@@ -201,15 +201,29 @@ story.append(Paragraph("Działająca wersja demonstracyjna: <b><font color='#A85
 story.append(HRFlowable(width="100%", thickness=0.8, color=COPPER_SOFT, spaceAfter=8))
 story.append(img_flow(os.path.join(ASSETS, "sklep-home.jpg"), 100 * mm))
 story.append(Spacer(1, 10))
-story.append(Paragraph("Wersja mobilna", st_h2))
-story.append(P("Większość klientów sklepów internetowych kupuje dziś z telefonu — dlatego całość projektujemy "
-               "najpierw pod ekran telefonu. Strona główna i karta produktu w wersji mobilnej:", st_muted))
-story.append(img_flow(os.path.join(ASSETS, "mobile.jpg"), 92 * mm))
-story.append(Spacer(1, 6))
-story.append(Paragraph("Przykład prowadzenia social mediów", st_h2))
-story.append(P("Przykładowa karuzela (3 plansze) na Instagram i Facebook, w oprawie graficznej nowego sklepu — "
-               "takie posty projektujemy i publikujemy w ramach pakietu social media (2–4 miesięcznie):", st_muted))
-story.append(img_flow(os.path.join(ASSETS, "social.jpg"), 126 * mm))
+
+col_mobile = [
+    Paragraph("Wersja mobilna", st_h2),
+    P("Większość klientów kupuje dziś z telefonu — sklep projektujemy najpierw pod ekran telefonu, "
+      "z rozwijanym menu kategorii i szybką ścieżką zamówienia:", st_muted),
+    img_flow(os.path.join(ASSETS, "mobile.jpg"), 96 * mm),
+]
+col_social = [
+    Paragraph("Social media", st_h2),
+    P("Przykładowy post na Instagram i Facebook w oprawie nowego sklepu — takie posty projektujemy "
+      "i publikujemy w ramach pakietu social media (2–4 miesięcznie):", st_muted),
+    img_flow(os.path.join(ASSETS, "social.jpg"), 56 * mm),
+]
+viz = Table([[col_mobile, col_social]], colWidths=[104 * mm, 66 * mm])
+viz.setStyle(TableStyle([
+    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+    ("LEFTPADDING", (0, 0), (-1, -1), 0),
+    ("RIGHTPADDING", (0, 0), (0, 0), 8),
+    ("RIGHTPADDING", (1, 0), (1, 0), 0),
+    ("TOPPADDING", (0, 0), (-1, -1), 0),
+    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+]))
+story.append(viz)
 
 doc.build(story)
 print("OK oferta-innochem-2026-08-21.pdf")

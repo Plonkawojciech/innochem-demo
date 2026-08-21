@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useCart } from "@/lib/cart";
 
 export function DemoBar() {
@@ -19,10 +20,22 @@ export function DemoBar() {
 export function Header() {
   const { count } = useCart();
   const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [sub, setSub] = useState<string | null>(null);
   return (
     <header className="site">
       <div className="wrap site-inner">
-        <Link className="logo" href="/">
+        <button
+          className={open ? "burger is-open" : "burger"}
+          aria-label={open ? "Zamknij menu" : "Otwórz menu"}
+          aria-expanded={open}
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span />
+          <span />
+          <span />
+        </button>
+        <Link className="logo" href="/" onClick={() => setOpen(false)}>
           INNO<span>CHEM</span>
           <em>Royal Purple Polska</em>
         </Link>
@@ -36,6 +49,41 @@ export function Header() {
           Koszyk <span className="count">{count}</span>
         </button>
       </div>
+      {open && (
+        <nav className="m-menu" aria-label="Menu mobilne">
+          <div className="m-sec">Kategorie</div>
+          {CATS.map((c) =>
+            c.items ? (
+              <div key={c.label}>
+                <button
+                  className={sub === c.label ? "m-cat is-open" : "m-cat"}
+                  onClick={() => setSub(sub === c.label ? null : c.label)}
+                >
+                  {c.label}
+                  <span className="m-caret" aria-hidden>▾</span>
+                </button>
+                {sub === c.label && (
+                  <div className="m-sub">
+                    {c.items.map((i) => (
+                      <Link href="/produkt/hps-5w30" key={i} onClick={() => setOpen(false)}>
+                        {i}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link className="m-cat" href="/produkt/hps-5w30" key={c.label} onClick={() => setOpen(false)}>
+                {c.label}
+              </Link>
+            )
+          )}
+          <div className="m-sec">Sklep</div>
+          <Link className="m-cat" href="/#technologia" onClick={() => setOpen(false)}>Technologia</Link>
+          <Link className="m-cat" href="/#kontakt" onClick={() => setOpen(false)}>Kontakt</Link>
+          <a className="m-dist" href="#kontakt" onClick={() => setOpen(false)}>Zostań dystrybutorem</a>
+        </nav>
+      )}
     </header>
   );
 }
