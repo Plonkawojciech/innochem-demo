@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;900&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#101010; display:flex; width:1410px; gap:0; }
+  .slide {
+    width:470px; height:470px; position:relative; overflow:hidden;
+    background:#000; color:#FFFFFF; font-family:Inter,sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .slide + .slide { border-left:1px solid #1c1c1c; }
+
+  .ghost {
+    position:absolute; top:50%; left:50%; transform:translate(-50%,-58%);
+    font-family:Archivo,sans-serif; font-weight:900; font-size:190px; letter-spacing:-0.04em;
+    color:transparent; -webkit-text-stroke:1.5px rgba(154,107,255,.4); white-space:nowrap;
+  }
+  .bottle { position:absolute; top:50%; left:50%; transform:translate(-50%,-52%); height:330px; mix-blend-mode:lighten; }
+
+  .top { position:absolute; top:34px; left:0; right:0; text-align:center;
+    font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.3em; color:#8B8698; }
+  .top b { color:#F5C518; font-weight:500; }
+
+  .cap { position:absolute; bottom:34px; left:0; right:0; text-align:center; }
+  .cap h2 { font-family:Archivo,sans-serif; font-weight:700; text-transform:uppercase;
+    font-size:25px; letter-spacing:.01em; line-height:1.15; }
+  .cap h2 .v { color:#9A6BFF; }
+  .cap p { color:#9a96a6; font-size:14px; margin-top:8px; }
+
+  .rule { position:absolute; bottom:118px; left:50%; transform:translateX(-50%);
+    width:44px; height:2px; background:#F5C518; }
+
+  /* slide 2: fakty na osi */
+  .facts { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:340px; }
+  .fact { display:flex; align-items:baseline; gap:16px; padding:17px 0; border-bottom:1px solid #1e1e22; }
+  .fact:last-child { border-bottom:0; }
+  .fact .n { font-family:Archivo,sans-serif; font-weight:900; font-size:30px; color:#9A6BFF; min-width:52px; }
+  .fact .t { font-size:15px; line-height:1.4; color:#d9d6e2; }
+  .fact .t small { display:block; color:#8B8698; font-size:12.5px; margin-top:2px; }
+
+  /* slide 3 */
+  .cta-wrap { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; width:100%; }
+  .cta-wrap .logo { font-family:Archivo,sans-serif; font-weight:900; font-size:40px; letter-spacing:.01em; }
+  .cta-wrap .logo span { color:#9A6BFF; }
+  .cta-wrap .sub { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.32em; color:#8B8698; margin-top:6px; }
+  .cta-wrap .pill { display:inline-block; margin-top:30px; background:#F5C518; color:#151318;
+    font-weight:600; font-size:16px; padding:14px 30px; border-radius:100px; }
+  .mini { position:absolute; bottom:-70px; left:50%; transform:translateX(-50%); height:260px; mix-blend-mode:lighten; opacity:.85; }
+</style>
+</head>
+<body>
+
+<div class="slide" style="background:url('tlo-garaz.png') center/cover; ">
+  <div style="position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.25) 40%, rgba(0,0,0,.75) 85%);"></div>
+  <div class="top" style="color:#b7b2c2;"><b>ROYAL PURPLE</b> · SYNTETYCZNE OLEJE Z USA</div>
+  <img class="bottle" style="filter:drop-shadow(0 24px 40px rgba(0,0,0,.8));" src="http://localhost:8932/img/rp-motor-oil-hps-5w30.jpg" alt="">
+  <div class="rule"></div>
+  <div class="cap">
+    <h2>Olej, który wygrywa <span class="v">wyścigi</span></h2>
+    <p>Ten sam, którego używa się w NASCAR</p>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="top">TECHNOLOGIA <b>SYNERLEC</b></div>
+  <div class="facts">
+    <div class="fact"><div class="n">−8°</div><div class="t">Niższa temperatura pracy silnika<small>film olejowy nie zrywa się przy wysokich obrotach</small></div></div>
+    <div class="fact"><div class="n">2×</div><div class="t">Wyższa wytrzymałość filmu<small>niż w klasycznym oleju syntetycznym</small></div></div>
+    <div class="fact"><div class="n">ZDDP</div><div class="t">Podwyższony cynk i fosfor<small>ochrona rozrządu i silników po tuningu</small></div></div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="top">WYŁĄCZNY DYSTRYBUTOR <b>W POLSCE</b></div>
+  <div class="cta-wrap">
+    <div class="logo">INNO<span>CHEM</span></div>
+    <div class="sub">ROYAL PURPLE POLSKA</div>
+    <div class="pill">Dobierz olej do swojego silnika</div>
+  </div>
+  <img class="mini" src="http://localhost:8932/img/royal-purple-motor-oil-0w40.jpg" alt="">
+</div>
+
+</body>
+</html>

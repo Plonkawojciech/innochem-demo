@@ -118,6 +118,16 @@ def row(*cells, bold=()):
     return [Paragraph(c, st_cell_b if i in bold else st_cell) for i, c in enumerate(cells)]
 
 
+from reportlab.platypus import PageBreak, Image as RLImage
+from PIL import Image as PILImage
+
+def img_flow(path, width):
+    with PILImage.open(path) as im:
+        w, h = im.size
+    return RLImage(path, width=width, height=width * h / w)
+
+ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+
 story = []
 
 story.append(Paragraph("OFERTA DLA INNOCHEM.PL", st_kicker))
@@ -132,35 +142,36 @@ story.append(P("Przygotowaliśmy projekt sklepu od zera — szybki, bezpieczny i
 
 story.append(Paragraph("Zakres i ceny", st_h2))
 story.append(tbl([
-    hdr("Zakres", "Cena netto", "Termin"),
+    hdr("Zakres", "Cena netto"),
     row("<b>Wdrożenie nowego sklepu</b><br/>Projekt graficzny i budowa sklepu, przeniesienie wszystkich "
         "produktów i treści, płatności online (BLIK, szybkie przelewy), kurier i paczkomaty, faktury VAT, "
         "pełna wersja mobilna. Uruchomienie pod obecną domeną bez przerwy w działaniu.",
-        "2 500 zł<br/>jednorazowo", "3 tygodnie<br/>od akceptacji", bold=(1,)),
+        "2 500 zł jednorazowo", bold=(1,)),
     row("<b>Utrzymanie — pakiet podstawowy</b><br/>Hosting, certyfikat SSL, codzienne kopie zapasowe, "
         "monitoring, aktualizacje bezpieczeństwa i bieżące drobne zmiany treści.",
-        "350 zł<br/>miesięcznie", "od startu", bold=(1,)),
+        "350 zł miesięcznie", bold=(1,)),
     row("<b>Utrzymanie — pakiet z SEO</b><br/>Wszystko z pakietu podstawowego oraz stała praca nad "
         "widocznością w Google: optymalizacja opisów produktów i kategorii, dane strukturalne (ceny i "
         "dostępność widoczne w wynikach), rozbudowa bazy wiedzy o teksty, których klienci szukają, "
         "i miesięczny raport pozycji. To ruch, za który nie płaci się reklamami.",
-        "550 zł<br/>miesięcznie", "od startu", bold=(1,)),
-    row("<b>Aplikacja mobilna sklepu (iOS + Android)</b><br/>Sklep jako aplikacja w App Store i Google Play, "
-        "z tym samym magazynem i zamówieniami. Bez podnoszenia abonamentu — utrzymanie w cenie pakietu. "
-        "Powiadomienia push o promocjach trafiają do klientów za darmo, bez płacenia za reklamy.",
-        "1 500 zł<br/>jednorazowo", "3 tygodnie<br/>od startu sklepu", bold=(1,)),
-], [96 * mm, 26 * mm, CW - 122 * mm]))
+        "500 zł miesięcznie", bold=(1,)),
+], [116 * mm, CW - 116 * mm]))
 story.append(Spacer(1, 4))
 
 story.append(Paragraph("Opcje do dokupienia w dowolnym momencie", st_h2))
 story.append(tbl([
     hdr("Zakres", "Cena netto"),
+    row("<b>Aplikacja mobilna sklepu (iOS + Android)</b> — sklep jako aplikacja w App Store i Google Play, "
+        "z tym samym magazynem i zamówieniami. Bez podnoszenia abonamentu — utrzymanie w cenie pakietu. "
+        "Powiadomienia push o promocjach trafiają do klientów za darmo, bez płacenia za reklamy.",
+        "1 500 zł jednorazowo", bold=(1,)),
     row("<b>Google Ads</b> — reklamy nad wynikami Google dla szukających olejów Royal Purple; "
         "prowadzenie, optymalizacja i miesięczny raport. Budżet reklamowy płacony bezpośrednio do Google, "
-        "z ustalonym limitem.", "250 zł miesięcznie", bold=(1,)),
-    row("<b>Social media</b> — prowadzenie profilu firmowego (Facebook/Instagram): regularne posty "
-        "produktowe i poradnikowe, grafiki, odpowiadanie na wiadomości.", "400 zł miesięcznie", bold=(1,)),
-], [96 * mm, CW - 96 * mm]))
+        "z ustalonym limitem.", "150 zł miesięcznie", bold=(1,)),
+    row("<b>Social media</b> — prowadzenie profili firmowych na Instagramie i Facebooku: 2–4 posty "
+        "miesięcznie (grafiki produktowe i poradnikowe w spójnej oprawie — przykład na następnej stronie), "
+        "odpowiadanie na wiadomości.", "150 zł miesięcznie", bold=(1,)),
+], [116 * mm, CW - 116 * mm]))
 story.append(Spacer(1, 4))
 
 story.append(P("<b>Dlaczego pakiet ze sklepem i aplikacją się opłaca:</b> klienci, którzy raz kupili, wracają "
@@ -171,14 +182,30 @@ story.append(Paragraph("Czego potrzebujemy od Państwa", st_h2))
 for t in [
     "<b>Dostęp do obecnego sklepu</b> — przeniesiemy produkty, opisy i zdjęcia; nic nie trzeba przepisywać ręcznie.",
     "<b>Dostęp do domeny innochem.pl</b> — zmiana według naszej instrukcji, bez przerwy w działaniu poczty.",
-    "<b>Dane do płatności</b> — umowa z operatorem płatności (pomożemy ją założyć, jeśli jej nie ma).",
 ]:
     story.append(bullet(t))
 
-story.append(Paragraph("Warunki", st_h2))
-story.append(P("Wdrożenie płatne po odbiorze sklepu, abonament od miesiąca startu. Sklep, treści i domena "
-               "pozostają Państwa własnością. 30 dni gwarancji poprawek po starcie. Faktura VAT. "
-               "Do cen netto doliczany jest VAT 23%."))
+story.append(Paragraph("Termin i umowa", st_h2))
+story.append(P("<b>Termin uruchomienia: 2–4 tygodnie</b> od momentu, w którym mamy komplet materiałów i dostępów. "
+               "Wdrożenie płatne po odbiorze sklepu, abonament od miesiąca startu."))
+story.append(P("Umowę podpisujemy na okres uzgodniony w rozmowie, z <b>miesięcznym okresem wypowiedzenia "
+               "i bez kar umownych</b> — jeśli współpraca nie będzie Pani odpowiadać, po prostu się rozstajemy. "
+               "Sklep, treści i domena pozostają Państwa własnością. 30 dni gwarancji poprawek po starcie. "
+               "Faktura VAT; do cen netto doliczany jest VAT 23%."))
+
+# ---- strona 2: wizualizacje ----
+story.append(PageBreak())
+story.append(Paragraph("TAK BĘDZIE WYGLĄDAĆ NOWY SKLEP", st_kicker))
+story.append(Paragraph("Projekt jest już gotowy do obejrzenia", st_h1))
+story.append(Paragraph("Działająca wersja demonstracyjna: <b><font color='#A85E2B'>innochem.programo.pl</font></b> "
+                       "— strona główna, karta produktu i ścieżka zamówienia.", st_lead))
+story.append(HRFlowable(width="100%", thickness=0.8, color=COPPER_SOFT, spaceAfter=8))
+story.append(img_flow(os.path.join(ASSETS, "sklep-home.jpg"), CW))
+story.append(Spacer(1, 10))
+story.append(Paragraph("Przykład prowadzenia social mediów", st_h2))
+story.append(P("Karuzela na Instagram i Facebook w oprawie graficznej sklepu — takie posty przygotowujemy "
+               "w ramach pakietu social media (2–4 miesięcznie):", st_muted))
+story.append(img_flow(os.path.join(ASSETS, "karuzela.png"), CW))
 
 doc.build(story)
 print("OK oferta-innochem-2026-08-21.pdf")
