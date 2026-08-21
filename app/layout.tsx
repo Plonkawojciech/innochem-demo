@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
+import { Manrope, Inter, IBM_Plex_Mono } from "next/font/google";
 import { CartProvider } from "@/lib/cart";
-import { DemoBar, Header } from "@/components/SiteChrome";
+import { DemoBar, Header, CatBar } from "@/components/SiteChrome";
 import "./globals.css";
 
-const archivo = Space_Grotesk({ subsets: ["latin-ext"], weight: ["500", "700"], variable: "--f-display" });
+const archivo = Manrope({ subsets: ["latin-ext"], weight: ["600", "700", "800"], variable: "--f-display" });
 const inter = Inter({ subsets: ["latin-ext"], variable: "--f-body" });
 const mono = IBM_Plex_Mono({ subsets: ["latin-ext"], weight: ["400", "500", "700"], variable: "--f-mono" });
 
@@ -22,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <CartProvider>
           <DemoBar />
           <Header />
+          <CatBar />
           {children}
         </CartProvider>
       </body>

@@ -22,7 +22,7 @@ export function BuyBox({ product }: { product: Product }) {
         <div className="buy-price">
           <span>{zl(product.price)}</span> <small>brutto / szt.</small>
         </div>
-        <span className="stock">W magazynie — wysyłka w 24 h</span>
+        <span className="stock">W magazynie</span>
       </div>
       <div className="buy-row">
         <div className="qty">
@@ -43,7 +43,7 @@ export function BuyBox({ product }: { product: Product }) {
           {added ? "Dodano do koszyka" : "Dodaj do koszyka"}
         </button>
       </div>
-      <p className="ship-note">Darmowa dostawa od 250 zł · Kurier 24 h lub paczkomat · Zwrot do 30 dni</p>
+      <p className="ship-note">Wysyłka kurierem lub do paczkomatu · Zwrot do 14 dni</p>
     </div>
   );
 }

@@ -199,17 +199,17 @@ story.append(Paragraph("Projekt jest już gotowy do obejrzenia", st_h1))
 story.append(Paragraph("Działająca wersja demonstracyjna: <b><font color='#A85E2B'>innochem.programo.pl</font></b> "
                        "— strona główna, karta produktu i ścieżka zamówienia.", st_lead))
 story.append(HRFlowable(width="100%", thickness=0.8, color=COPPER_SOFT, spaceAfter=8))
-story.append(img_flow(os.path.join(ASSETS, "sklep-home.jpg"), CW))
+story.append(img_flow(os.path.join(ASSETS, "sklep-home.jpg"), 138 * mm))
 story.append(Spacer(1, 10))
 story.append(Paragraph("Wersja mobilna", st_h2))
 story.append(P("Większość klientów sklepów internetowych kupuje dziś z telefonu — dlatego całość projektujemy "
                "najpierw pod ekran telefonu. Strona główna i karta produktu w wersji mobilnej:", st_muted))
-story.append(img_flow(os.path.join(ASSETS, "mobile.jpg"), 150 * mm))
-story.append(PageBreak())
+story.append(img_flow(os.path.join(ASSETS, "mobile.jpg"), 118 * mm))
+story.append(Spacer(1, 6))
 story.append(Paragraph("Przykład prowadzenia social mediów", st_h2))
 story.append(P("Tak wygląda post z karuzelą na Instagramie w oprawie graficznej nowego sklepu — takie "
                "posty przygotowujemy i publikujemy w ramach pakietu social media (2–4 miesięcznie, IG + FB):", st_muted))
-story.append(img_flow(os.path.join(ASSETS, "ig-post.png"), CW))
+story.append(img_flow(os.path.join(ASSETS, "ig-post.png"), 90 * mm))
 
 doc.build(story)
 print("OK oferta-innochem-2026-08-21.pdf")

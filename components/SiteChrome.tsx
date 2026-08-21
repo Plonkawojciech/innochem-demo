@@ -40,6 +40,44 @@ export function Header() {
   );
 }
 
+const CATS: { label: string; items?: string[] }[] = [
+  { label: "Oleje samochodowe", items: ["Oleje silnikowe", "Oleje przekładniowe", "Inne"] },
+  { label: "Oleje motocyklowe" },
+  { label: "Oleje wyścigowe" },
+  { label: "Pojazdy śnieżne i traktory" },
+  {
+    label: "Oleje przemysłowe",
+    items: ["Oleje i smary przekładniowe", "Smary do kompresorów", "Oleje do sprężarek", "Oleje hydrauliczne", "Inne płyny i oleje"],
+  },
+];
+
+export function CatBar() {
+  return (
+    <nav className="catbar" aria-label="Kategorie produktów">
+      <div className="wrap catbar-inner">
+        {CATS.map((c) => (
+          <div className={c.items ? "cb-item has-menu" : "cb-item"} key={c.label}>
+            <Link href="/produkt/hps-5w30">
+              {c.label}
+              {c.items && <span className="cb-caret" aria-hidden>▾</span>}
+            </Link>
+            {c.items && (
+              <div className="cb-menu">
+                {c.items.map((i) => (
+                  <Link href="/produkt/hps-5w30" key={i}>{i}</Link>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+        <div className="cb-item cb-dist">
+          <a href="#kontakt">Zostań dystrybutorem</a>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
 export function Footer({ full = false }: { full?: boolean }) {
   return (
     <footer className="site" id="kontakt">
@@ -49,9 +87,11 @@ export function Footer({ full = false }: { full?: boolean }) {
             <div>
               <b>INNOCHEM</b>
               <p>
-                Wyłączny dystrybutor olejów i smarów Royal Purple w Polsce.
+                Wyłączny dystrybutor olejów i smarów Royal Purple w Polsce od 2009 roku.
                 <br />
-                kontakt@innochem.pl
+                ul. Okrzei 64, 25-526 Kielce · pn–pt 8:00–16:00
+                <br />
+                kontakt@innochem.pl · tel. 602 155 919
               </p>
             </div>
             <div>

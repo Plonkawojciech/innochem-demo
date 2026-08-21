@@ -41,9 +41,10 @@ export default async function ProduktPage({ params }: { params: Promise<{ id: st
               <span className="tag">{p.vol}</span>
             </div>
             <p className="desc">
-              W pełni syntetyczny olej silnikowy do aut o podwyższonych osiągach i silników po modyfikacjach.
-              Podwyższona zawartość cynku i fosforu chroni układ rozrządu, a technologia Synerlec tworzy trwały
-              film olejowy odporny na zrywanie przy wysokich obrotach.
+              Syntetyczny olej silnikowy do silników benzynowych i Diesla, opracowany dla jednostek wysokiej
+              wydajności i po modyfikacjach. Zawiera opatentowany pakiet dodatków Synerlec oraz związki cynku
+              i fosforu (dodatki przeciwzużyciowe). Ze względu na zwiększoną zawartość dodatków AW olej nie
+              posiada klasyfikacji API — zalecany do pojazdów nieobjętych już gwarancją producenta.
             </p>
 
             <BuyBox product={p} />
@@ -77,15 +78,19 @@ export default async function ProduktPage({ params }: { params: Promise<{ id: st
                   <td>Zastosowanie</td>
                   <td>benzyna / diesel</td>
                 </tr>
+                <tr>
+                  <td>Klasyfikacja API</td>
+                  <td>brak — zwiększone dodatki AW</td>
+                </tr>
               </tbody>
             </table>
 
             <h2 className="display">Dla kogo ten olej</h2>
             <p className="desc">
-              HPS (High Performance Street) powstał dla kierowców, którzy oczekują od silnika więcej: auta
-              sportowe, silniki po chip-tuningu, klasyki z płaskimi popychaczami oraz pojazdy eksploatowane
-              intensywnie. Jeśli nie masz pewności, czy to właściwa lepkość dla Twojego silnika — napisz do
-              nas, dobierzemy olej do konkretnej jednostki.
+              Seria HPS (High Performance Street) powstała dla kierowców poszukujących wyższej jakości,
+              wydajności i ochrony: aut o podwyższonych osiągach, silników po modyfikacjach i pojazdów
+              eksploatowanych intensywnie. Jeśli nie masz pewności, czy to właściwa lepkość dla Twojego
+              silnika — napisz do nas, pomożemy dobrać olej do konkretnej jednostki.
             </p>
           </div>
         </main>
