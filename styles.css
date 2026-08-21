@@ -115,7 +115,7 @@ nav.main a:hover, nav.main a[aria-current] { color: var(--ink); }
 .btn-violet { background: var(--violet); color: #fff; }
 .btn-violet:hover { background: #7B49E4; }
 .hero-photo { position: relative; }
-.hero-photo img { width: min(420px, 90%); margin: 0 auto; filter: drop-shadow(0 30px 60px rgba(109, 59, 209, 0.35)); }
+.hero-photo img { width: min(420px, 90%); margin: 0 auto; mix-blend-mode: lighten; filter: drop-shadow(0 30px 60px rgba(109, 59, 209, 0.35)); }
 .hero-photo::before {
   content: ""; position: absolute; inset: 10% 15%;
   background: radial-gradient(closest-side, rgba(109, 59, 209, 0.28), transparent 70%);
