@@ -28,7 +28,7 @@ export function Header() {
         </Link>
         <nav className="main" aria-label="Główna nawigacja">
           <Link href="/#kategorie">Kategorie</Link>
-          <Link href="/#bestsellery">Bestsellery</Link>
+          <Link href="/produkt/hps-5w30">Produkt</Link>
           <Link href="/#technologia">Technologia</Link>
           <Link href="/#kontakt">Kontakt</Link>
         </nav>
@@ -57,7 +57,7 @@ export function Footer({ full = false }: { full?: boolean }) {
             <div>
               <b>Sklep</b>
               <Link href="/#kategorie">Kategorie</Link>
-              <Link href="/#bestsellery">Bestsellery</Link>
+              <Link href="/produkt/hps-5w30">Przykładowy produkt</Link>
               <Link href="/zamowienie">Koszyk</Link>
             </div>
             <div>

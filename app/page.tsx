@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ProductGrid } from "@/components/ProductCard";
 import { Reveal } from "@/components/Reveal";
 import { Footer } from "@/components/SiteChrome";
 
@@ -61,12 +60,12 @@ export default function Home() {
               <b>Oleje motocyklowe<small>seria Max-Cycle · silnik, sprzęgło i skrzynia</small></b>
               <span className="go">→</span>
             </Link>
-            <Link className="cat" href="/produkt/0w40">
+            <Link className="cat" href="/produkt/hps-5w30">
               <span className="idx">03</span>
               <b>Oleje wyścigowe<small>XPR Racing · tor, rajdy i sporty motorowe</small></b>
               <span className="go">→</span>
             </Link>
-            <Link className="cat" href="/produkt/5w30">
+            <Link className="cat" href="/produkt/hps-5w30">
               <span className="idx">04</span>
               <b>Przemysł i hydraulika<small>sprężarki, przekładnie, układy hydrauliczne</small></b>
               <span className="go">→</span>
@@ -96,16 +95,25 @@ export default function Home() {
         </div>
       </div>
 
-      <section className="block" id="bestsellery">
+      <section className="block" id="produkt">
         <div className="wrap">
-          <Reveal className="sec-head">
-            <div>
-              <span className="label">Najczęściej wybierane</span>
-              <h2 className="display">Bestsellery</h2>
+          <Reveal className="feature">
+            <div className="feature-photo">
+              <img src="/img/rp-hps-5w30-hd.png" alt="Royal Purple HPS 5W-30" width={1024} height={1536} />
             </div>
-            <Link href="/produkt/hps-5w30">Zobacz pełną ofertę</Link>
+            <div className="feature-copy">
+              <span className="label">Przykładowa karta produktu</span>
+              <h2 className="display">Royal Purple HPS 5W-30</h2>
+              <p>
+                Flagowy olej serii High Performance Street — podwyższony pakiet ZDDP i technologia
+                Synerlec dla aut o wyższych osiągach i jednostek po tuningu. Zobacz, jak w nowym
+                sklepie wygląda pełna karta produktu ze specyfikacją i zamówieniem.
+              </p>
+              <div className="cta-row">
+                <Link className="btn btn-primary" href="/produkt/hps-5w30">Zobacz kartę produktu</Link>
+              </div>
+            </div>
           </Reveal>
-          <ProductGrid />
         </div>
       </section>
 
