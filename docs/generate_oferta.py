@@ -201,10 +201,15 @@ story.append(Paragraph("Działająca wersja demonstracyjna: <b><font color='#A85
 story.append(HRFlowable(width="100%", thickness=0.8, color=COPPER_SOFT, spaceAfter=8))
 story.append(img_flow(os.path.join(ASSETS, "sklep-home.jpg"), CW))
 story.append(Spacer(1, 10))
+story.append(Paragraph("Wersja mobilna", st_h2))
+story.append(P("Większość klientów sklepów internetowych kupuje dziś z telefonu — dlatego całość projektujemy "
+               "najpierw pod ekran telefonu. Strona główna i karta produktu w wersji mobilnej:", st_muted))
+story.append(img_flow(os.path.join(ASSETS, "mobile.jpg"), 150 * mm))
+story.append(PageBreak())
 story.append(Paragraph("Przykład prowadzenia social mediów", st_h2))
 story.append(P("Tak wygląda post z karuzelą na Instagramie w oprawie graficznej nowego sklepu — takie "
                "posty przygotowujemy i publikujemy w ramach pakietu social media (2–4 miesięcznie, IG + FB):", st_muted))
-story.append(img_flow(os.path.join(ASSETS, "ig-post.png"), 150 * mm))
+story.append(img_flow(os.path.join(ASSETS, "ig-post.png"), CW))
 
 doc.build(story)
 print("OK oferta-innochem-2026-08-21.pdf")
