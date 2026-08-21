@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Zamówienie — INNOCHEM</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@900&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="demo-bar">WERSJA DEMONSTRACYJNA — projekt nowego sklepu innochem.pl przygotowany przez <strong><a href="https://programo.pl">Programo</a></strong>. Zamówienia nie są realizowane.</div>
+
+<header class="site">
+  <div class="wrap site-inner">
+    <a class="logo" href="index.html">INNO<span>CHEM</span><em>Royal Purple Polska</em></a>
+    <nav class="main" aria-label="Główna nawigacja">
+      <a href="index.html#kategorie">Kategorie</a>
+      <a href="index.html#bestsellery">Bestsellery</a>
+      <a href="index.html#dystrybucja">Dla warsztatów</a>
+      <a href="index.html#kontakt">Kontakt</a>
+    </nav>
+    <button class="cart-btn" onclick="location.href='checkout.html'">Koszyk <span class="count" id="cartCount">0</span></button>
+  </div>
+</header>
+
+<div class="wrap" id="chkView">
+  <div class="steps" role="list">
+    <div class="step on" role="listitem"><span class="mono">KROK 1</span>Koszyk i dane</div>
+    <div class="step" role="listitem"><span class="mono">KROK 2</span>Dostawa i płatność</div>
+    <div class="step" role="listitem"><span class="mono">KROK 3</span>Potwierdzenie</div>
+  </div>
+
+  <div class="chk">
+    <div>
+      <div class="panel" style="margin-bottom:24px">
+        <h2 class="display">Dane zamawiającego</h2>
+        <div class="f-grid">
+          <label class="f">Imię<input placeholder="Jan"></label>
+          <label class="f">Nazwisko<input placeholder="Kowalski"></label>
+          <label class="f full">E-mail<input type="email" placeholder="jan@przyklad.pl"></label>
+          <label class="f">Telefon<input placeholder="+48"></label>
+          <label class="f">NIP (opcjonalnie — faktura VAT)<input placeholder="000-000-00-00"></label>
+          <label class="f full">Adres<input placeholder="Ulica i numer"></label>
+          <label class="f">Kod pocztowy<input placeholder="00-000"></label>
+          <label class="f">Miasto<input placeholder="Poznań"></label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="display">Dostawa i płatność</h2>
+        <div class="ship-opts">
+          <label class="opt"><input type="radio" name="ship" value="15.90" checked><div><b>Kurier DPD</b><span>doręczenie następnego dnia roboczego</span></div><span class="p">15,90 zł</span></label>
+          <label class="opt"><input type="radio" name="ship" value="11.90"><div><b>Paczkomat InPost</b><span>odbiór 24/7</span></div><span class="p">11,90 zł</span></label>
+          <label class="opt"><input type="radio" name="ship" value="0"><div><b>Odbiór osobisty</b><span>po wcześniejszym umówieniu</span></div><span class="p">0,00 zł</span></label>
+        </div>
+        <div class="ship-opts" style="margin-top:18px">
+          <label class="opt"><input type="radio" name="pay" checked><div><b>Płatność online</b><span>BLIK, szybki przelew, karta</span></div></label>
+          <label class="opt"><input type="radio" name="pay"><div><b>Za pobraniem</b><span>płatność przy odbiorze</span></div></label>
+        </div>
+      </div>
+    </div>
+
+    <aside class="panel">
+      <h2 class="display">Twoje zamówienie</h2>
+      <div id="cartList"></div>
+      <div style="margin-top:14px">
+        <div class="sum-line"><span>Produkty</span><span id="sumProd">0,00 zł</span></div>
+        <div class="sum-line"><span>Dostawa</span><span id="sumShip">15,90 zł</span></div>
+        <div class="sum-line total"><span>Razem</span><span id="sumTotal">0,00 zł</span></div>
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:20px" id="orderBtn">Zamawiam i płacę</button>
+      <p class="ship-note" style="text-align:center">To demo — płatność nie zostanie pobrana.</p>
+    </aside>
+  </div>
+</div>
+
+<div class="wrap success" id="successView" hidden>
+  <div class="mark" aria-hidden="true">✓</div>
+  <h1 class="display">Zamówienie przyjęte</h1>
+  <p>Dziękujemy. W prawdziwym sklepie klient otrzymałby teraz e-mail z potwierdzeniem i numerem zamówienia, a płatność przeszłaby przez bramkę BLIK / Przelewy24. To koniec ścieżki demonstracyjnej.</p>
+  <a class="btn btn-violet" href="index.html">Wróć do sklepu</a>
+</div>
+
+<footer class="site">
+  <div class="wrap foot-note">
+    <span>© 2026 INNOCHEM. Wszystkie prawa zastrzeżone.</span>
+    <span>Projekt demonstracyjny: <a href="https://programo.pl" style="display:inline">programo.pl</a></span>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+<script>
+function renderCart() {
+  const c = getCart();
+  const ids = Object.keys(c);
+  if (!ids.length) { c["hps-5w30"] = 1; setCart(c); return renderCart(); }
+  let sum = 0;
+  cartList.innerHTML = ids.map(id => {
+    const p = PRODUCTS.find(x => x.id === id); if (!p) return "";
+    sum += p.price * c[id];
+    return `<div class="cart-item"><img src="${p.img}" alt=""><div><b>${p.name} ${p.visc}</b><span>${p.vol} · ${c[id]} szt.</span></div><span class="p">${zl(p.price * c[id])}</span></div>`;
+  }).join("");
+  const ship = parseFloat(document.querySelector('input[name="ship"]:checked').value);
+  sumProd.textContent = zl(sum);
+  sumShip.textContent = zl(ship);
+  sumTotal.textContent = zl(sum + ship);
+}
+document.querySelectorAll('input[name="ship"]').forEach(r => r.addEventListener("change", renderCart));
+orderBtn.addEventListener("click", () => {
+  document.querySelectorAll(".step")[1].classList.add("on");
+  document.querySelectorAll(".step")[2].classList.add("on");
+  chkView.hidden = true; successView.hidden = false;
+  localStorage.removeItem("innochem-cart"); renderCount();
+  window.scrollTo(0, 0);
+});
+renderCart();
+</script>
+</body>
+</html>
