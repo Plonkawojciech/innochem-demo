@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<title>Karuzela social</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#EDEBE6; font-family:Inter,-apple-system,sans-serif;
+         display:flex; gap:26px; justify-content:center; align-items:flex-start; padding:44px; }
+  .col { display:flex; flex-direction:column; gap:12px; }
+  .num { font-size:11px; font-weight:700; letter-spacing:.2em; color:#8a8494; text-align:center; }
+  .slide { width:400px; height:400px; position:relative; overflow:hidden; background:#0B0A0E;
+           box-shadow:0 24px 48px rgba(16,16,23,.18); color:#EFEDF4; }
+
+  /* S1 — produkt */
+  .s1 { background:url('/tlo-garaz.png') center/cover; }
+  .s1::before { content:""; position:absolute; inset:0;
+                background:linear-gradient(0deg, rgba(11,10,14,.94) 8%, rgba(11,10,14,.35) 55%, rgba(11,10,14,.55)); }
+  .s1 img { position:absolute; right:26px; bottom:84px; width:172px; mix-blend-mode:lighten;
+            filter:drop-shadow(0 26px 40px rgba(0,0,0,.75)); }
+  .s1 .brand { position:absolute; top:26px; left:28px; font-size:11px; font-weight:700;
+               letter-spacing:.22em; color:#E4B95B; }
+  .s1 h1 { position:absolute; left:28px; bottom:88px; width:190px;
+           font-size:31px; line-height:1.12; font-weight:800; letter-spacing:-0.015em; }
+  .s1 .sub { position:absolute; left:28px; bottom:34px; width:330px; font-size:12.5px; color:#b9b4c4; line-height:1.5; }
+
+  /* S2 — fakty */
+  .s2 { background:#0B0A0E; padding:34px 32px; display:flex; flex-direction:column; }
+  .s2 .brand { font-size:11px; font-weight:700; letter-spacing:.22em; color:#E4B95B; margin-bottom:20px; }
+  .s2 h2 { font-size:25px; font-weight:800; letter-spacing:-0.01em; margin-bottom:10px; }
+  .s2 .row { border-top:1px solid rgba(255,255,255,.1); padding:16px 0; display:flex; gap:16px; align-items:baseline; }
+  .s2 .row:first-of-type { margin-top:8px; }
+  .s2 .k { min-width:86px; font-size:11px; font-weight:700; letter-spacing:.12em; color:#9F86FF; }
+  .s2 .t { font-size:13px; color:#c9c5d4; line-height:1.5; }
+  .s2 .foot { margin-top:auto; font-size:11px; color:#6f697e; letter-spacing:.06em; }
+
+  /* S3 — CTA */
+  .s3 { background:url('/tlo-silnik.png') center/cover; }
+  .s3::before { content:""; position:absolute; inset:0; background:rgba(11,10,14,.82); }
+  .s3 .in { position:absolute; inset:0; padding:36px 34px; display:flex; flex-direction:column; }
+  .s3 .brand { font-size:11px; font-weight:700; letter-spacing:.22em; color:#E4B95B; }
+  .s3 h2 { margin-top:auto; font-size:29px; line-height:1.15; font-weight:800; letter-spacing:-0.015em; width:300px; }
+  .s3 p { margin:14px 0 26px; font-size:13px; color:#b9b4c4; width:300px; line-height:1.55; }
+  .s3 .btn { align-self:flex-start; background:#E4B95B; color:#16130c; font-size:13px; font-weight:700;
+             padding:13px 26px; letter-spacing:.02em; }
+</style>
+</head>
+<body>
+  <div class="col">
+    <div class="slide s1">
+      <span class="brand">INNOCHEM · ROYAL PURPLE</span>
+      <img src="/img/rp-hps-5w30-hd.png" alt="">
+      <h1>Syntetyczne oleje z Teksasu</h1>
+      <p class="sub">Royal Purple — amerykańska technologia smarowania od 1986 roku. Wyłączna dystrybucja w Polsce.</p>
+    </div>
+    <p class="num">1 / 3</p>
+  </div>
+  <div class="col">
+    <div class="slide s2">
+      <span class="brand">TECHNOLOGIA SYNERLEC</span>
+      <h2>Co robi ten olej w silniku?</h2>
+      <div class="row"><span class="k">FILM</span><span class="t">mocny syntetyczny film olejowy zapobiega kontaktowi metal-metal</span></div>
+      <div class="row"><span class="k">KOROZJA</span><span class="t">wypiera wilgoć i chroni powierzchnie metalowe</span></div>
+      <div class="row"><span class="k">STABILNOŚĆ</span><span class="t">odporność na utlenianie wydłuża czas eksploatacji</span></div>
+      <span class="foot">innochem.pl</span>
+    </div>
+    <p class="num">2 / 3</p>
+  </div>
+  <div class="col">
+    <div class="slide s3">
+      <div class="in">
+        <span class="brand">INNOCHEM · ROYAL PURPLE</span>
+        <h2>Nie wiesz, który olej do Twojego silnika?</h2>
+        <p>Napisz do nas — doradzimy i dobierzemy olej do konkretnej jednostki. Wysyłka w całej Polsce.</p>
+        <span class="btn">innochem.pl</span>
+      </div>
+    </div>
+    <p class="num">3 / 3</p>
+  </div>
+</body>
+</html>

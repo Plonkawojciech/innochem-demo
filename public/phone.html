@@ -6,30 +6,49 @@
 <title>Podgląd mobilny</title>
 <style>
   * { box-sizing: border-box; }
-  body { margin:0; background:#F1EFE9; font-family:-apple-system,"Segoe UI",sans-serif;
-         display:flex; flex-wrap:wrap; gap:48px 56px; justify-content:center; align-items:flex-start;
-         padding:32px 24px 48px; min-height:100vh; }
-  .unit { position:relative; }
-  .phone { width:min(330px, 88vw); aspect-ratio: 390/700; border-radius:32px; background:#101017;
-           padding:9px; box-shadow:0 30px 60px rgba(16,16,23,.22), 0 2px 6px rgba(16,16,23,.12); }
-  .phone iframe { width:100%; height:100%; border:0; border-radius:24px; background:#F7F6F3; }
-  .pill { position:absolute; left:18px; bottom:-16px; display:flex; align-items:center; gap:7px;
-          background:#22222d; color:#e8e6ef; font-size:12px; letter-spacing:.02em;
-          padding:8px 14px; border-radius:100px; box-shadow:0 10px 24px rgba(16,16,23,.28); }
-  .pill svg { width:11px; height:11px; opacity:.75; }
-  .cap { text-align:center; margin-top:34px; font-size:13px; color:#6b6675; letter-spacing:.03em; }
+  body { margin:0; min-height:100vh; font-family:-apple-system,"Segoe UI",sans-serif;
+         background:#0B0A0E; position:relative; overflow:hidden;
+         display:flex; gap:72px; justify-content:center; align-items:center; padding:56px 24px; }
+  body::before { content:""; position:absolute; inset:0;
+         background: radial-gradient(620px 420px at 34% 46%, rgba(124,92,255,.16), transparent 70%),
+                     radial-gradient(560px 420px at 68% 60%, rgba(228,185,91,.07), transparent 70%); }
+  .unit { position:relative; z-index:1; }
+  .unit.lift { transform: translateY(-26px); }
+  .phone { width:min(320px, 86vw); aspect-ratio: 390/720; border-radius:38px;
+           background:linear-gradient(160deg,#3a3745,#17151d 40%); padding:10px;
+           box-shadow: 0 60px 110px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.08) inset; }
+  .phone iframe { width:100%; height:100%; border:0; border-radius:29px; background:#F7F6F3; }
+  .cap { margin-top:26px; text-align:center; font-size:11.5px; font-weight:600; letter-spacing:.22em;
+         text-transform:uppercase; color:#9a94a8; }
+  .cap b { color:#E4B95B; font-weight:600; }
+  @media (max-width:760px){ body{flex-wrap:wrap; gap:48px;} .unit.lift{transform:none;} }
 </style>
 </head>
 <body>
-  <div class="unit">
-    <div class="phone"><iframe src="/" title="Strona główna"></iframe></div>
-    <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>innochem.programo.pl</span>
-    <p class="cap">Strona główna</p>
+  <div class="unit lift">
+    <div class="phone"><iframe id="f1" src="/" title="Strona główna"></iframe></div>
+    <p class="cap"><b>innochem.programo.pl</b> · strona główna</p>
   </div>
   <div class="unit">
-    <div class="phone"><iframe src="/produkt/hps-5w30" title="Karta produktu"></iframe></div>
-    <span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>innochem.programo.pl/produkt</span>
-    <p class="cap">Karta produktu</p>
+    <div class="phone"><iframe id="f2" src="/produkt/hps-5w30" title="Karta produktu"></iframe></div>
+    <p class="cap">karta produktu · zamówienie</p>
   </div>
+<script>
+  // Podgląd do oferty: chowamy pasek demo w ramkach i przewijamy kartę produktu do ceny.
+  function clean(f, scrollTo) {
+    f.addEventListener("load", () => {
+      const d = f.contentDocument;
+      const css = d.createElement("style");
+      css.textContent = ".demo-bar{display:none!important} html{scroll-behavior:auto!important} ::-webkit-scrollbar{display:none} html{scrollbar-width:none}";
+      d.head.appendChild(css);
+      if (scrollTo) setTimeout(() => {
+        const el = d.querySelector(scrollTo);
+        if (el) f.contentWindow.scrollTo(0, el.getBoundingClientRect().top + f.contentWindow.scrollY - 78);
+      }, 1400);
+    });
+  }
+  clean(document.getElementById("f1"));
+  clean(document.getElementById("f2"), ".buy-box");
+</script>
 </body>
 </html>
