@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Archivo, Inter, IBM_Plex_Mono } from "next/font/google";
+import { Space_Grotesk, Inter, IBM_Plex_Mono } from "next/font/google";
 import { CartProvider } from "@/lib/cart";
 import { DemoBar, Header } from "@/components/SiteChrome";
 import "./globals.css";
 
-const archivo = Archivo({ subsets: ["latin-ext"], weight: "900", variable: "--f-display" });
+const archivo = Space_Grotesk({ subsets: ["latin-ext"], weight: ["500", "700"], variable: "--f-display" });
 const inter = Inter({ subsets: ["latin-ext"], variable: "--f-body" });
 const mono = IBM_Plex_Mono({ subsets: ["latin-ext"], weight: ["400", "500", "700"], variable: "--f-mono" });
 

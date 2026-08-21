@@ -29,7 +29,7 @@ export function Header() {
         <nav className="main" aria-label="Główna nawigacja">
           <Link href="/#kategorie">Kategorie</Link>
           <Link href="/#bestsellery">Bestsellery</Link>
-          <Link href="/#dystrybucja">Dla warsztatów</Link>
+          <Link href="/#technologia">Technologia</Link>
           <Link href="/#kontakt">Kontakt</Link>
         </nav>
         <button className="cart-btn" onClick={() => router.push("/zamowienie")}>
