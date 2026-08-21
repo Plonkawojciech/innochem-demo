@@ -127,7 +127,7 @@ nav.main a:hover { color: var(--ink); }
 .btn-violet { background: var(--violet); color: #fff; }
 .btn-violet:hover { background: #8d70ff; }
 .hero-photo { position: relative; display: flex; justify-content: center; }
-.hero-photo img { width: min(360px, 80%); mix-blend-mode: lighten; filter: drop-shadow(0 40px 70px rgba(0,0,0,.7)); }
+.hero-photo img { width: min(360px, 80%); height: auto; mix-blend-mode: lighten; filter: drop-shadow(0 40px 70px rgba(0,0,0,.7)); }
 
 /* hero spec strip */
 .hero-meta { position: relative; border-top: 1px solid var(--line); }

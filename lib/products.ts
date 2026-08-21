@@ -9,7 +9,7 @@ export type Product = {
 };
 
 export const PRODUCTS: Product[] = [
-  { id: "hps-5w30", name: "Royal Purple HPS", visc: "5W-30", vol: "0,946 l", price: 78, img: "/img/rp-motor-oil-hps-5w30.jpg", tag: "HIGH PERFORMANCE STREET" },
+  { id: "hps-5w30", name: "Royal Purple HPS", visc: "5W-30", vol: "0,946 l", price: 78, img: "/img/rp-hps-5w30-hd.png", tag: "HIGH PERFORMANCE STREET" },
   { id: "0w40", name: "Royal Purple Motor Oil", visc: "0W-40", vol: "0,946 l", price: 80, img: "/img/royal-purple-motor-oil-0w40.jpg", tag: "API SN" },
   { id: "5w30", name: "Royal Purple Motor Oil", visc: "5W-30", vol: "0,946 l", price: 74, img: "/img/rp-motor-oil-5w30.jpg", tag: "API SN" },
   { id: "0w20", name: "Royal Purple Motor Oil", visc: "0W-20", vol: "0,946 l", price: 74, img: "/img/royal-purple-motor-oil-0w20.jpg", tag: "API SN" },

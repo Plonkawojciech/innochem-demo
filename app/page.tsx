@@ -29,7 +29,7 @@ export default function Home() {
             </div>
           </div>
           <div className="hero-photo">
-            <img src="/img/rp-motor-oil-hps-5w30.jpg" alt="Royal Purple HPS 5W-30" width={600} height={600} />
+            <img src="/img/rp-hps-5w30-hd.png" alt="Royal Purple HPS 5W-30" width={1024} height={1536} />
           </div>
         </div>
         <div className="hero-meta">
