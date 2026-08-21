@@ -147,14 +147,9 @@ story.append(tbl([
         "produktów i treści, płatności online (BLIK, szybkie przelewy), kurier i paczkomaty, faktury VAT, "
         "pełna wersja mobilna. Uruchomienie pod obecną domeną bez przerwy w działaniu.",
         "2 500 zł jednorazowo", bold=(1,)),
-    row("<b>Utrzymanie — pakiet podstawowy</b><br/>Hosting, certyfikat SSL, codzienne kopie zapasowe, "
+    row("<b>Utrzymanie sklepu</b><br/>Hosting, certyfikat SSL, codzienne kopie zapasowe, "
         "monitoring, aktualizacje bezpieczeństwa i bieżące drobne zmiany treści.",
         "350 zł miesięcznie", bold=(1,)),
-    row("<b>Utrzymanie — pakiet z SEO</b><br/>Wszystko z pakietu podstawowego oraz stała praca nad "
-        "widocznością w Google: optymalizacja opisów produktów i kategorii, dane strukturalne (ceny i "
-        "dostępność widoczne w wynikach), rozbudowa bazy wiedzy o teksty, których klienci szukają, "
-        "i miesięczny raport pozycji. To ruch, za który nie płaci się reklamami.",
-        "500 zł miesięcznie", bold=(1,)),
 ], [116 * mm, CW - 116 * mm]))
 story.append(Spacer(1, 4))
 
@@ -165,12 +160,16 @@ story.append(tbl([
         "z tym samym magazynem i zamówieniami. Bez podnoszenia abonamentu — utrzymanie w cenie pakietu. "
         "Powiadomienia push o promocjach trafiają do klientów za darmo, bez płacenia za reklamy.",
         "1 500 zł jednorazowo", bold=(1,)),
+    row("<b>Pakiet SEO</b> — stała praca nad widocznością w Google: optymalizacja opisów produktów "
+        "i kategorii, dane strukturalne (ceny i dostępność widoczne w wynikach), rozbudowa bazy wiedzy "
+        "o teksty, których klienci szukają, i miesięczny raport pozycji. To ruch, za który nie płaci się "
+        "reklamami.", "dodatkowe 150 zł miesięcznie", bold=(1,)),
     row("<b>Google Ads</b> — reklamy nad wynikami Google dla szukających olejów Royal Purple; "
         "prowadzenie, optymalizacja i miesięczny raport. Budżet reklamowy płacony bezpośrednio do Google, "
-        "z ustalonym limitem.", "150 zł miesięcznie", bold=(1,)),
+        "z ustalonym limitem.", "dodatkowe 150 zł miesięcznie", bold=(1,)),
     row("<b>Social media</b> — prowadzenie profili firmowych na Instagramie i Facebooku: 2–4 posty "
         "miesięcznie (grafiki produktowe i poradnikowe w spójnej oprawie — przykład na następnej stronie), "
-        "odpowiadanie na wiadomości.", "150 zł miesięcznie", bold=(1,)),
+        "odpowiadanie na wiadomości.", "dodatkowe 150 zł miesięcznie", bold=(1,)),
 ], [116 * mm, CW - 116 * mm]))
 story.append(Spacer(1, 4))
 
