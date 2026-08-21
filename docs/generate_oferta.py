@@ -199,29 +199,37 @@ story.append(Paragraph("Projekt jest już gotowy do obejrzenia", st_h1))
 story.append(Paragraph("Działająca wersja demonstracyjna: <b><font color='#A85E2B'>innochem.programo.pl</font></b> "
                        "— strona główna, karta produktu i ścieżka zamówienia.", st_lead))
 story.append(HRFlowable(width="100%", thickness=0.8, color=COPPER_SOFT, spaceAfter=8))
-story.append(img_flow(os.path.join(ASSETS, "sklep-home.jpg"), 100 * mm))
-story.append(Spacer(1, 10))
+story.append(img_flow(os.path.join(ASSETS, "sklep-home.jpg"), 170 * mm))
+story.append(Spacer(1, 12))
 
-col_mobile = [
-    Paragraph("Wersja mobilna", st_h2),
-    P("Większość klientów kupuje dziś z telefonu — sklep projektujemy najpierw pod ekran telefonu, "
-      "z rozwijanym menu kategorii i szybką ścieżką zamówienia:", st_muted),
-    img_flow(os.path.join(ASSETS, "mobile.jpg"), 96 * mm),
-]
-col_social = [
-    Paragraph("Social media", st_h2),
-    P("Przykładowy post na Instagram i Facebook w oprawie nowego sklepu — takie posty projektujemy "
-      "i publikujemy w ramach pakietu social media (2–4 miesięcznie):", st_muted),
-    img_flow(os.path.join(ASSETS, "social.jpg"), 56 * mm),
-]
-viz = Table([[col_mobile, col_social]], colWidths=[104 * mm, 66 * mm])
+# dwie kolumny wyrównane wierszami: nagłówek / opis / obraz (obrazy tej samej wysokości)
+VIZ_H = 74 * mm
+viz = Table(
+    [
+        [Paragraph("Wersja mobilna", st_h2), Paragraph("Social media", st_h2)],
+        [
+            P("Sklep projektujemy najpierw pod ekran telefonu — rozwijane menu kategorii "
+              "i szybka ścieżka zamówienia:", st_muted),
+            P("Przykładowy post na Instagram i Facebook w oprawie nowego sklepu "
+              "(pakiet social media, 2–4 posty miesięcznie):", st_muted),
+        ],
+        [
+            img_flow(os.path.join(ASSETS, "mobile.jpg"), VIZ_H * 760 / 590),
+            img_flow(os.path.join(ASSETS, "social.jpg"), VIZ_H * 485 / 736),
+        ],
+    ],
+    colWidths=[102 * mm, 68 * mm],
+)
 viz.setStyle(TableStyle([
-    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+    ("VALIGN", (0, 0), (-1, 1), "TOP"),
+    ("VALIGN", (0, 2), (-1, 2), "MIDDLE"),
+    ("ALIGN", (1, 2), (1, 2), "CENTER"),
     ("LEFTPADDING", (0, 0), (-1, -1), 0),
-    ("RIGHTPADDING", (0, 0), (0, 0), 8),
-    ("RIGHTPADDING", (1, 0), (1, 0), 0),
+    ("RIGHTPADDING", (0, 0), (0, -1), 10),
+    ("RIGHTPADDING", (1, 0), (1, -1), 0),
     ("TOPPADDING", (0, 0), (-1, -1), 0),
-    ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+    ("BOTTOMPADDING", (0, 0), (-1, 1), 4),
+    ("BOTTOMPADDING", (0, 2), (-1, 2), 0),
 ]))
 story.append(viz)
 
