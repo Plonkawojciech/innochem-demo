@@ -2,10 +2,21 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart";
 
+// ?shot=1 chowa pasek demo, ?menu=1 otwiera menu mobilne — do zrzutów w ofercie
+function useShotParam(param: string) {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    setOn(new URLSearchParams(window.location.search).get(param) === "1");
+  }, [param]);
+  return on;
+}
+
 export function DemoBar() {
+  const hidden = useShotParam("shot");
+  if (hidden) return null;
   return (
     <div className="demo-bar">
       WERSJA DEMONSTRACYJNA — projekt nowego sklepu innochem.pl przygotowany przez{" "}
@@ -22,6 +33,13 @@ export function Header() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [sub, setSub] = useState<string | null>(null);
+  const autoMenu = useShotParam("menu");
+  useEffect(() => {
+    if (autoMenu) {
+      setOpen(true);
+      setSub("Oleje samochodowe");
+    }
+  }, [autoMenu]);
   return (
     <header className="site">
       <div className="wrap site-inner">

@@ -8,64 +8,36 @@
   * { box-sizing: border-box; }
   body { margin:0; min-height:100vh; font-family:-apple-system,"Segoe UI",sans-serif;
          background:linear-gradient(180deg,#F1EFEA,#E6E2DA); position:relative;
-         display:flex; gap:64px; justify-content:center; align-items:center; padding:60px 24px; }
+         display:flex; gap:72px; justify-content:center; align-items:center; padding:56px 24px; }
   body::before { content:""; position:absolute; inset:0;
          background: radial-gradient(700px 460px at 50% 40%, rgba(76,47,214,.06), transparent 70%); }
   .unit { position:relative; z-index:1; }
-  .unit.lift { transform: translateY(-20px); }
+  .unit.lift { transform: translateY(-18px); }
 
-  /* telefon w stylu modeli z programo.pl: czysta rama, przyciski boczne, głośnik */
-  .phone { position:relative; width:min(310px, 86vw); aspect-ratio: 390/752; border-radius:44px;
-           background:#101014; padding:12px;
-           box-shadow: 0 40px 80px rgba(28,24,40,.32), 0 4px 14px rgba(28,24,40,.18),
-                       inset 0 0 0 2px rgba(255,255,255,.06); }
-  .phone::before { content:""; position:absolute; left:-2px; top:120px; width:3px; height:56px;
+  /* rama iPhone'a: prawdziwe proporcje zrzutu z symulatora (720x1368) */
+  .phone { position:relative; width:min(252px, 78vw); border-radius:42px;
+           background:#111116; padding:9px;
+           box-shadow: 0 36px 70px rgba(28,24,40,.30), 0 3px 12px rgba(28,24,40,.16),
+                       inset 0 0 0 1.5px rgba(255,255,255,.07); }
+  .phone::before { content:""; position:absolute; left:-2px; top:104px; width:3px; height:46px;
            border-radius:2px; background:#2a2a30; }
-  .phone::after { content:""; position:absolute; right:-2px; top:150px; width:3px; height:84px;
+  .phone::after { content:""; position:absolute; right:-2px; top:128px; width:3px; height:72px;
            border-radius:2px; background:#2a2a30; }
-  .screen { position:relative; width:100%; height:100%; border-radius:33px; overflow:hidden; background:#F7F6F3; }
-  .screen iframe { width:100%; height:100%; border:0; background:#F7F6F3; }
-  .cap { margin-top:24px; text-align:center; font-size:11.5px; font-weight:600; letter-spacing:.2em;
+  .phone img { display:block; width:100%; border-radius:33px; }
+  .cap { margin-top:22px; text-align:center; font-size:11px; font-weight:600; letter-spacing:.2em;
          text-transform:uppercase; color:#7d7789; }
   .cap b { color:#4C2FD6; font-weight:700; }
-  @media (max-width:760px){ body{flex-wrap:wrap; gap:48px;} .unit.lift{transform:none;} }
+  @media (max-width:640px){ body{flex-wrap:wrap; gap:44px;} .unit.lift{transform:none;} }
 </style>
 </head>
 <body>
   <div class="unit lift">
-    <div class="phone"><div class="screen"><iframe id="f1" src="/" title="Menu mobilne"></iframe></div></div>
+    <div class="phone"><img src="/shots/home.jpg" alt="Menu kategorii na telefonie"></div>
     <p class="cap"><b>innochem.programo.pl</b> · menu kategorii</p>
   </div>
   <div class="unit">
-    <div class="phone"><div class="screen"><iframe id="f2" src="/produkt/hps-5w30" title="Karta produktu"></iframe></div></div>
+    <div class="phone"><img src="/shots/pdp.jpg" alt="Karta produktu na telefonie"></div>
     <p class="cap">karta produktu · zamówienie</p>
   </div>
-<script>
-  // Podgląd do oferty: chowamy pasek demo, na 1. telefonie otwieramy menu burgera z rozwiniętą listą.
-  function clean(f, opts) {
-    f.addEventListener("load", () => {
-      const d = f.contentDocument;
-      const css = d.createElement("style");
-      css.textContent = ".demo-bar{display:none!important} html{scroll-behavior:auto!important} ::-webkit-scrollbar{display:none} html{scrollbar-width:none} *{transition:none!important}";
-      d.head.appendChild(css);
-      setTimeout(() => {
-        if (opts && opts.menu) {
-          const b = d.querySelector(".burger");
-          if (b) b.click();
-          setTimeout(() => {
-            const c = d.querySelector(".m-cat");
-            if (c && c.tagName === "BUTTON") c.click();
-          }, 250);
-        }
-        if (opts && opts.scrollTo) {
-          const el = d.querySelector(opts.scrollTo);
-          if (el) f.contentWindow.scrollTo(0, el.getBoundingClientRect().top + f.contentWindow.scrollY - 78);
-        }
-      }, 1400);
-    });
-  }
-  clean(document.getElementById("f1"), { menu: true });
-  clean(document.getElementById("f2"), { scrollTo: ".buy-box" });
-</script>
 </body>
 </html>

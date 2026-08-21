@@ -17,7 +17,7 @@ export function BuyBox({ product }: { product: Product }) {
   };
 
   return (
-    <div className="buy-box">
+    <div className="buy-box" id="kupno">
       <div className="buy-top">
         <div className="buy-price">
           <span>{zl(product.price)}</span> <small>brutto / szt.</small>
