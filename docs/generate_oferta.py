@@ -18,7 +18,7 @@ import os
 LOGO = ImageReader(os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "assets", "programo-logo-white.png"))
 LOGO_W, LOGO_H = 30 * mm, 30 * mm * 245 / 1200
-CONTACT = ("Programo s.c.  ·  programo.pl  ·  biuro@programo.pl  ·  "
+CONTACT = ("Programo s.j.  ·  programo.pl  ·  biuro@programo.pl  ·  "
            "Wojciech Płonka, +48 797 222 363  ·  wojciech.plonka@programo.pl")
 
 SUP = "/System/Library/Fonts/Supplemental"
@@ -89,7 +89,7 @@ def header_footer(canvas, doc):
 
 doc = BaseDocTemplate("oferta-innochem-2026-08-21.pdf", pagesize=A4,
                       leftMargin=M, rightMargin=M, topMargin=21 * mm, bottomMargin=15 * mm,
-                      title=TITLE, author="Programo s.c.")
+                      title=TITLE, author="Programo s.j.")
 doc.addPageTemplates([PageTemplate(id="page", frames=[Frame(M, 15 * mm, CW, H - 36 * mm, id="main")],
                                    onPage=header_footer)])
 
