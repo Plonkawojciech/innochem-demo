@@ -7,7 +7,7 @@ Załącznik: umowa-innochem-2026-09-14.pdf
 
 Dzień dobry Pani Aneto,
 
-dziękuję za dane. Uzupełniona umowa jest w załączniku, poza danymi stron nic się w niej nie zmieniło. Jeśli wszystko się zgadza, proszę o podpis na ostatniej stronie i odesłanie skanu albo zdjęcia; podpis elektroniczny też jest w porządku. Po otrzymaniu podpisanej umowy wystawiam fakturę na 5 300 zł netto z terminem 7 dni, zgodnie z § 3.
+dziękuję za dane. Uzupełniona umowa jest w załączniku. Poza danymi stron dopisałem w § 6 ust. 2 kwotę wykupu kodu: 4 500 zł netto, żeby nie było niedomówień, gdyby kiedyś chciała Pani przenieść sklep gdzie indziej. Reszta bez zmian. Jeśli wszystko się zgadza, proszę o podpis na ostatniej stronie i odesłanie skanu albo zdjęcia; podpis elektroniczny też jest w porządku. Po otrzymaniu podpisanej umowy wystawiam fakturę na 5 300 zł netto z terminem 7 dni, zgodnie z § 3.
 
 Uwagi do demo zapisuję i wprowadzam: znikają „baza wiedzy", „pojazdy śnieżne i traktory" oraz „Teksas". W zakładce „oleje przemysłowe" zamiast koszyka będzie krótka informacja, że to produkty na indywidualne zapytanie i zamówienie, plus przycisk „Zadaj pytanie", który otwiera formularz z tym produktem już wpisanym.
 
