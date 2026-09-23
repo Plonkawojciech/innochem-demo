@@ -1,0 +1,103 @@
+name: innochem
+x-store-environment: &store-environment
+  NODE_ENV: production
+  PGHOST: database
+  PGPORT: "5432"
+  PGDATABASE: innochem
+  PGUSER: innochem
+  PGPASSWORD: ${INNOCHEM_DATABASE_PASSWORD:?Set INNOCHEM_DATABASE_PASSWORD in the deployment secret store}
+  APP_URL: ${INNOCHEM_APP_URL:?Set the approved application URL}
+  BETTER_AUTH_SECRET: ${INNOCHEM_AUTH_SECRET:?Set a unique authentication secret}
+  AUTH_COOKIE_PREFIX: innochem
+  MEDIA_ROOT: /app/media
+  STOREFRONT_PREVIEW: ${INNOCHEM_PREVIEW:-true}
+  TRUST_PROXY: ${INNOCHEM_TRUST_PROXY:-false}
+  MAIL_DELIVERY_ENABLED: ${INNOCHEM_MAIL_ENABLED:-false}
+  STORE_WORKER_ENABLED: ${INNOCHEM_WORKER_ENABLED:-false}
+  WORKER_SECRET: ${INNOCHEM_WORKER_SECRET:?Set a unique worker secret}
+  PAYMENTS_ENABLED: ${INNOCHEM_PAYMENTS_ENABLED:-false}
+  STRIPE_MODE: ${INNOCHEM_STRIPE_MODE:-test}
+  STRIPE_SECRET_KEY: ${INNOCHEM_STRIPE_SECRET_KEY:-}
+  STRIPE_WEBHOOK_SECRET: ${INNOCHEM_STRIPE_WEBHOOK_SECRET:-}
+  STRIPE_TEST_CHECKOUT_ENABLED: ${INNOCHEM_STRIPE_TEST_CHECKOUT_ENABLED:-false}
+  SMTP_HOST: ${INNOCHEM_SMTP_HOST:-}
+  SMTP_PORT: ${INNOCHEM_SMTP_PORT:-465}
+  SMTP_USER: ${INNOCHEM_SMTP_USER:-}
+  SMTP_PASSWORD: ${INNOCHEM_SMTP_PASSWORD:-}
+  MAIL_FROM: ${INNOCHEM_MAIL_FROM:-}
+services:
+  database:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: innochem
+      POSTGRES_USER: innochem
+      POSTGRES_PASSWORD: ${INNOCHEM_DATABASE_PASSWORD:?Set INNOCHEM_DATABASE_PASSWORD}
+    volumes:
+      - database:/var/lib/postgresql/data
+    networks: [store]
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U innochem -d innochem"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  web:
+    build: .
+    image: innochem-store:${INNOCHEM_RELEASE:-local}
+    restart: unless-stopped
+    environment: *store-environment
+    ports: ["127.0.0.1:${INNOCHEM_PORT:-3046}:3000"]
+    volumes:
+      - media:/app/media
+    tmpfs: [/tmp]
+    networks: [store, egress]
+    depends_on:
+      database: {condition: service_healthy}
+    security_opt: [no-new-privileges:true]
+  migrate:
+    image: innochem-store:${INNOCHEM_RELEASE:-local}
+    profiles: [operations]
+    environment: *store-environment
+    command: [node, operations/migrate.mjs]
+    networks: [store]
+    depends_on:
+      database: {condition: service_healthy}
+  worker:
+    image: innochem-store:${INNOCHEM_RELEASE:-local}
+    restart: unless-stopped
+    environment:
+      WORKER_URL: http://web:3000/api/internal/worker
+      WORKER_SECRET: ${INNOCHEM_WORKER_SECRET:?Set INNOCHEM_WORKER_SECRET}
+    command: [node, operations/worker.mjs]
+    tmpfs: [/tmp]
+    networks: [store]
+    depends_on:
+      web: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, node, -e, "const fs=require('fs');try{process.exit(Date.now()-Number(fs.readFileSync('/tmp/innochem-worker-heartbeat','utf8'))<300000?0:1)}catch{process.exit(1)}"]
+      interval: 60s
+      timeout: 5s
+      start_period: 240s
+      retries: 2
+  backup:
+    build: {context: ., dockerfile: ops/backup.Dockerfile}
+    profiles: [operations]
+    environment:
+      PGHOST: database
+      PGPORT: "5432"
+      PGDATABASE: innochem
+      PGUSER: innochem
+      PGPASSWORD: ${INNOCHEM_DATABASE_PASSWORD:?Set INNOCHEM_DATABASE_PASSWORD}
+      MEDIA_ROOT: /media
+      BACKUP_ENCRYPTION_KEY: ${INNOCHEM_BACKUP_KEY:-}
+      BACKUP_QUIESCED: ${INNOCHEM_BACKUP_QUIESCED:-false}
+    volumes:
+      - media:/media:ro
+      - ${INNOCHEM_BACKUP_DIRECTORY:-./private/backups}:/backups
+    networks: [store]
+networks:
+  store: {internal: true}
+  egress: {}
+volumes:
+  database: {}
+  media: {}

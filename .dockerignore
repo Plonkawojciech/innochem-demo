@@ -1,0 +1,15 @@
+node_modules
+.next
+.next-*
+.git
+.env*
+docs
+private
+data
+test-results
+coverage
+*.log
+
+__pycache__
+*.pyc
+operations

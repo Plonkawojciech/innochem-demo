@@ -1,45 +1,61 @@
 "use client";
-
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart";
-
-// ?shot=1 chowa pasek demo, ?menu=1 otwiera menu mobilne — do zrzutów w ofercie
-function useShotParam(param: string) {
-  const [on, setOn] = useState(false);
-  useEffect(() => {
-    setOn(new URLSearchParams(window.location.search).get(param) === "1");
-  }, [param]);
-  return on;
-}
-
-export function DemoBar() {
-  const hidden = useShotParam("shot");
-  if (hidden) return null;
+import { phoneHref, type SiteContent } from "@/lib/site-content";
+export function PreviewBar() {
   return (
     <div className="demo-bar">
-      WERSJA DEMONSTRACYJNA — projekt nowego sklepu innochem.pl przygotowany przez{" "}
-      <strong>
-        <a href="https://programo.pl">Programo</a>
-      </strong>
-      . Zamówienia nie są realizowane.
+      Podgląd nowego sklepu INNOCHEM. Zamówienia i wiadomości nie są
+      realizowane.
     </div>
   );
 }
-
-export function Header() {
-  const { count } = useCart();
+export function CmsPreviewBar() {
+  const [error, setError] = useState("");
   const router = useRouter();
+  return (
+    <div className="cms-preview-bar">
+      <span>Oglądasz zapisany szkic witryny.</span>{" "}
+      <Link href="/admin/witryna">Wróć do edycji</Link>
+      <button
+        type="button"
+        onClick={async () => {
+          try {
+            const r = await fetch("/api/admin/site-preview", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ enabled: false }),
+            });
+            if (!r.ok) throw new Error();
+            router.refresh();
+          } catch {
+            setError("Nie udało się wyłączyć podglądu. Spróbuj ponownie.");
+          }
+        }}
+      >
+        Zakończ podgląd
+      </button>
+      {error && <span role="alert">{error}</span>}
+    </div>
+  );
+}
+export function Header({
+  brand,
+  navigation,
+}: Pick<SiteContent, "brand" | "navigation">) {
+  const { count } = useCart();
   const [open, setOpen] = useState(false);
-  const [sub, setSub] = useState<string | null>(null);
-  const autoMenu = useShotParam("menu");
+  const pathname = usePathname();
+  useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
-    if (autoMenu) {
-      setOpen(true);
-      setSub("Oleje samochodowe");
-    }
-  }, [autoMenu]);
+    const close = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("keydown", close);
+    return () => document.removeEventListener("keydown", close);
+  }, []);
   return (
     <header className="site">
       <div className="wrap site-inner">
@@ -47,146 +63,148 @@ export function Header() {
           className={open ? "burger is-open" : "burger"}
           aria-label={open ? "Zamknij menu" : "Otwórz menu"}
           aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
+          aria-controls="mobile-menu"
+          onClick={() => setOpen(!open)}
         >
           <span />
           <span />
           <span />
         </button>
-        <Link className="logo" href="/" onClick={() => setOpen(false)}>
-          INNO<span>CHEM</span>
-          <em>Royal Purple Polska</em>
+        <Link className="logo" href="/">
+          {brand.logo.path ? (
+            <img
+              src={brand.logo.path}
+              alt={brand.logo.alt || brand.name}
+              className="brand-logo"
+            />
+          ) : brand.name === "INNOCHEM" ? (
+            <>
+              INNO<span>CHEM</span>
+            </>
+          ) : (
+            brand.name
+          )}
+          <em>{brand.tagline}</em>
         </Link>
         <nav className="main" aria-label="Główna nawigacja">
-          <Link href="/#kategorie">Kategorie</Link>
-          <Link href="/produkt/hps-5w30">Produkt</Link>
-          <Link href="/#technologia">Technologia</Link>
-          <Link href="/#kontakt">Kontakt</Link>
+          {navigation.main.map((l, i) => (
+            <Link href={l.href} key={i}>
+              {l.name}
+            </Link>
+          ))}
         </nav>
-        <button className="cart-btn" onClick={() => router.push("/zamowienie")}>
+        <Link className="cart-btn" href="/zamowienie">
           Koszyk <span className="count">{count}</span>
-        </button>
+        </Link>
       </div>
       {open && (
-        <nav className="m-menu" aria-label="Menu mobilne">
-          <div className="m-sec">Kategorie</div>
-          {CATS.map((c) =>
-            c.items ? (
-              <div key={c.label}>
-                <button
-                  className={sub === c.label ? "m-cat is-open" : "m-cat"}
-                  onClick={() => setSub(sub === c.label ? null : c.label)}
-                >
-                  {c.label}
-                  <span className="m-caret" aria-hidden>▾</span>
-                </button>
-                {sub === c.label && (
-                  <div className="m-sub">
-                    {c.items.map((i) => (
-                      <Link href="/produkt/hps-5w30" key={i} onClick={() => setOpen(false)}>
-                        {i}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link className="m-cat" href="/produkt/hps-5w30" key={c.label} onClick={() => setOpen(false)}>
-                {c.label}
+        <nav className="m-menu" id="mobile-menu" aria-label="Menu mobilne">
+          {navigation.categories.map((c, i) => (
+            <div key={i}>
+              <Link className="m-cat" href={c.href}>
+                {c.name}
               </Link>
-            )
-          )}
-          <div className="m-sec">Sklep</div>
-          <Link className="m-cat" href="/#technologia" onClick={() => setOpen(false)}>Technologia</Link>
-          <Link className="m-cat" href="/#kontakt" onClick={() => setOpen(false)}>Kontakt</Link>
-          <a className="m-dist" href="#kontakt" onClick={() => setOpen(false)}>Zostań dystrybutorem</a>
+              {!!c.items.length && (
+                <div className="m-sub">
+                  {c.items.map((l, j) => (
+                    <Link href={l.href} key={j}>
+                      {l.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+          {navigation.main.map((l, i) => (
+            <Link className="m-cat" href={l.href} key={i}>
+              {l.name}
+            </Link>
+          ))}
+          <Link className="m-dist" href={navigation.highlighted.href}>
+            {navigation.highlighted.name}
+          </Link>
         </nav>
       )}
     </header>
   );
 }
-
-const CATS: { label: string; items?: string[] }[] = [
-  { label: "Oleje samochodowe", items: ["Oleje silnikowe", "Oleje przekładniowe", "Inne"] },
-  { label: "Oleje motocyklowe" },
-  { label: "Oleje wyścigowe" },
-  { label: "Pojazdy śnieżne i traktory" },
-  {
-    label: "Oleje przemysłowe",
-    items: ["Oleje i smary przekładniowe", "Smary do kompresorów", "Oleje do sprężarek", "Oleje hydrauliczne", "Inne płyny i oleje"],
-  },
-];
-
-export function CatBar() {
+export function CatBar({ navigation }: Pick<SiteContent, "navigation">) {
   return (
     <nav className="catbar" aria-label="Kategorie produktów">
       <div className="wrap catbar-inner">
-        {CATS.map((c) => (
-          <div className={c.items ? "cb-item has-menu" : "cb-item"} key={c.label}>
-            <Link href="/produkt/hps-5w30">
-              {c.label}
-              {c.items && <span className="cb-caret" aria-hidden>▾</span>}
+        {navigation.categories.map((c, i) => (
+          <div
+            className={c.items.length ? "cb-item has-menu" : "cb-item"}
+            key={i}
+          >
+            <Link href={c.href}>
+              {c.name}
+              {!!c.items.length && (
+                <span className="cb-caret" aria-hidden>
+                  ▾
+                </span>
+              )}
             </Link>
-            {c.items && (
+            {!!c.items.length && (
               <div className="cb-menu">
-                {c.items.map((i) => (
-                  <Link href="/produkt/hps-5w30" key={i}>{i}</Link>
+                {c.items.map((l, j) => (
+                  <Link key={j} href={l.href}>
+                    {l.name}
+                  </Link>
                 ))}
               </div>
             )}
           </div>
         ))}
         <div className="cb-item cb-dist">
-          <a href="#kontakt">Zostań dystrybutorem</a>
+          <Link href={navigation.highlighted.href}>
+            {navigation.highlighted.name}
+          </Link>
         </div>
       </div>
     </nav>
   );
 }
-
-export function Footer({ full = false }: { full?: boolean }) {
+export function Footer({
+  brand,
+  contact,
+  footer,
+}: Pick<SiteContent, "brand" | "contact" | "footer">) {
   return (
     <footer className="site" id="kontakt">
       <div className="wrap">
-        {full && (
-          <div className="foot-grid">
-            <div>
-              <b>INNOCHEM</b>
-              <p>
-                Wyłączny dystrybutor olejów i smarów Royal Purple w Polsce od 2009 roku.
-                <br />
-                ul. Okrzei 64, 25-526 Kielce · pn–pt 8:00–16:00
-                <br />
-                kontakt@innochem.pl · tel. 602 155 919
-              </p>
-            </div>
-            <div>
-              <b>Sklep</b>
-              <Link href="/#kategorie">Kategorie</Link>
-              <Link href="/produkt/hps-5w30">Przykładowy produkt</Link>
-              <Link href="/zamowienie">Koszyk</Link>
-            </div>
-            <div>
-              <b>Informacje</b>
-              <a href="#">Dostawa i zwroty</a>
-              <a href="#">Regulamin</a>
-              <a href="#">Polityka prywatności</a>
-            </div>
-            <div>
-              <b>Współpraca</b>
-              <a href="#">Zostań dystrybutorem</a>
-              <a href="#">Baza wiedzy</a>
-            </div>
+        <div className="foot-grid">
+          <div>
+            <b>{brand.name}</b>
+            <p className="preserve-lines">
+              {brand.footerText}
+              <br />
+              {contact.address}
+              <br />
+              {contact.hours}
+            </p>
+            <a href={`mailto:${contact.email}`}>{contact.email}</a>
+            <a href={phoneHref(contact.phone)}>{contact.phone}</a>
           </div>
-        )}
+          {footer.map((group, i) => (
+            <div key={i}>
+              <b>{group.title}</b>
+              {group.links.map((l, j) => (
+                <Link href={l.href} key={j}>
+                  {l.name}
+                </Link>
+              ))}
+            </div>
+          ))}
+        </div>
+        <p>
+          <Link href="/odstapienie">Odstąp od umowy</Link>
+        </p>
         <div className="foot-note">
-          <span>© 2026 INNOCHEM. Wszystkie prawa zastrzeżone.</span>
           <span>
-            Projekt demonstracyjny:{" "}
-            <a href="https://programo.pl" style={{ display: "inline" }}>
-              programo.pl
-            </a>
+            © {new Date().getFullYear()} {brand.name}. {brand.copyright}
           </span>
+          <a href="https://programo.pl">Wykonanie: Programo</a>
         </div>
       </div>
     </footer>

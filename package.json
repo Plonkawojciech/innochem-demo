@@ -4,16 +4,37 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:import": "tsx scripts/import-legacy.ts",
+    "test": "tsx --test --test-concurrency=1 tests/*.test.ts tests/*.test.mjs",
+    "format:check": "prettier --check app components lib scripts tests"
   },
   "dependencies": {
-    "next": "^16.2.0",
+    "@tiptap/extension-image": "^3.31.3",
+    "@tiptap/extension-table": "^3.31.3",
+    "@tiptap/react": "^3.31.3",
+    "@tiptap/starter-kit": "^3.31.3",
+    "better-auth": "^1.7.5",
+    "next": "^16.3.6",
+    "nodemailer": "^10.0.10",
+    "pg": "^8.23.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "sanitize-html": "^2.17.7",
+    "sharp": "^0.35.4",
+    "stripe": "^22.6.2",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@types/node": "^22",
+    "@types/nodemailer": "^8.0.2",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
+    "@types/sanitize-html": "^2.16.1",
+    "prettier": "^3.9.8",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

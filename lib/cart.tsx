@@ -1,46 +1,93 @@
 "use client";
-
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  type ReactNode,
+} from "react";
 type Cart = Record<string, number>;
-
-type CartCtx = {
+type CartContext = {
   cart: Cart;
   count: number;
-  add: (id: string, qty?: number) => void;
+  ready: boolean;
+  add: (id: string, quantity?: number) => void;
+  setQuantity: (id: string, quantity: number) => void;
   clear: () => void;
 };
-
-const Ctx = createContext<CartCtx | null>(null);
-const KEY = "innochem-cart";
-
-function load(): Cart {
-  try {
-    return JSON.parse(localStorage.getItem(KEY) || "{}");
-  } catch {
-    return {};
-  }
+const Context = createContext<CartContext | null>(null);
+const KEY = "innochem-cart-v2";
+function valid(value: unknown): Cart {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(
+        ([id, q]) =>
+          /^[a-f0-9-]{36}$/.test(id) &&
+          typeof q === "number" &&
+          Number.isInteger(q) &&
+          q > 0 &&
+          q <= 999,
+      )
+      .slice(0, 50),
+  );
 }
-
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Cart>({});
-
-  useEffect(() => setCart(load()), []);
-
-  const persist = (c: Cart) => {
-    localStorage.setItem(KEY, JSON.stringify(c));
-    setCart(c);
-  };
-
-  const add = (id: string, qty = 1) => persist({ ...cart, [id]: (cart[id] || 0) + qty });
-  const clear = () => persist({});
-  const count = Object.values(cart).reduce((a, b) => a + b, 0);
-
-  return <Ctx.Provider value={{ cart, count, add, clear }}>{children}</Ctx.Provider>;
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    try {
+      setCart(valid(JSON.parse(localStorage.getItem(KEY) || "{}")));
+    } catch {}
+    setReady(true);
+    const sync = (e: StorageEvent) => {
+      if (e.key === KEY) {
+        try {
+          setCart(valid(JSON.parse(e.newValue || "{}")));
+        } catch {}
+      }
+    };
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+  useEffect(() => {
+    if (ready) {
+      try {
+        localStorage.setItem(KEY, JSON.stringify(cart));
+      } catch {}
+    }
+  }, [cart, ready]);
+  const add = (id: string, quantity = 1) =>
+    setCart((c) =>
+      valid({
+        ...c,
+        [id]: Math.min(999, (c[id] || 0) + Math.max(1, Math.floor(quantity))),
+      }),
+    );
+  const setQuantity = (id: string, quantity: number) =>
+    setCart((c) => {
+      const next = { ...c };
+      if (quantity <= 0) delete next[id];
+      else next[id] = Math.min(999, Math.floor(quantity));
+      return valid(next);
+    });
+  return (
+    <Context.Provider
+      value={{
+        cart,
+        count: Object.values(cart).reduce((a, b) => a + b, 0),
+        ready,
+        add,
+        setQuantity,
+        clear: () => setCart({}),
+      }}
+    >
+      {children}
+    </Context.Provider>
+  );
 }
-
 export function useCart() {
-  const ctx = useContext(Ctx);
-  if (!ctx) throw new Error("useCart poza CartProvider");
+  const ctx = useContext(Context);
+  if (!ctx) throw new Error("Missing CartProvider");
   return ctx;
 }

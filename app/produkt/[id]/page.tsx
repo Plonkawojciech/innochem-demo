@@ -1,102 +1,124 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PRODUCTS } from "@/lib/products";
-import { Footer } from "@/components/SiteChrome";
+import { product, productMedia, productDocuments } from "@/lib/server/catalog";
+import { ProductGallery } from "@/components/ProductGallery";
 import { BuyBox } from "./BuyBox";
-
-export function generateStaticParams() {
-  return PRODUCTS.map((p) => ({ id: p.id }));
+export const dynamic = "force-dynamic";
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const p = await product((await params).id);
+  return {
+    title: p ? `${p.metaTitle || p.name} — INNOCHEM` : "Produkt — INNOCHEM",
+    description: p?.metaDescription || p?.summary,
+    alternates: { canonical: `/produkt/${p?.slug || (await params).id}` },
+  };
 }
-
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const p = PRODUCTS.find((x) => x.id === id);
-  return { title: p ? `${p.name} ${p.visc} (${p.vol}) — INNOCHEM` : "INNOCHEM" };
-}
-
-export default async function ProduktPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const p = PRODUCTS.find((x) => x.id === id);
+export default async function ProductPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const p = await product((await params).id);
   if (!p) notFound();
-
+  const [media, documents] = await Promise.all([
+    productMedia(p.id),
+    productDocuments(p.id),
+  ]);
+  const images = p.imagePath
+    ? [
+        { path: p.imagePath, alt: p.imageAlt || p.name },
+        ...media.filter((m) => m.path !== p.imagePath),
+      ]
+    : media;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: p.name,
+    description: p.summary,
+    sku: p.sku,
+    image: p.imagePath
+      ? new URL(p.imagePath, process.env.APP_URL || "https://innochem.pl").href
+      : undefined,
+    brand: { "@type": "Brand", name: "Royal Purple" },
+    offers:
+      p.saleMode === "retail"
+        ? {
+            "@type": "Offer",
+            url: new URL(
+              `/produkt/${p.slug}`,
+              process.env.APP_URL || "https://innochem.pl",
+            ).href,
+            priceCurrency: "PLN",
+            price: (p.priceCents / 100).toFixed(2),
+            availability:
+              p.available > 0
+                ? "https://schema.org/InStock"
+                : "https://schema.org/OutOfStock",
+            itemCondition: "https://schema.org/NewCondition",
+          }
+        : undefined,
+  };
   return (
-    <>
-      <div className="wrap">
-        <p className="crumbs">
-          <Link href="/">Sklep</Link> / <Link href="/#kategorie">Oleje samochodowe</Link>{" "}
-          / <span>{p.name} {p.visc}</span>
-        </p>
-
-        <main className="pdp">
-          <div className="pdp-photo">
-            <img src={p.img} alt={`${p.name} ${p.visc}`} />
-          </div>
-
-          <div>
-            <div className="visc-big">{p.visc}</div>
-            <h1 className="display">{p.name}</h1>
-            <div className="tag-row">
-              <span className="tag">{p.tag}</span>
-              <span className="tag">SYNERLEC</span>
-              <span className="tag">{p.vol}</span>
-            </div>
-            <p className="desc">
-              Syntetyczny olej silnikowy do silników benzynowych i Diesla, opracowany dla jednostek wysokiej
-              wydajności i po modyfikacjach. Zawiera opatentowany pakiet dodatków Synerlec oraz związki cynku
-              i fosforu (dodatki przeciwzużyciowe). Ze względu na zwiększoną zawartość dodatków AW olej nie
-              posiada klasyfikacji API — zalecany do pojazdów nieobjętych już gwarancją producenta.
-            </p>
-
-            <BuyBox product={p} />
-
-            <table className="spec">
-              <tbody>
-                <tr>
-                  <th colSpan={2}>Specyfikacja techniczna</th>
-                </tr>
-                <tr>
-                  <td>Klasa lepkości SAE</td>
-                  <td>{p.visc}</td>
-                </tr>
-                <tr>
-                  <td>Baza olejowa</td>
-                  <td>pełna synteza</td>
-                </tr>
-                <tr>
-                  <td>Dodatek uszlachetniający</td>
-                  <td>Synerlec</td>
-                </tr>
-                <tr>
-                  <td>Zawartość ZDDP (cynk/fosfor)</td>
-                  <td>podwyższona</td>
-                </tr>
-                <tr>
-                  <td>Pojemność opakowania</td>
-                  <td>0,946 l (1 US qt)</td>
-                </tr>
-                <tr>
-                  <td>Zastosowanie</td>
-                  <td>benzyna / diesel</td>
-                </tr>
-                <tr>
-                  <td>Klasyfikacja API</td>
-                  <td>brak — zwiększone dodatki AW</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <h2 className="display">Dla kogo ten olej</h2>
-            <p className="desc">
-              Seria HPS (High Performance Street) powstała dla kierowców poszukujących wyższej jakości,
-              wydajności i ochrony: aut o podwyższonych osiągach, silników po modyfikacjach i pojazdów
-              eksploatowanych intensywnie. Jeśli nie masz pewności, czy to właściwa lepkość dla Twojego
-              silnika — napisz do nas, pomożemy dobrać olej do konkretnej jednostki.
-            </p>
-          </div>
-        </main>
+    <main className="wrap">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
+      <p className="crumbs">
+        <Link href="/">Strona główna</Link> /{" "}
+        <Link href="/katalog">Produkty</Link> / {p.name}
+      </p>
+      <div className="pdp">
+        <ProductGallery images={images} name={p.name} />
+        <div>
+          <p className="label">Royal Purple</p>
+          <h1 className="display">{p.name}</h1>
+          <p className="desc">{p.summary}</p>
+          <BuyBox product={p} />
+          <p className="product-help">
+            Potrzebujesz pomocy w doborze?{" "}
+            <Link href={`/kontakt?produkt=${encodeURIComponent(p.name)}`}>
+              Zapytaj o ten produkt
+            </Link>
+            .
+          </p>
+        </div>
       </div>
-
-      <Footer />
-    </>
+      <section className="product-description prose">
+        <h2 className="display">Opis i zastosowanie</h2>
+        <div dangerouslySetInnerHTML={{ __html: p.descriptionHtml }} />
+      </section>
+      {!!documents.length && (
+        <section className="product-description prose">
+          <h2 className="display">Dokumenty do pobrania</h2>
+          <ul>
+            {documents.map((d) => (
+              <li key={d.path}>
+                <a href={d.path} target="_blank" rel="noopener noreferrer">
+                  {d.label}
+                </a>
+                {d.archival && " — dokument archiwalny ze wcześniejszej strony"}
+              </li>
+            ))}
+          </ul>
+          {documents.some((d) => d.archival) && (
+            <p>
+              Dokumenty archiwalne zachowujemy jako materiały źródłowe. Przed
+              zastosowaniem oleju sprawdź zgodność specyfikacji z etykietą
+              posiadanego opakowania. Aktualne dokumenty uzyskasz przez{" "}
+              <Link href={`/kontakt?produkt=${encodeURIComponent(p.name)}`}>
+                kontakt ze sklepem
+              </Link>
+              .
+            </p>
+          )}
+        </section>
+      )}
+    </main>
   );
 }
