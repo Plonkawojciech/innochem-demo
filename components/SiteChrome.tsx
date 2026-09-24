@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart";
 import { phoneHref, type SiteContent } from "@/lib/site-content";
+import { ThemeToggle } from "./ThemeToggle";
 export function PreviewBar() {
   return (
     <div className="demo-bar">
@@ -93,6 +94,7 @@ export function Header({
             </Link>
           ))}
         </nav>
+        <ThemeToggle />
         <Link className="cart-btn" href="/zamowienie">
           Koszyk <span className="count">{count}</span>
         </Link>

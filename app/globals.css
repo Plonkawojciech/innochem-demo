@@ -16,7 +16,31 @@
   --muted: #837e90;
   --line: rgba(23, 19, 31, 0.11);
   --line-dark: rgba(255, 255, 255, 0.09);
+  --header-bg: rgba(247, 246, 243, 0.88);
+  --glass: rgba(255, 255, 255, 0.92);
+  --photo-well: #ffffff;
+  --on-ink: #ffffff;
   --radius: 4px;
+  color-scheme: light;
+}
+/* Dark theme: deep violet instead of white, same accents, same layout. */
+:root[data-theme="dark"] {
+  --bg: #100d17;
+  --panel: #191424;
+  --dark: #08060c;
+  --dark-2: #100d17;
+  --violet: #8b74ff;
+  --violet-soft: rgba(139, 116, 255, 0.16);
+  --gold: #d9b355;
+  --ink: #f3f0fa;
+  --body: #c7c1d6;
+  --muted: #8d86a1;
+  --line: rgba(255, 255, 255, 0.1);
+  --header-bg: rgba(16, 13, 23, 0.86);
+  --glass: rgba(25, 20, 36, 0.94);
+  --photo-well: #1f1930;
+  --on-ink: #100d17;
+  color-scheme: dark;
 }
 
 * {
@@ -110,7 +134,7 @@ header.site {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(247, 246, 243, 0.88);
+  background: var(--header-bg);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid var(--line);
 }
@@ -347,7 +371,7 @@ nav.main a:hover {
   left: 0;
   min-width: 230px;
   display: none;
-  background: #fff;
+  background: var(--panel);
   border: 1px solid var(--line);
   box-shadow: 0 18px 40px rgba(23, 19, 31, 0.14);
   padding: 6px 0;
@@ -626,7 +650,7 @@ section.block {
   transition: background 0.15s;
 }
 .cat:hover {
-  background: #fff;
+  background: var(--panel);
 }
 .cat .idx {
   font-family: var(--f-mono), monospace;
@@ -1165,7 +1189,7 @@ label.f input:focus {
   width: 54px;
   height: 54px;
   object-fit: contain;
-  background: #fff;
+  background: var(--panel);
   border: 1px solid var(--line);
   border-radius: 4px;
   padding: 4px;
@@ -1369,7 +1393,7 @@ label.f input:focus {
   padding: 13px;
   border: 1px solid var(--line);
   font: inherit;
-  background: white;
+  background: var(--panel);
 }
 .category-links {
   display: flex;
@@ -1404,7 +1428,7 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
+  background: var(--panel);
 }
 .card .ph img {
   max-height: 280px;
@@ -1433,7 +1457,7 @@ button:disabled {
   color: var(--body);
 }
 .pdp-photo {
-  background: #fff;
+  background: var(--panel);
 }
 .pdp-photo img {
   max-height: 650px;
@@ -1831,7 +1855,7 @@ address {
   border: 1px solid var(--line);
   font: inherit;
   resize: vertical;
-  background: #fff;
+  background: var(--panel);
   width: 100%;
 }
 .honeypot {
@@ -1918,7 +1942,7 @@ address {
 .admin-save {
   position: sticky;
   bottom: 0;
-  background: #fff;
+  background: var(--panel);
   border-top: 1px solid #ddd;
   padding: 16px;
   display: flex;
@@ -1969,7 +1993,7 @@ address {
   background: #f9f9f9;
 }
 .media-editor button {
-  background: #fff;
+  background: var(--panel);
   border: 1px solid #ddd;
   padding: 6px;
   cursor: pointer;
@@ -2056,7 +2080,7 @@ address {
   border: 1px solid #cfcbd5;
   border-radius: 8px;
   padding: 11px 12px;
-  background: #fff;
+  background: var(--panel);
   color: #222;
   font: inherit;
   width: 100%;
@@ -2134,7 +2158,7 @@ address {
   margin-top: 12px;
 }
 .gallery-thumbs button {
-  background: #fff;
+  background: var(--panel);
   border: 2px solid transparent;
   padding: 6px;
   cursor: pointer;
@@ -2188,7 +2212,7 @@ address {
 .rich-toolbar button,
 .rich-editor details button {
   border: 1px solid #d6d0df;
-  background: white;
+  background: var(--panel);
   padding: 7px 9px;
   font: inherit;
   font-size: 13px;
@@ -2201,7 +2225,7 @@ address {
 .rich-editor .tiptap {
   min-height: 220px;
   border: 1px solid #d6d0df;
-  background: #fff;
+  background: var(--panel);
   padding: 16px;
   line-height: 1.65;
   outline-color: var(--violet);
@@ -2342,7 +2366,7 @@ address {
   position: sticky;
   top: 73px;
   z-index: 15;
-  background: #fff;
+  background: var(--panel);
   border-bottom: 1px solid #ddd;
   padding: 16px 0;
   display: flex;
@@ -2362,7 +2386,7 @@ address {
 }
 .site-editor-section {
   border: 1px solid #d6d0df;
-  background: white;
+  background: var(--panel);
   border-radius: 6px;
   margin: 12px 0;
   padding: 0 22px 20px;
@@ -2558,7 +2582,7 @@ address {
 .chip.on {
   background: var(--ink);
   border-color: var(--ink);
-  color: #fff;
+  color: var(--on-ink);
 }
 .chip.on small {
   color: #cfc8e6;
@@ -2583,7 +2607,7 @@ address {
   border: 0;
   padding: 0 20px;
   background: var(--ink);
-  color: #fff;
+  color: var(--on-ink);
   font: 600 13px var(--f-body);
   cursor: pointer;
 }
@@ -2623,7 +2647,7 @@ address {
   position: relative;
   height: auto;
   aspect-ratio: 1;
-  background: #fff;
+  background: var(--photo-well);
   padding: 18px;
 }
 .card .ph img {
@@ -2647,7 +2671,7 @@ address {
     monospace;
   letter-spacing: 0.04em;
   background: var(--ink);
-  color: #fff;
+  color: var(--on-ink);
   padding: 5px 9px;
   border-radius: 4px;
 }
@@ -2726,7 +2750,7 @@ address {
   border: 1px solid var(--violet);
 }
 .card .add:disabled {
-  background: #ece9f0;
+  background: var(--violet-soft);
   color: var(--muted);
   opacity: 1;
 }
@@ -2763,7 +2787,7 @@ address {
   top: 96px;
 }
 .pdp-photo {
-  background: #fff;
+  background: var(--photo-well);
   border: 1px solid var(--line);
   border-radius: 6px;
   padding: 32px;
@@ -2787,7 +2811,7 @@ address {
   bottom: 12px;
   font-size: 12px;
   color: var(--muted);
-  background: rgba(255, 255, 255, 0.85);
+  background: var(--glass);
   padding: 4px 10px;
   border-radius: 100px;
   border: 1px solid var(--line);
@@ -2990,7 +3014,7 @@ address {
     justify-content: space-between;
     gap: 16px;
     padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-    background: rgba(255, 255, 255, 0.96);
+    background: var(--glass);
     backdrop-filter: blur(10px);
     border-top: 1px solid var(--line);
   }
@@ -3007,5 +3031,62 @@ address {
     background: var(--violet);
     color: #fff;
     padding: 13px 26px;
+  }
+}
+
+/* theme toggle */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 100px;
+  background: var(--panel);
+  color: var(--body);
+  font:
+    500 12.5px var(--f-body),
+    sans-serif;
+  cursor: pointer;
+}
+.theme-toggle:hover {
+  border-color: var(--violet);
+  color: var(--ink);
+}
+.theme-toggle svg {
+  width: 15px;
+  height: 15px;
+}
+:root[data-theme="dark"] .card:hover {
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+:root[data-theme="dark"] .card .ph img,
+:root[data-theme="dark"] .pdp-photo img {
+  filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.55));
+}
+:root[data-theme="dark"] .card .ph,
+:root[data-theme="dark"] .pdp-photo,
+:root[data-theme="dark"] .feature-photo {
+  background:
+    radial-gradient(
+      closest-side at 50% 55%,
+      rgba(139, 116, 255, 0.22),
+      transparent 80%
+    ),
+    var(--photo-well);
+}
+:root[data-theme="dark"] .demo-bar {
+  background: #1f1930;
+}
+:root[data-theme="dark"] .qty button {
+  background: var(--panel);
+}
+@media (max-width: 700px) {
+  .theme-toggle span {
+    display: none;
+  }
+  .theme-toggle {
+    padding: 0 10px;
   }
 }

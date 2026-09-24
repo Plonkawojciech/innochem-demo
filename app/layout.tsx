@@ -10,6 +10,7 @@ import {
 } from "@/components/SiteChrome";
 import "./globals.css";
 import { requestSite } from "@/lib/server/site-request";
+import { themeBootScript } from "@/components/ThemeToggle";
 
 const archivo = Manrope({
   subsets: ["latin-ext"],
@@ -59,7 +60,11 @@ export default async function RootLayout({
     <html
       lang="pl"
       className={`${archivo.variable} ${inter.variable} ${mono.variable}`}
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       <body>
         <CartProvider>
           {process.env.STOREFRONT_PREVIEW !== "false" && <PreviewBar />}
