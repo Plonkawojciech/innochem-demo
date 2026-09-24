@@ -3,13 +3,60 @@
  * each product, keeping the previous cover in the gallery. Expects a directory of
  * files named <legacyId>.png. Never deletes files and refuses non-alpha images.
  */
-import { readdir, readFile, mkdir, copyFile, realpath } from "node:fs/promises";
-import { constants } from "node:fs";
+import {
+  readdir,
+  readFile,
+  mkdir,
+  writeFile,
+  realpath,
+} from "node:fs/promises";
 import path from "node:path";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
 import { transaction, database } from "../lib/server/db";
 const folder = "official/cutouts-2026-09-24";
+/** Every render is trimmed to its alpha bounding box and placed on the same 1200x1500 canvas
+ *  with the product scaled to 86% of the canvas height, so all covers share one framing. */
+async function normalize(bytes: Buffer) {
+  const canvas = { width: 1200, height: 1500 };
+  const trimmed = await sharp(bytes)
+    .ensureAlpha()
+    .trim({ threshold: 10 })
+    .png()
+    .toBuffer();
+  const meta = await sharp(trimmed).metadata();
+  const targetHeight = Math.round(canvas.height * 0.86);
+  const scale = Math.min(
+    targetHeight / meta.height!,
+    (canvas.width * 0.8) / meta.width!,
+  );
+  const resized = await sharp(trimmed)
+    .resize({
+      width: Math.max(1, Math.round(meta.width! * scale)),
+      height: Math.max(1, Math.round(meta.height! * scale)),
+      fit: "fill",
+      kernel: "lanczos3",
+    })
+    .png()
+    .toBuffer();
+  const size = await sharp(resized).metadata();
+  return sharp({
+    create: {
+      ...canvas,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    },
+  })
+    .composite([
+      {
+        input: resized,
+        left: Math.round((canvas.width - size.width!) / 2),
+        top: Math.round((canvas.height - size.height!) / 2),
+      },
+    ])
+    .png({ compressionLevel: 9, palette: false })
+    .toBuffer();
+}
 async function main() {
   const dir = process.argv[2],
     apply = process.argv.includes("--apply");
@@ -24,7 +71,11 @@ async function main() {
       /^\d+\.png$/.test(f),
     )) {
       const legacyId = Number(file.replace(".png", ""));
-      const bytes = await readFile(path.join(dir, file));
+      const raw = await readFile(path.join(dir, file));
+      const rawMeta = await sharp(raw).metadata();
+      if (rawMeta.format !== "png" || !rawMeta.hasAlpha)
+        throw new Error(`Not an alpha PNG: ${file}`);
+      const bytes = await normalize(raw);
       const meta = await sharp(bytes).metadata();
       if (
         meta.format !== "png" ||
@@ -52,11 +103,7 @@ async function main() {
       if (!apply) continue;
       await mkdir(path.join(root, folder), { recursive: true });
       try {
-        await copyFile(
-          path.join(dir, file),
-          path.join(root, relative),
-          constants.COPYFILE_EXCL,
-        );
+        await writeFile(path.join(root, relative), bytes, { flag: "wx" });
       } catch (e) {
         if (!(e && typeof e === "object" && "code" in e && e.code === "EEXIST"))
           throw e;
