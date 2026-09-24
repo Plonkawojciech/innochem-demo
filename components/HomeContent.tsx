@@ -39,8 +39,8 @@ export function HomeContent({ home }: { home: SiteContent["home"] }) {
                   srcSet={mediaSrcSet(hero.image.path, [480, 640, 960])}
                   sizes="(max-width: 900px) 70vw, 460px"
                   alt={hero.image.alt}
-                  width={1024}
-                  height={1536}
+                  width={1000}
+                  height={1400}
                   fetchPriority="high"
                   decoding="async"
                 />
@@ -130,8 +130,8 @@ export function HomeContent({ home }: { home: SiteContent["home"] }) {
                     )}
                     sizes="(max-width: 900px) 60vw, 320px"
                     alt={featured.image.alt}
-                    width={1024}
-                    height={1536}
+                    width={1000}
+                    height={1400}
                     loading="lazy"
                     decoding="async"
                   />
