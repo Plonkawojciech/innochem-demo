@@ -1165,8 +1165,10 @@ label.f input:focus {
   width: 54px;
   height: 54px;
   object-fit: contain;
-  background: var(--dark);
-  padding: 5px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 4px;
 }
 .cart-item b {
   font-size: 13.5px;
