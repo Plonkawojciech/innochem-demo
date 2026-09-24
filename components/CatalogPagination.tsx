@@ -4,16 +4,19 @@ export function CatalogPagination({
   pages,
   path,
   search = "",
+  grade = null,
 }: {
   page: number;
   pages: number;
   path: string;
   search?: string;
+  grade?: string | null;
 }) {
   if (pages <= 1) return null;
   function url(n: number) {
     const params = new URLSearchParams();
     if (search) params.set("q", search);
+    if (grade) params.set("g", grade);
     if (n > 1) params.set("page", String(n));
     return `${path}${params.size ? `?${params}` : ""}`;
   }

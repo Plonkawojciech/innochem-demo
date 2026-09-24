@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { query } from "./db";
 import type { StoreCategory, StoreProduct } from "../store-types";
+import { productFacts } from "../product-facts";
 
 type ProductRow = {
   id: string;
@@ -47,10 +48,21 @@ export function catalogPage(value: unknown) {
     : 1;
 }
 export async function products(
-  options: { category?: string; search?: string; page?: number } = {},
+  options: {
+    category?: string;
+    search?: string;
+    grade?: string;
+    page?: number;
+  } = {},
 ) {
   const values: unknown[] = [];
   const where = ["p.status='active'"];
+  if (options.grade && /^\d{1,2}W-\d{2,3}$/.test(options.grade)) {
+    values.push(`%${options.grade}%`, `%${options.grade.replace("-", "")}%`);
+    where.push(
+      `(p.name ILIKE $${values.length - 1} OR p.name ILIKE $${values.length})`,
+    );
+  }
   if (options.category) {
     values.push(options.category);
     where.push(
@@ -83,6 +95,32 @@ export async function products(
     [...values, (page - 1) * catalogPageSize],
   );
   return { items: result.rows.map(mapProduct), total, page, pages };
+}
+/** Viscosity grades present among active retail products, for catalog filters. */
+export async function catalogGrades(category?: string) {
+  const values: unknown[] = [];
+  let where = "status='active' AND sale_mode='retail'";
+  if (category) {
+    values.push(category);
+    where +=
+      " AND id IN (WITH RECURSIVE tree AS (SELECT id FROM categories WHERE slug=$1 AND visible UNION SELECT c.id FROM categories c JOIN tree t ON c.parent_id=t.id WHERE c.visible) SELECT pc.product_id FROM product_categories pc JOIN tree t ON t.id=pc.category_id)";
+  }
+  const { rows } = await query<{ name: string }>(
+    `SELECT name FROM products WHERE ${where}`,
+    values,
+  );
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const grade = productFacts(row.name).grade;
+    if (grade) counts.set(grade, (counts.get(grade) || 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((a, b) => gradeOrder(a[0]) - gradeOrder(b[0]))
+    .map(([grade, count]) => ({ grade, count }));
+}
+function gradeOrder(grade: string) {
+  const m = grade.match(/^(\d+)W-(\d+)$/);
+  return m ? Number(m[1]) * 1000 + Number(m[2]) : 99999;
 }
 export async function cartProducts(rawIds: unknown) {
   const ids = z.array(z.uuid()).max(50).parse(rawIds);

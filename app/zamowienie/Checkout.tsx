@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useCart } from "@/lib/cart";
+import { mediaSrc } from "@/lib/media";
 import { money, type StoreProduct } from "@/lib/store-types";
 type Delivery = { id: string; label: string; priceCents: number; cod: boolean };
 type Payment = "bank_transfer" | "cod" | "stripe";
@@ -190,7 +191,15 @@ export function Checkout({
               <h2 className="display">Koszyk</h2>
               {items.map(({ id, quantity, product: p }) => (
                 <div className="cart-item" key={id}>
-                  {p?.imagePath && <img src={p.imagePath} alt="" />}
+                  {p?.imagePath && (
+                    <img
+                      src={mediaSrc(p.imagePath, 160)}
+                      alt=""
+                      width={64}
+                      height={64}
+                      loading="lazy"
+                    />
+                  )}
                   <div>
                     <b>{p?.name || "Produkt niedostępny"}</b>
                     {p && <span>{money(p.priceCents)} / szt.</span>}

@@ -1,24 +1,39 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { products, categories, catalogPage } from "@/lib/server/catalog";
+import {
+  products,
+  categories,
+  catalogPage,
+  catalogGrades,
+} from "@/lib/server/catalog";
 import { CatalogPagination } from "@/components/CatalogPagination";
+import { CatalogFilters } from "@/components/CatalogFilters";
 import { ProductGrid } from "@/components/ProductCard";
 export const dynamic = "force-dynamic";
+type Search = { page?: string; g?: string };
+function readGrade(value: unknown) {
+  return typeof value === "string" && /^\d{1,2}W-\d{2,3}$/.test(value)
+    ? value
+    : null;
+}
 export async function generateMetadata({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<Search>;
 }) {
   const { slug } = await params;
-  const page = catalogPage((await searchParams).page);
+  const search = await searchParams;
+  const page = catalogPage(search.page);
+  const grade = readGrade(search.g);
   const c = (await categories()).find((c) => c.slug === slug);
   return {
-    title: `${c?.name || "Kategoria"} — INNOCHEM${page > 1 ? ` — strona ${page}` : ""}`,
+    title: `${c?.name || "Kategoria"}${grade ? ` ${grade}` : ""} — INNOCHEM${page > 1 ? ` — strona ${page}` : ""}`,
     alternates: {
       canonical: `/kategoria/${slug}${page > 1 ? `?page=${page}` : ""}`,
     },
+    ...(grade ? { robots: { index: false, follow: true } } : {}),
   };
 }
 export default async function Category({
@@ -26,7 +41,7 @@ export default async function Category({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<Search>;
 }) {
   const { slug } = await params;
   const all = await categories();
@@ -43,10 +58,16 @@ export default async function Category({
     ].includes(slug)
   )
     redirect("/przemysl");
-  const page = catalogPage((await searchParams).page);
-  const catalog = await products({ category: slug, page });
+  const search = await searchParams;
+  const page = catalogPage(search.page);
+  const grade = readGrade(search.g);
+  const [catalog, grades] = await Promise.all([
+    products({ category: slug, grade: grade || undefined, page }),
+    catalogGrades(slug),
+  ]);
   if (page > catalog.pages) notFound();
-  const { items } = catalog;
+  const { items, total } = catalog;
+  const parentSlug = all.find((x) => x.id === c.parentId)?.slug ?? null;
   return (
     <main className="wrap catalog-page">
       <p className="crumbs">
@@ -61,15 +82,26 @@ export default async function Category({
           />
         )}
       </div>
-      <div className="category-links">
-        {all
-          .filter((x) => x.parentId === c.id)
-          .map((x) => (
-            <Link href={`/kategoria/${x.slug}`} key={x.id}>
-              {x.name}
-            </Link>
-          ))}
-      </div>
+      <CatalogFilters
+        base={`/kategoria/${slug}`}
+        categories={all}
+        activeCategory={parentSlug || slug}
+        grades={grades}
+        grade={grade}
+        q=""
+        total={total}
+      />
+      {all.some((x) => x.parentId === c.id) && (
+        <div className="category-links">
+          {all
+            .filter((x) => x.parentId === c.id)
+            .map((x) => (
+              <Link href={`/kategoria/${x.slug}`} key={x.id}>
+                {x.name}
+              </Link>
+            ))}
+        </div>
+      )}
       <ProductGrid products={items} />
       {!items.length && (
         <div className="empty-state">
@@ -80,6 +112,7 @@ export default async function Category({
       <CatalogPagination
         page={page}
         pages={catalog.pages}
+        grade={grade}
         path={`/kategoria/${slug}`}
       />
     </main>

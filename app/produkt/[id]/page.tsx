@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { product, productMedia, productDocuments } from "@/lib/server/catalog";
+import {
+  product,
+  productMedia,
+  productDocuments,
+  products,
+} from "@/lib/server/catalog";
 import { ProductGallery } from "@/components/ProductGallery";
+import { ProductCard } from "@/components/ProductCard";
+import { productFacts } from "@/lib/product-facts";
 import { BuyBox } from "./BuyBox";
 export const dynamic = "force-dynamic";
 export async function generateMetadata({
@@ -23,9 +30,14 @@ export default async function ProductPage({
 }) {
   const p = await product((await params).id);
   if (!p) notFound();
-  const [media, documents] = await Promise.all([
+  const facts = productFacts(p.name);
+  const primaryCategory = p.categorySlugs[0];
+  const [media, documents, related] = await Promise.all([
     productMedia(p.id),
     productDocuments(p.id),
+    primaryCategory
+      ? products({ category: primaryCategory, page: 1 })
+      : Promise.resolve(null),
   ]);
   const images = p.imagePath
     ? [
@@ -33,6 +45,9 @@ export default async function ProductPage({
         ...media.filter((m) => m.path !== p.imagePath),
       ]
     : media;
+  const suggestions = (related?.items ?? [])
+    .filter((x) => x.id !== p.id && x.saleMode === "retail")
+    .slice(0, 4);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -62,7 +77,7 @@ export default async function ProductPage({
         : undefined,
   };
   return (
-    <main className="wrap">
+    <main className="wrap product-page">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -71,22 +86,63 @@ export default async function ProductPage({
       />
       <p className="crumbs">
         <Link href="/">Strona główna</Link> /{" "}
-        <Link href="/katalog">Produkty</Link> / {p.name}
+        <Link href="/katalog">Produkty</Link> / {facts.title}
       </p>
       <div className="pdp">
         <ProductGallery images={images} name={p.name} />
-        <div>
-          <p className="label">Royal Purple</p>
-          <h1 className="display">{p.name}</h1>
-          <p className="desc">{p.summary}</p>
+        <div className="pdp-copy">
+          {facts.series && <p className="series-line">{facts.series}</p>}
+          <h1 className="display">{facts.title}</h1>
+          {(facts.grade || facts.volume) && (
+            <p className="pdp-meta">
+              {facts.grade && (
+                <span>
+                  Klasa lepkości <b>{facts.grade}</b>
+                </span>
+              )}
+              {facts.volume && (
+                <span>
+                  Opakowanie <b>{facts.volume}</b>
+                </span>
+              )}
+              {p.sku && (
+                <span>
+                  Kod <b>{p.sku}</b>
+                </span>
+              )}
+            </p>
+          )}
+          {p.summary && <p className="desc">{p.summary}</p>}
           <BuyBox product={p} />
-          <p className="product-help">
-            Potrzebujesz pomocy w doborze?{" "}
-            <Link href={`/kontakt?produkt=${encodeURIComponent(p.name)}`}>
-              Zapytaj o ten produkt
-            </Link>
-            .
-          </p>
+          <ul className="trust">
+            <li>
+              <b>Oryginał od dystrybutora</b>
+              <span>Import z USA, sprzedaż w Polsce od 2009 roku.</span>
+            </li>
+            <li>
+              <b>Wysyłka w 1–2 dni robocze</b>
+              <span>
+                Butelki pakujemy w karton z zabezpieczeniem przed wyciekiem.
+              </span>
+            </li>
+            <li>
+              <b>14 dni na zwrot</b>
+              <span>
+                Nieotwarte opakowanie zwrócisz bez podania przyczyny.{" "}
+                <Link href="/zwroty-i-reklamacje">Zasady zwrotów</Link>
+              </span>
+            </li>
+            <li>
+              <b>Nie wiesz, który olej wybrać?</b>
+              <span>
+                Zadzwoń: <a href="tel:+48602155919">602 155 919</a> albo{" "}
+                <Link href={`/kontakt?produkt=${encodeURIComponent(p.name)}`}>
+                  zapytaj o ten produkt
+                </Link>
+                .
+              </span>
+            </li>
+          </ul>
         </div>
       </div>
       <section className="product-description prose">
@@ -117,6 +173,25 @@ export default async function ProductPage({
               .
             </p>
           )}
+        </section>
+      )}
+      {suggestions.length > 0 && (
+        <section className="related">
+          <div className="sec-head">
+            <div>
+              <h2 className="display">Z tej samej kategorii</h2>
+            </div>
+            {primaryCategory && (
+              <Link href={`/kategoria/${primaryCategory}`}>
+                Zobacz wszystkie
+              </Link>
+            )}
+          </div>
+          <div className="grid related-grid">
+            {suggestions.map((x) => (
+              <ProductCard key={x.id} p={x} />
+            ))}
+          </div>
         </section>
       )}
     </main>

@@ -1,37 +1,55 @@
 import { notFound } from "next/navigation";
 import { CatalogPagination } from "@/components/CatalogPagination";
+import { CatalogFilters } from "@/components/CatalogFilters";
 import Link from "next/link";
-import { products, categories, catalogPage } from "@/lib/server/catalog";
+import {
+  products,
+  categories,
+  catalogPage,
+  catalogGrades,
+} from "@/lib/server/catalog";
 import { ProductGrid } from "@/components/ProductCard";
 export const dynamic = "force-dynamic";
+type Search = { q?: string; page?: string; g?: string };
+function readGrade(value: unknown) {
+  return typeof value === "string" && /^\d{1,2}W-\d{2,3}$/.test(value)
+    ? value
+    : null;
+}
 export async function generateMetadata({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<Search>;
 }) {
   const params = await searchParams;
   const page = catalogPage(params.page);
   const search = typeof params.q === "string" ? params.q.slice(0, 120) : "";
+  const grade = readGrade(params.g);
   const query = new URLSearchParams();
   if (search) query.set("q", search);
+  if (grade) query.set("g", grade);
   if (page > 1) query.set("page", String(page));
   return {
-    title: `Oleje Royal Purple — katalog INNOCHEM${page > 1 ? ` — strona ${page}` : ""}`,
+    title: `Oleje Royal Purple${grade ? ` ${grade}` : ""} — katalog INNOCHEM${page > 1 ? ` — strona ${page}` : ""}`,
+    description:
+      "Wszystkie oleje silnikowe, motocyklowe i wyścigowe Royal Purple dostępne w Polsce. Ceny brutto, stany magazynowe na żywo, wysyłka z Kielc.",
     alternates: { canonical: `/katalog${query.size ? `?${query}` : ""}` },
-    ...(search ? { robots: { index: false, follow: true } } : {}),
+    ...(search || grade ? { robots: { index: false, follow: true } } : {}),
   };
 }
 export default async function Catalog({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<Search>;
 }) {
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q.slice(0, 120) : "";
+  const grade = readGrade(params.g);
   const page = catalogPage(params.page);
-  const [catalog, cats] = await Promise.all([
-    products({ search: q, page }),
+  const [catalog, cats, grades] = await Promise.all([
+    products({ search: q, grade: grade || undefined, page }),
     categories(),
+    catalogGrades(),
   ]);
   if (page > catalog.pages) notFound();
   const { items, total } = catalog;
@@ -43,48 +61,28 @@ export default async function Catalog({
       <div className="catalog-heading">
         <h1 className="display">Oleje Royal Purple</h1>
         <p>
-          Wybierz produkt do swojego samochodu, motocykla lub zastosowania
-          sportowego.
+          Oryginalne produkty z importu, sprzedawane w Polsce od 2009 roku.
+          Wybierz kategorię lub klasę lepkości zalecaną przez producenta
+          pojazdu.
         </p>
       </div>
-      <form className="search-form" role="search">
-        <label htmlFor="product-search">Szukaj produktu</label>
-        <div>
-          <input
-            id="product-search"
-            name="q"
-            defaultValue={q}
-            placeholder="Nazwa lub lepkość, np. 5W30"
-            maxLength={120}
-          />
-          <button className="btn btn-primary">Szukaj</button>
-        </div>
-      </form>
-      <div className="category-links">
-        {cats
-          .filter((c) =>
-            [
-              "oleje-samochodowe",
-              "oleje-motocyklowe",
-              "oleje-wyscigowe",
-            ].includes(c.slug),
-          )
-          .map((c) => (
-            <Link key={c.id} href={`/kategoria/${c.slug}`}>
-              {c.name}
-            </Link>
-          ))}
-      </div>
-      <p className="result-count">
-        {total} produktów{q && ` dla „${q}”`}
-      </p>
+      <CatalogFilters
+        base="/katalog"
+        categories={cats}
+        activeCategory={null}
+        grades={grades}
+        grade={grade}
+        q={q}
+        total={total}
+      />
       {items.length ? (
         <ProductGrid products={items} />
       ) : (
         <div className="empty-state">
           <h2>Nie znaleźliśmy takiego produktu</h2>
           <p>
-            Spróbuj krótszej nazwy lub skontaktuj się z nami, aby dobrać olej.
+            Spróbuj krótszej nazwy albo samej lepkości, na przykład „5W30”.
+            Możesz też napisać do nas, dobierzemy olej do silnika.
           </p>
           <Link href="/katalog">Pokaż cały katalog</Link>
         </div>
@@ -92,9 +90,33 @@ export default async function Catalog({
       <CatalogPagination
         page={page}
         pages={catalog.pages}
+        grade={grade}
         path="/katalog"
         search={q}
       />
+      <section className="catalog-trust">
+        <div>
+          <b>Wyłączny dystrybutor</b>
+          <span>Oryginalne produkty Royal Purple z USA, od 2009 roku.</span>
+        </div>
+        <div>
+          <b>Wysyłka w 1–2 dni robocze</b>
+          <span>
+            Zamówienia opłacone do południa pakujemy tego samego dnia.
+          </span>
+        </div>
+        <div>
+          <b>14 dni na zwrot</b>
+          <span>Nieotwarte produkty zwrócisz bez podawania przyczyny.</span>
+        </div>
+        <div>
+          <b>Pomoc w doborze</b>
+          <span>
+            Zadzwoń: <a href="tel:+48602155919">602 155 919</a>, dni robocze
+            8:00–16:00.
+          </span>
+        </div>
+      </section>
     </main>
   );
 }

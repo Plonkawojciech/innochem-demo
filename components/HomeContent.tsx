@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Reveal } from "./Reveal";
 import type { SiteContent } from "@/lib/site-content";
+import { mediaSrc, mediaSrcSet } from "@/lib/media";
 export function HomeContent({ home }: { home: SiteContent["home"] }) {
   const { hero, benefits, categories, technology, featured } = home;
   return (
@@ -34,10 +35,14 @@ export function HomeContent({ home }: { home: SiteContent["home"] }) {
             <div className="hero-photo">
               {hero.image.path && (
                 <img
-                  src={hero.image.path}
+                  src={mediaSrc(hero.image.path, 960)}
+                  srcSet={mediaSrcSet(hero.image.path, [480, 640, 960])}
+                  sizes="(max-width: 900px) 70vw, 460px"
                   alt={hero.image.alt}
                   width={1024}
                   height={1536}
+                  fetchPriority="high"
+                  decoding="async"
                 />
               )}
             </div>
@@ -118,10 +123,17 @@ export function HomeContent({ home }: { home: SiteContent["home"] }) {
               <div className="feature-photo">
                 {featured.image.path && (
                   <img
-                    src={featured.image.path}
+                    src={mediaSrc(featured.image.path, 640)}
+                    srcSet={mediaSrcSet(
+                      featured.image.path,
+                      [320, 480, 640, 960],
+                    )}
+                    sizes="(max-width: 900px) 60vw, 320px"
                     alt={featured.image.alt}
                     width={1024}
                     height={1536}
+                    loading="lazy"
+                    decoding="async"
                   />
                 )}
               </div>

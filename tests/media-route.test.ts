@@ -67,3 +67,54 @@ test("media paths cannot escape the root or use an external redirect destination
     process.env.MEDIA_ROOT = old;
   }
 });
+test("resized derivatives are WebP, cached on disk and never larger than requested", async () => {
+  const sharp = (await import("sharp")).default;
+  const old = process.env.MEDIA_ROOT;
+  const root = await mkdtemp(path.join(os.tmpdir(), "innochem-media-resize-"));
+  process.env.MEDIA_ROOT = root;
+  try {
+    await writeFile(
+      path.join(root, "bottle.png"),
+      await sharp({
+        create: {
+          width: 1200,
+          height: 1600,
+          channels: 4,
+          background: "#4c2fd6",
+        },
+      })
+        .png()
+        .toBuffer(),
+    );
+    const call = (url: string) =>
+      GET(new Request(url), {
+        params: Promise.resolve({ path: ["bottle.png"] }),
+      });
+    const first = await call("http://localhost/media/bottle.png?w=480");
+    assert.equal(first.status, 200);
+    assert.equal(first.headers.get("content-type"), "image/webp");
+    const bytes = Buffer.from(await first.arrayBuffer());
+    const meta = await sharp(bytes).metadata();
+    assert.equal(meta.format, "webp");
+    assert.equal(meta.width, 480);
+    assert.equal(meta.height, 640);
+    const second = await call("http://localhost/media/bottle.png?w=480");
+    assert.deepEqual(Buffer.from(await second.arrayBuffer()), bytes);
+    assert.equal(
+      (await call("http://localhost/media/bottle.png?w=999")).status,
+      404,
+    );
+    const original = await call("http://localhost/media/bottle.png");
+    assert.equal(original.headers.get("content-type"), "image/png");
+    assert.equal(
+      (
+        await GET(new Request("http://localhost/media/_derivatives/x.webp"), {
+          params: Promise.resolve({ path: ["_derivatives", "x.webp"] }),
+        })
+      ).status,
+      404,
+    );
+  } finally {
+    process.env.MEDIA_ROOT = old;
+  }
+});
