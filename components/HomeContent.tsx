@@ -95,6 +95,17 @@ export function HomeContent({
           </div>
         </section>
       )}
+      <div className="wrap">
+        <aside className="oil-advice">
+          <p>
+            Nie wiesz, który olej wybrać? Napisz, jaki masz silnik, a dobierzemy
+            olej i sprawdzimy dostępność.
+          </p>
+          <Link className="btn btn-outline" href="/kontakt?temat=dobor">
+            Zapytaj o dobór
+          </Link>
+        </aside>
+      </div>
       {technology.enabled && (
         <section className="split" id="technologia">
           <div className="split-grid">

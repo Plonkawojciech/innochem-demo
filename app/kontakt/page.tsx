@@ -12,9 +12,9 @@ export async function generateMetadata() {
 export default async function Contact({
   searchParams,
 }: {
-  searchParams: Promise<{ produkt?: string }>;
+  searchParams: Promise<{ produkt?: string; temat?: string }>;
 }) {
-  const [{ produkt }, { content: c }] = await Promise.all([
+  const [{ produkt, temat }, { content: c }] = await Promise.all([
     searchParams,
     requestSite(),
   ]);
@@ -23,7 +23,11 @@ export default async function Contact({
       <ContactContent page={c.contactPage} contact={c.contact} company />
       <InquiryForm
         subject={
-          produkt ? `Produkt: ${produkt.slice(0, 180)}` : c.contactPage.subject
+          typeof produkt === "string" && produkt
+            ? `Produkt: ${produkt.slice(0, 180)}`
+            : temat === "dobor"
+              ? "Dobór oleju"
+              : c.contactPage.subject
         }
         preview={process.env.STOREFRONT_PREVIEW !== "false"}
       />

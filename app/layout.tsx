@@ -50,6 +50,25 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const { content, draft } = await requestSite();
+  const url = process.env.APP_URL || "https://innochem.pl";
+  const organization = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "INNOCHEM Aneta Zalewska",
+    url,
+    ...(content.brand.logo.path
+      ? { logo: new URL(content.brand.logo.path, url).href }
+      : {}),
+    telephone: content.contact.phone,
+    email: content.contact.email,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "ul. Okrzei 64",
+      postalCode: "25-526",
+      addressLocality: "Kielce",
+      addressCountry: "PL",
+    },
+  };
   return (
     <html
       lang="pl"
@@ -60,6 +79,12 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
       <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(organization).replace(/</g, "\\u003c"),
+          }}
+        />
         <CartProvider>
           {draft && <CmsPreviewBar />}
           <Header brand={content.brand} navigation={content.navigation} />

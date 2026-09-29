@@ -267,7 +267,7 @@ export const defaultSiteContent: SiteContent = {
         text: "oryginalne produkty z oficjalnej dystrybucji",
       },
       {
-        title: "Wysyłka z Kielc",
+        title: "Wysyłka w 1–2 dni robocze",
         text: "produkty dostępne w naszym magazynie",
       },
       {

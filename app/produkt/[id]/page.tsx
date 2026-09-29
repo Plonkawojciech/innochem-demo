@@ -5,10 +5,14 @@ import {
   productMedia,
   productDocuments,
   products,
+  categories,
+  seriesProducts,
 } from "@/lib/server/catalog";
 import { ProductGallery } from "@/components/ProductGallery";
 import { ProductCarousel } from "@/components/ProductCarousel";
 import { productFacts } from "@/lib/product-facts";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { storeSettings } from "@/lib/server/settings";
 import { BuyBox } from "./BuyBox";
 export const dynamic = "force-dynamic";
 export async function generateMetadata({
@@ -19,7 +23,10 @@ export async function generateMetadata({
   const p = await product((await params).id);
   return {
     title: p ? `${p.metaTitle || p.name} — INNOCHEM` : "Produkt — INNOCHEM",
-    description: p?.metaDescription || p?.summary,
+    description: p
+      ? p.metaDescription.trim() ||
+        `${p.name}. Sprawdź zastosowanie, dostępność i warunki dostawy z INNOCHEM.`
+      : undefined,
     alternates: { canonical: `/produkt/${p?.slug || (await params).id}` },
   };
 }
@@ -32,21 +39,39 @@ export default async function ProductPage({
   if (!p) notFound();
   const facts = productFacts(p.name);
   const primaryCategory = p.categorySlugs[0];
-  const [media, documents, related] = await Promise.all([
-    productMedia(p.id),
-    productDocuments(p.id),
-    primaryCategory
-      ? products({ category: primaryCategory, page: 1 })
-      : Promise.resolve(null),
-  ]);
+  const [media, documents, related, cats, settings, sameSeries] =
+    await Promise.all([
+      productMedia(p.id),
+      productDocuments(p.id),
+      primaryCategory
+        ? products({ category: primaryCategory, page: 1 })
+        : Promise.resolve(null),
+      categories(),
+      storeSettings(),
+      facts.series ? seriesProducts(facts.series, p.id) : Promise.resolve([]),
+    ]);
   const images = p.imagePath
     ? [
         { path: p.imagePath, alt: p.imageAlt || p.name },
         ...media.filter((m) => m.path !== p.imagePath),
       ]
     : media;
+  const shippingPrices = settings.shippingMethods
+    .filter((method) => method.enabled)
+    .map((method) => method.priceCents);
+  const shippingFromCents = shippingPrices.length
+    ? Math.min(...shippingPrices)
+    : null;
+  const applications = p.categorySlugs
+    .map((slug) => cats.find((c) => c.slug === slug)?.name)
+    .filter(Boolean)
+    .join(", ");
+  const sameSeriesIds = new Set(sameSeries.map((item) => item.id));
   const suggestions = (related?.items ?? [])
-    .filter((x) => x.id !== p.id && x.saleMode === "retail")
+    .filter(
+      (x) =>
+        x.id !== p.id && x.saleMode === "retail" && !sameSeriesIds.has(x.id),
+    )
     .slice(0, 12);
   const jsonLd = {
     "@context": "https://schema.org",
@@ -84,10 +109,13 @@ export default async function ProductPage({
           __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
         }}
       />
-      <p className="crumbs">
-        <Link href="/">Strona główna</Link> /{" "}
-        <Link href="/katalog">Produkty</Link> / {facts.title}
-      </p>
+      <Breadcrumbs
+        items={[
+          { name: "Strona główna", path: "/" },
+          { name: "Produkty", path: "/katalog" },
+          { name: facts.title, path: `/produkt/${p.slug}` },
+        ]}
+      />
       <div className="pdp">
         <ProductGallery images={images} name={p.name} />
         <div className="pdp-copy">
@@ -113,7 +141,7 @@ export default async function ProductPage({
             </p>
           )}
           {p.summary && <p className="desc">{p.summary}</p>}
-          <BuyBox product={p} />
+          <BuyBox product={p} shippingFromCents={shippingFromCents} />
           <ul className="trust">
             <li>
               <b>Oryginał od dystrybutora</b>
@@ -143,6 +171,32 @@ export default async function ProductPage({
               </span>
             </li>
           </ul>
+          <dl className="product-facts">
+            {[
+              ["Seria", facts.series],
+              ["Klasa lepkości", facts.grade],
+              ["Pojemność", facts.volume],
+              ["Kod produktu", p.sku],
+              ["Zastosowanie", applications],
+            ].map(([label, value]) =>
+              value ? (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ) : null,
+            )}
+            <div>
+              <dt>Dokumenty</dt>
+              <dd>
+                {documents.length ? (
+                  <a href="#dokumenty">{documents.length} do pobrania</a>
+                ) : (
+                  "0"
+                )}
+              </dd>
+            </div>
+          </dl>
           <section className="pdp-section" id="opis">
             <h2 className="display">Opis i zastosowanie</h2>
             <div
@@ -188,11 +242,19 @@ export default async function ProductPage({
           )}
         </div>
       </div>
+      {sameSeries.length > 0 && (
+        <section className="related">
+          <div className="sec-head">
+            <h2 className="display">Inne lepkości serii {facts.series}</h2>
+          </div>
+          <ProductCarousel products={sameSeries} />
+        </section>
+      )}
       {suggestions.length > 0 && (
         <section className="related">
           <div className="sec-head">
             <div>
-              <h2 className="display">Z tej samej kategorii</h2>
+              <h2 className="display">Produkty uzupełniające</h2>
             </div>
             {primaryCategory && (
               <Link href={`/kategoria/${primaryCategory}`}>

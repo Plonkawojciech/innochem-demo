@@ -3,7 +3,13 @@ import Link from "next/link";
 import { useState } from "react";
 import { money, type StoreProduct } from "@/lib/store-types";
 import { useCart } from "@/lib/cart";
-export function BuyBox({ product }: { product: StoreProduct }) {
+export function BuyBox({
+  product,
+  shippingFromCents,
+}: {
+  product: StoreProduct;
+  shippingFromCents: number | null;
+}) {
   const { add } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
@@ -35,6 +41,11 @@ export function BuyBox({ product }: { product: StoreProduct }) {
           <div className="buy-price">
             <span>{money(product.priceCents)}</span>
             <small>brutto z VAT, za sztukę</small>
+            <small>
+              {shippingFromCents === null
+                ? "Koszt dostawy zobaczysz w koszyku"
+                : `Dostawa kurierem od ${money(shippingFromCents)}`}
+            </small>
           </div>
           <span className={inStock ? "stock" : "unavailable"}>
             {inStock
@@ -75,17 +86,18 @@ export function BuyBox({ product }: { product: StoreProduct }) {
               +
             </button>
           </div>
-          <button
-            className="btn btn-primary"
-            disabled={!inStock}
-            onClick={addToCart}
-          >
-            {added
-              ? "Dodano do koszyka"
-              : inStock
-                ? "Dodaj do koszyka"
-                : "Zapytaj o dostępność"}
-          </button>
+          {inStock ? (
+            <button className="btn btn-primary" onClick={addToCart}>
+              {added ? "Dodano do koszyka" : "Dodaj do koszyka"}
+            </button>
+          ) : (
+            <Link
+              className="btn btn-outline"
+              href={`/kontakt?produkt=${encodeURIComponent(product.name)}`}
+            >
+              Zapytaj o dostępność
+            </Link>
+          )}
         </div>
         {added && (
           <p role="status" className="added-note">
@@ -94,23 +106,25 @@ export function BuyBox({ product }: { product: StoreProduct }) {
           </p>
         )}
         <p className="ship-note">
-          Koszt dostawy zobaczysz w koszyku przed złożeniem zamówienia.{" "}
+          Dokładny koszt dostawy zobaczysz w koszyku przed złożeniem zamówienia.{" "}
           <Link href="/dostawa-i-platnosci">Sposoby dostawy i płatności</Link>
         </p>
       </div>
-      <div className="sticky-buy" aria-hidden={!inStock}>
-        <div>
-          <b>{money(product.priceCents)}</b>
-          <small>{inStock ? "W magazynie" : "Niedostępny"}</small>
+      {inStock && (
+        <div className="sticky-buy">
+          <div>
+            <b>{money(product.priceCents)}</b>
+            <small>{inStock ? "W magazynie" : "Niedostępny"}</small>
+          </div>
+          <button
+            className="btn btn-primary"
+            disabled={!inStock}
+            onClick={addToCart}
+          >
+            {added ? "W koszyku" : "Do koszyka"}
+          </button>
         </div>
-        <button
-          className="btn btn-primary"
-          disabled={!inStock}
-          onClick={addToCart}
-        >
-          {added ? "W koszyku" : "Do koszyka"}
-        </button>
-      </div>
+      )}
     </>
   );
 }

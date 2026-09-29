@@ -1,3 +1,4 @@
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import {
@@ -10,7 +11,7 @@ import { CatalogPagination } from "@/components/CatalogPagination";
 import { CatalogToolbar } from "@/components/CatalogFilters";
 import { ProductGrid } from "@/components/ProductCard";
 export const dynamic = "force-dynamic";
-type Search = { page?: string; g?: string };
+type Search = { q?: string; page?: string; g?: string };
 function readGrade(value: unknown) {
   return typeof value === "string" && /^\d{1,2}W-\d{2,3}$/.test(value)
     ? value
@@ -27,13 +28,16 @@ export async function generateMetadata({
   const search = await searchParams;
   const page = catalogPage(search.page);
   const grade = readGrade(search.g);
+
   const c = (await categories()).find((c) => c.slug === slug);
   return {
     title: `${c?.name || "Kategoria"}${grade ? ` ${grade}` : ""} — INNOCHEM${page > 1 ? ` — strona ${page}` : ""}`,
     alternates: {
       canonical: `/kategoria/${slug}${page > 1 ? `?page=${page}` : ""}`,
     },
-    ...(grade ? { robots: { index: false, follow: true } } : {}),
+    ...(search.q !== undefined || search.g !== undefined
+      ? { robots: { index: false, follow: true } }
+      : {}),
   };
 }
 export default async function Category({
@@ -61,8 +65,9 @@ export default async function Category({
   const search = await searchParams;
   const page = catalogPage(search.page);
   const grade = readGrade(search.g);
+  const q = typeof search.q === "string" ? search.q.slice(0, 120) : "";
   const [catalog, grades] = await Promise.all([
-    products({ category: slug, grade: grade || undefined, page }),
+    products({ category: slug, search: q, grade: grade || undefined, page }),
     catalogGrades(slug),
   ]);
   if (page > catalog.pages) notFound();
@@ -70,6 +75,13 @@ export default async function Category({
   const parentSlug = all.find((x) => x.id === c.parentId)?.slug ?? null;
   return (
     <main className="wrap catalog-page">
+      <Breadcrumbs
+        items={[
+          { name: "Strona główna", path: "/" },
+          { name: "Produkty", path: "/katalog" },
+          { name: c.name, path: `/kategoria/${slug}` },
+        ]}
+      />
       <CatalogToolbar
         title={c.name}
         base={`/kategoria/${slug}`}
@@ -77,7 +89,7 @@ export default async function Category({
         activeCategory={parentSlug || slug}
         grades={grades}
         grade={grade}
-        q=""
+        q={q}
         total={total}
       />
       {c.descriptionHtml && (
@@ -103,15 +115,23 @@ export default async function Category({
       <ProductGrid products={items} />
       {!items.length && (
         <div className="empty-state">
-          <p>Obecnie nie ma produktów w tej kategorii.</p>
-          <Link className="btn btn-primary" href="/kontakt">
-            Zapytaj o dostępność
+          <h2>Nie znaleźliśmy takiego produktu</h2>
+          <p>
+            Spróbuj krótszej nazwy albo samej lepkości, na przykład „5W30”.
+            Możesz też napisać do nas, dobierzemy olej do silnika.
+          </p>
+          <Link
+            className="btn btn-primary"
+            href={`/katalog?q=${encodeURIComponent(q)}`}
+          >
+            Szukaj w całym sklepie
           </Link>
         </div>
       )}
       <CatalogPagination
         page={page}
         pages={catalog.pages}
+        search={q}
         grade={grade}
         path={`/kategoria/${slug}`}
       />

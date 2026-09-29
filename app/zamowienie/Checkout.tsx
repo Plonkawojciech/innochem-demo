@@ -73,6 +73,8 @@ export function Checkout({
     lastName: account?.lastName || "",
     email: account?.email || "",
   });
+  const [invoiceRequested, setInvoiceRequested] = useState(false);
+  const companyInvoice = invoiceRequested || !!(fields.company || fields.nip);
   const key = useRef<string | null>(null);
   const delivery = shipping.find((s) => s.id === shippingId);
   const items = Object.entries(cart).map(([id, quantity]) => ({
@@ -203,7 +205,13 @@ export function Checkout({
                     />
                   )}
                   <div>
-                    <b>{p?.name || "Produkt niedostępny"}</b>
+                    <b>
+                      {p ? (
+                        <Link href={`/produkt/${p.slug}`}>{p.name}</Link>
+                      ) : (
+                        "Produkt niedostępny"
+                      )}
+                    </b>
                     {p && <span>{money(p.priceCents)} / szt.</span>}
                     <label>
                       Ilość{" "}
@@ -248,7 +256,9 @@ export function Checkout({
                 </p>
               ) : (
                 <p>
-                  <Link href="/konto">Zaloguj się</Link> lub zamów bez konta.
+                  Zamawiasz bez zakładania konta. Masz konto?{" "}
+                  <Link href="/konto">Zaloguj się</Link>, żeby użyć zapisanych
+                  adresów.
                 </p>
               )}
               {!!account?.addresses.length && (
@@ -292,18 +302,6 @@ export function Checkout({
                   },
                   { name: "phone", label: "Telefon", auto: "tel", type: "tel" },
                   {
-                    name: "company",
-                    label: "Firma (opcjonalnie)",
-                    auto: "organization",
-                    optional: true,
-                  },
-                  {
-                    name: "nip",
-                    label: "NIP (opcjonalnie)",
-                    auto: "off",
-                    optional: true,
-                  },
-                  {
                     name: "street",
                     label: "Ulica i numer",
                     auto: "street-address",
@@ -322,9 +320,51 @@ export function Checkout({
                       name={f.name}
                       autoComplete={f.auto}
                       type={f.type || "text"}
-                      required={!f.optional}
+                      required
                       maxLength={f.name === "email" ? 254 : 180}
                       pattern={f.pattern}
+                      value={fields[f.name] || ""}
+                      onChange={(e) =>
+                        setFields((v) => ({ ...v, [f.name]: e.target.value }))
+                      }
+                    />
+                  </label>
+                ))}
+              </div>
+              <label className="check-label">
+                <input
+                  type="checkbox"
+                  checked={companyInvoice}
+                  onChange={(e) => {
+                    setInvoiceRequested(e.target.checked);
+                    if (!e.target.checked)
+                      setFields((f) => ({ ...f, company: "", nip: "" }));
+                  }}
+                />
+                <span>Chcę fakturę na firmę</span>
+              </label>
+              <div className="f-grid" hidden={!companyInvoice}>
+                {[
+                  {
+                    name: "company",
+                    label: "Nazwa firmy",
+                    auto: "organization",
+                    optional: true,
+                  },
+                  {
+                    name: "nip",
+                    label: "NIP",
+                    auto: "off",
+                    optional: true,
+                  },
+                ].map((f) => (
+                  <label className="f" key={f.name}>
+                    {f.label}
+                    <input
+                      name={f.name}
+                      autoComplete={f.auto}
+                      type="text"
+                      maxLength={180}
                       value={fields[f.name] || ""}
                       onChange={(e) =>
                         setFields((v) => ({ ...v, [f.name]: e.target.value }))

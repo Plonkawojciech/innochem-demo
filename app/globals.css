@@ -4116,3 +4116,45 @@ footer.site .foot-withdraw {
 .carousel-track {
   padding-top: 12px;
 }
+
+.product-facts {
+  margin: 24px 0;
+  border-top: 1px solid var(--line);
+}
+.product-facts > div {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) 2fr;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.product-facts dt {
+  color: var(--muted);
+}
+.product-facts dd {
+  margin: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.product-facts a {
+  text-decoration: underline;
+}
+.oil-advice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  margin-bottom: 40px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+.oil-advice p {
+  flex: 1 1 280px;
+  margin: 0;
+  color: var(--body);
+}
+.f-grid[hidden] {
+  display: none;
+}

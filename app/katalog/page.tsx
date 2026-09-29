@@ -23,18 +23,17 @@ export async function generateMetadata({
 }) {
   const params = await searchParams;
   const page = catalogPage(params.page);
-  const search = typeof params.q === "string" ? params.q.slice(0, 120) : "";
   const grade = readGrade(params.g);
   const query = new URLSearchParams();
-  if (search) query.set("q", search);
-  if (grade) query.set("g", grade);
   if (page > 1) query.set("page", String(page));
   return {
     title: `Oleje Royal Purple${grade ? ` ${grade}` : ""} — katalog INNOCHEM${page > 1 ? ` — strona ${page}` : ""}`,
     description:
       "Wszystkie oleje silnikowe, motocyklowe i wyścigowe Royal Purple dostępne w Polsce. Ceny brutto, stany magazynowe na żywo, wysyłka z Kielc.",
     alternates: { canonical: `/katalog${query.size ? `?${query}` : ""}` },
-    ...(search || grade ? { robots: { index: false, follow: true } } : {}),
+    ...(params.q !== undefined || params.g !== undefined
+      ? { robots: { index: false, follow: true } }
+      : {}),
   };
 }
 export default async function Catalog({
@@ -93,9 +92,7 @@ export default async function Catalog({
         </div>
         <div>
           <b>Wysyłka w 1–2 dni robocze</b>
-          <span>
-            Zamówienia opłacone do południa pakujemy tego samego dnia.
-          </span>
+          <span>Termin dotyczy przekazania zamówienia do wysyłki.</span>
         </div>
         <div>
           <b>14 dni na zwrot</b>

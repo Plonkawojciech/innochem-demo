@@ -173,3 +173,13 @@ export async function productDocuments(id: string) {
     )
   ).rows;
 }
+
+export async function seriesProducts(series: string, excludeId: string) {
+  const { rows } = await query<ProductRow>(
+    `${select} WHERE p.status='active' AND p.sale_mode='retail' AND p.id<>$1 ORDER BY p.name,p.id`,
+    [excludeId],
+  );
+  return rows
+    .filter((row) => productFacts(row.name).series === series)
+    .map(mapProduct);
+}
