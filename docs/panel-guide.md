@@ -1,6 +1,6 @@
 # Obsługa panelu INNOCHEM
 
-Panel znajduje się pod adresem `/admin`. Wymaga zalogowania na zweryfikowane konto administratora. Konto klienta nie ma do niego dostępu. Wersja z paskiem „Podgląd nowego sklepu” służy do sprawdzania zmian; zapisane w niej zamówienia i wiadomości nie są realizowane.
+Panel znajduje się pod adresem `/admin`. Wymaga zalogowania na zweryfikowane konto administratora. Konto klienta nie ma do niego dostępu. Do czasu uruchomienia na innochem.pl sklep działa w trybie podglądu: zamówień nie da się złożyć, a wiadomości nie są wysyłane.
 
 ## Produkty i magazyn
 
@@ -39,3 +39,11 @@ W „Ustawieniach” wpisuje się uzgodnione dostawy, płatności, adresy poczty
 „Pliki” to wspólna biblioteka zdjęć i dokumentów. „Eksport” umożliwia pobranie danych sklepu jako JSON, produktów i zamówień jako CSV oraz osobnego archiwum plików. Eksport z klientami i zamówieniami zawiera dane osobowe; zapisz go w prywatnym miejscu. Eksport panelu nie zastępuje zaszyfrowanej kopii technicznej opisanej w [instrukcji utrzymania](operations.md).
 
 Przed szkoleniem przygotuj produkt testowy i wykonaj kolejno: zmianę ceny, wybór zdjęcia, edycję opisu, zapis szkicu strony, podgląd, obsługę syntetycznego zamówienia i eksport. Nie ćwicz płatności ani wysyłki na rzeczywistym zamówieniu klienta.
+
+## Prywatność i statystyki
+
+W stopce sklepu jest link „Ustawienia prywatności”. Klient decyduje w nim, czy zgadza się na statystykę odwiedzin (Google Analytics). Bez zgody sklep nie uruchamia żadnego skryptu Google; zakupy działają tak samo. Decyzję klient może zmienić w każdej chwili w tym samym miejscu.
+
+W panelu „Analityka” widać kolejkę zdarzeń o zakupach i zwrotach, które sklep wysyła do Google Analytics z serwera: status (oczekuje, wysłane, pominięte, błąd), numer zamówienia i ewentualny powód pominięcia (np. brak zgody klienta albo pobranie, które nie jest jeszcze zapłatą). To podgląd tylko do odczytu; sprzedaż zawsze liczy się z zamówień w panelu, nie z Google.
+
+Raport miesięczny przygotowuje wykonawca na podstawie Google Search Console (ruch z wyszukiwarki, pozycje fraz) i zamówień z panelu.
