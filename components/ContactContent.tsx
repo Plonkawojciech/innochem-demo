@@ -1,17 +1,28 @@
 import { phoneHref, type SiteContent } from "@/lib/site-content";
+import { Breadcrumbs } from "./Breadcrumbs";
 export function ContactContent({
   page,
   contact,
   company = false,
+  path,
   children,
 }: {
   page: SiteContent["contactPage"];
   contact: SiteContent["contact"];
   company?: boolean;
+  path?: string;
   children?: React.ReactNode;
 }) {
   return (
     <div className="contact-copy">
+      {path && (
+        <Breadcrumbs
+          items={[
+            { name: "Strona główna", path: "/" },
+            { name: page.title, path },
+          ]}
+        />
+      )}
       <p className="label">{page.label}</p>
       <h1 className="display">{page.title}</h1>
       {page.image.path && (
