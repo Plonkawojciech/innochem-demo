@@ -145,12 +145,14 @@ export function ProductGallery({
               ‹
             </button>
           )}
-          <img
-            key={current.path}
-            src={mediaSrc(current.path, 1280)}
-            alt={current.alt || name}
-            decoding="async"
-          />
+          {open && (
+            <img
+              key={current.path}
+              src={mediaSrc(current.path, 1280)}
+              alt={current.alt || name}
+              decoding="async"
+            />
+          )}
           {many && (
             <button
               type="button"

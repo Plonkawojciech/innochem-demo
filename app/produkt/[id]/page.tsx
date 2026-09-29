@@ -28,6 +28,18 @@ export async function generateMetadata({
         `${p.name}. Sprawdź zastosowanie, dostępność i warunki dostawy z INNOCHEM.`
       : undefined,
     alternates: { canonical: `/produkt/${p?.slug || (await params).id}` },
+    ...(p
+      ? {
+          openGraph: {
+            title: p.metaTitle || p.name,
+            description: p.metaDescription.trim() || p.summary,
+            type: "website",
+            ...(p.imagePath
+              ? { images: [{ url: `${p.imagePath}?w=960`, alt: p.name }] }
+              : {}),
+          },
+        }
+      : {}),
   };
 }
 export default async function ProductPage({

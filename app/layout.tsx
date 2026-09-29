@@ -87,13 +87,18 @@ export default async function RootLayout({
             __html: JSON.stringify(organization).replace(/</g, "\\u003c"),
           }}
         />
+        <a className="skip-link" href="#tresc">
+          Przejdź do treści
+        </a>
         <CartProvider>
           <Analytics />
           <ConsentBanner />
           {draft && <CmsPreviewBar />}
           <Header brand={content.brand} navigation={content.navigation} />
           <CatBar navigation={content.navigation} />
-          {children}
+          <div id="tresc" tabIndex={-1}>
+            {children}
+          </div>
           <Footer
             brand={content.brand}
             contact={content.contact}

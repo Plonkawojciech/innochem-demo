@@ -114,7 +114,7 @@ export function CatalogToolbar({
                   grade: g.grade === grade ? null : g.grade,
                 })}
                 className={g.grade === grade ? "chip on" : "chip"}
-                aria-pressed={g.grade === grade}
+                aria-current={g.grade === grade ? "true" : undefined}
               >
                 {g.grade}
               </Link>

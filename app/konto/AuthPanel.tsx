@@ -208,6 +208,9 @@ export function SignOut() {
       disabled={busy}
       onClick={async () => {
         setBusy(true);
+        await fetch("/api/session/clear-access", { method: "POST" }).catch(
+          () => undefined,
+        );
         const r = await fetch("/api/auth/sign-out", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

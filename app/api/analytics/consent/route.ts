@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   try {
     requireSameOrigin(request);
     const decision = input.parse(await jsonBody(request, 1024));
-    if (decision.analytics) await rateLimit(request, "analytics-consent", 30);
+    await rateLimit(request, "analytics-consent", decision.analytics ? 30 : 60);
     const old = consentId(request);
     if (old) await revokeConsent(old);
     const response = NextResponse.json({ ok: true });

@@ -4311,3 +4311,41 @@ footer.site .foot-withdraw {
   display: block;
   margin-top: 6px;
 }
+
+/* accessibility and contrast (audit 2026-09-29) */
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: -48px;
+  z-index: 100;
+  padding: 10px 16px;
+  background: var(--ink);
+  color: var(--on-ink);
+  border-radius: 6px;
+  font-weight: 600;
+  transition: top 0.12s;
+}
+.skip-link:focus {
+  top: 12px;
+}
+#tresc:focus {
+  outline: none;
+}
+:root {
+  --muted: #676279;
+}
+:root[data-theme="dark"] .card .add,
+:root[data-theme="dark"] .buy-box .btn-primary,
+:root[data-theme="dark"] .sticky-buy .btn,
+:root[data-theme="dark"] .feature-copy .btn-primary,
+:root[data-theme="dark"] .empty-state .btn-primary {
+  color: #100d17;
+}
+:root[data-theme="dark"] .card .add:hover:not(:disabled),
+:root[data-theme="dark"] .buy-box .btn-primary:hover {
+  color: #100d17;
+}
+:root[data-theme="dark"] .doc-icon {
+  color: #c9bcff;
+  background: rgba(139, 116, 255, 0.22);
+}
