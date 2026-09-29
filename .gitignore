@@ -16,3 +16,4 @@ next-env.d.ts
 /operations/
 __pycache__/
 *.pyc
+docs/research/
