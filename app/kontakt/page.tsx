@@ -20,7 +20,12 @@ export default async function Contact({
   ]);
   return (
     <main className="wrap contact-page">
-      <ContactContent page={c.contactPage} contact={c.contact} company />
+      <ContactContent
+        page={c.contactPage}
+        contact={c.contact}
+        path="/kontakt"
+        company
+      />
       <InquiryForm
         subject={
           typeof produkt === "string" && produkt

@@ -23,7 +23,11 @@ export default async function Industry({
     c.industryPage.subject;
   return (
     <main className="wrap contact-page">
-      <ContactContent page={c.industryPage} contact={c.contact}>
+      <ContactContent
+        page={c.industryPage}
+        contact={c.contact}
+        path="/przemysl"
+      >
         <ul className="industry-list">
           {c.industryPage.departments.map((d, i) => (
             <li key={i}>{d.name}</li>

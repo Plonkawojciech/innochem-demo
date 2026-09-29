@@ -42,6 +42,13 @@ function mapProduct(row: ProductRow): StoreProduct {
 }
 const select = `SELECT p.*, COALESCE((SELECT array_agg(c.slug ORDER BY c.position) FROM product_categories pc JOIN categories c ON c.id=pc.category_id WHERE pc.product_id=p.id AND c.visible), ARRAY[]::text[]) AS category_slugs FROM products p`;
 export const catalogPageSize = 24;
+/** Complete active retail catalog, without storefront pagination. */
+export async function merchantProducts() {
+  const { rows } = await query<ProductRow>(
+    `${select} WHERE p.status='active' AND p.sale_mode='retail' ORDER BY p.id`,
+  );
+  return rows.map(mapProduct);
+}
 export function catalogPage(value: unknown) {
   return typeof value === "string" && /^[1-9]\d{0,5}$/.test(value)
     ? Number(value)

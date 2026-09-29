@@ -1,4 +1,5 @@
 import { ViewEvent } from "@/components/Analytics";
+import { categoryDescription } from "@/lib/server/seo-text";
 import { productFacts } from "@/lib/product-facts";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import Link from "next/link";
@@ -34,6 +35,10 @@ export async function generateMetadata({
   const c = (await categories()).find((c) => c.slug === slug);
   return {
     title: `${c?.name || "Kategoria"}${grade ? ` ${grade}` : ""} — INNOCHEM${page > 1 ? ` — strona ${page}` : ""}`,
+    description: categoryDescription(
+      c?.name || "Kategoria",
+      c?.descriptionHtml || "",
+    ),
     alternates: {
       canonical: `/kategoria/${slug}${page > 1 ? `?page=${page}` : ""}`,
     },
