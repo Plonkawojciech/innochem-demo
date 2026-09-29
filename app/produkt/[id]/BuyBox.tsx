@@ -1,4 +1,6 @@
 "use client";
+import { useViewEvent } from "@/components/Analytics";
+import { item } from "@/lib/analytics";
 import Link from "next/link";
 import { useState } from "react";
 import { money, type StoreProduct } from "@/lib/store-types";
@@ -11,6 +13,11 @@ export function BuyBox({
   shippingFromCents: number | null;
 }) {
   const { add } = useCart();
+  useViewEvent("view_item", {
+    currency: "PLN",
+    value: product.priceCents / 100,
+    items: [item(product)],
+  });
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   if (product.saleMode === "inquiry")
@@ -31,7 +38,7 @@ export function BuyBox({
   const limit = Math.max(1, Math.min(999, product.available));
   const inStock = product.available > 0;
   const addToCart = () => {
-    add(product.id, quantity);
+    add(product.id, quantity, product);
     setAdded(true);
   };
   return (

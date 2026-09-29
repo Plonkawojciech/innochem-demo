@@ -1,3 +1,5 @@
+import { ViewEvent } from "@/components/Analytics";
+import { productFacts } from "@/lib/product-facts";
 import { notFound } from "next/navigation";
 import { CatalogPagination } from "@/components/CatalogPagination";
 import { CatalogToolbar } from "@/components/CatalogFilters";
@@ -54,6 +56,16 @@ export default async function Catalog({
   const { items, total } = catalog;
   return (
     <main className="wrap catalog-page">
+      {!total && (q || grade) && (
+        <ViewEvent
+          name="search_no_results"
+          params={{
+            grade: productFacts(q).grade || grade,
+            series: productFacts(q).series,
+            results: 0,
+          }}
+        />
+      )}
       <CatalogToolbar
         title="Oleje Royal Purple"
         base="/katalog"
@@ -65,7 +77,7 @@ export default async function Catalog({
         total={total}
       />
       {items.length ? (
-        <ProductGrid products={items} />
+        <ProductGrid products={items} listId="katalog" />
       ) : (
         <div className="empty-state">
           <h2>Nie znaleźliśmy takiego produktu</h2>

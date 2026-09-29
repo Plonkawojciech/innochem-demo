@@ -129,7 +129,12 @@ export function ProductGallery({
             </svg>
           </button>
         </div>
-        <div className="lightbox-stage">
+        <div
+          className="lightbox-stage"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setOpen(false);
+          }}
+        >
           {many && (
             <button
               type="button"

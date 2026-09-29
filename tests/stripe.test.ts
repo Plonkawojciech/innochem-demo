@@ -340,6 +340,15 @@ test("simultaneous duplicate webhook deliveries commit stock and payment mail ex
     handleStripeEvent(e, f.gateway),
     handleStripeEvent(event(f.session), f.gateway),
   ]);
+  assert.equal(
+    (
+      await query(
+        "SELECT count(*)::int AS n FROM analytics_outbox WHERE order_id=$1 AND event_type='purchase'",
+        [f.order.id],
+      )
+    ).rows[0].n,
+    1,
+  );
   assert.equal(await f.status(), "paid");
   assert.deepEqual(await f.stock(), { stock: 4, reserved: 0 });
   assert.equal(

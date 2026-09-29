@@ -1,4 +1,7 @@
 "use client";
+import { useViewEvent } from "@/components/Analytics";
+import { item, track } from "@/lib/analytics";
+import { analyticsIdentity } from "@/lib/consent";
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useCart } from "@/lib/cart";
@@ -98,6 +101,42 @@ export function Checkout({
     if (!allowedPayments.includes(payment))
       setPayment(allowedPayments[0] || "bank_transfer");
   }, [shippingId, payment, allowedPayments.join(",")]);
+  const cartEvent = {
+    currency: "PLN",
+    value: subtotal / 100,
+    items: items.flatMap((i) =>
+      i.product ? [item(i.product, i.quantity)] : [],
+    ),
+  };
+  const viewedCart = useRef<typeof cartEvent | null>(null);
+  if (ready && catalogReady && !catalogError && !viewedCart.current)
+    viewedCart.current = cartEvent;
+  useViewEvent("view_cart", viewedCart.current || {}, !!viewedCart.current);
+  const begun = useRef(false);
+  const selectedShipping = useRef("");
+  const selectedPayment = useRef("");
+  function beginCheckout() {
+    if (!begun.current && track("begin_checkout", cartEvent))
+      begun.current = true;
+  }
+  function selectShipping(id: string) {
+    setShippingId(id);
+    beginCheckout();
+    if (
+      selectedShipping.current !== id &&
+      track("add_shipping_info", { ...cartEvent, shipping_tier: id })
+    )
+      selectedShipping.current = id;
+  }
+  function selectPayment(method: Payment) {
+    setPayment(method);
+    beginCheckout();
+    if (
+      selectedPayment.current !== method &&
+      track("add_payment_info", { ...cartEvent, payment_type: method })
+    )
+      selectedPayment.current = method;
+  }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (busy) return;
@@ -112,6 +151,7 @@ export function Checkout({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           idempotencyKey: key.current,
+          analytics: analyticsIdentity(),
           lines: items.map((i) => ({ productId: i.id, quantity: i.quantity })),
           buyer: {
             firstName: field("firstName"),
@@ -226,6 +266,7 @@ export function Checkout({
                           setQuantity(
                             id,
                             Math.max(1, Number(e.target.value) || 1),
+                            p,
                           )
                         }
                       />
@@ -238,7 +279,7 @@ export function Checkout({
                     <button
                       type="button"
                       className="text-button"
-                      onClick={() => setQuantity(id, 0)}
+                      onClick={() => setQuantity(id, 0, p)}
                     >
                       Usuń
                     </button>
@@ -247,7 +288,11 @@ export function Checkout({
                 </div>
               ))}
             </section>
-            <section className="panel">
+            <section
+              className="panel"
+              onFocusCapture={beginCheckout}
+              onChangeCapture={beginCheckout}
+            >
               <h2 className="display">Dane zamawiającego</h2>
               {account ? (
                 <p>
@@ -385,7 +430,8 @@ export function Checkout({
                       name="shipping"
                       value={s.id}
                       checked={shippingId === s.id}
-                      onChange={() => setShippingId(s.id)}
+                      onChange={() => selectShipping(s.id)}
+                      onClick={() => selectShipping(s.id)}
                     />
                     <span>{s.label}</span>
                     <strong>{money(s.priceCents)}</strong>
@@ -403,7 +449,8 @@ export function Checkout({
                       type="radio"
                       name="payment"
                       checked={payment === p}
-                      onChange={() => setPayment(p)}
+                      onChange={() => selectPayment(p)}
+                      onClick={() => selectPayment(p)}
                     />
                     <span>
                       {p === "bank_transfer"

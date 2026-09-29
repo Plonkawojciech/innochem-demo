@@ -1,3 +1,5 @@
+import { Analytics } from "@/components/Analytics";
+import { ConsentBanner } from "@/components/ConsentBanner";
 import type { Metadata } from "next";
 import { Manrope, Inter, IBM_Plex_Mono } from "next/font/google";
 import { CartProvider } from "@/lib/cart";
@@ -86,6 +88,8 @@ export default async function RootLayout({
           }}
         />
         <CartProvider>
+          <Analytics />
+          <ConsentBanner />
           {draft && <CmsPreviewBar />}
           <Header brand={content.brand} navigation={content.navigation} />
           <CatBar navigation={content.navigation} />

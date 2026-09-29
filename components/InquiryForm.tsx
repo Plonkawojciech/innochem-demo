@@ -1,4 +1,5 @@
 "use client";
+import { track } from "@/lib/analytics";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 export function InquiryForm({
@@ -32,6 +33,15 @@ export function InquiryForm({
       const data = await r.json();
       if (!r.ok) throw new Error(data.error);
       setDone(true);
+      if (!preview)
+        track("generate_lead", {
+          type:
+            location.pathname === "/przemysl"
+              ? "przemysl"
+              : location.pathname === "/dystrybutorzy"
+                ? "b2b"
+                : "dobor",
+        });
     } catch (e) {
       setError(
         e instanceof Error ? e.message : "Nie udało się zapisać wiadomości.",

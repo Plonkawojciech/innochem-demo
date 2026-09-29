@@ -25,6 +25,7 @@ export default function AdminLayout({
           ["kategorie", "Kategorie"],
           ["zamowienia", "Zamówienia"],
           ["zapytania", "Zapytania"],
+          ["analityka", "Kolejka analityki"],
           ["odstapienia", "Odstąpienia"],
           ["tresci", "Treści"],
           ["witryna", "Wygląd i treści witryny"],

@@ -1,3 +1,4 @@
+import { enqueueAnalytics } from "./analytics";
 import { enqueueMailInTransaction } from "./mail";
 import { z } from "zod";
 import { query, transaction } from "./db";
@@ -215,6 +216,7 @@ export async function actOnOrder(id: string, raw: unknown, actor: string) {
         actor,
       ],
     );
+    if (p.action === "record_refund") await enqueueAnalytics(db, id, "refund");
     await audit(db, actor, `order.${p.action}`, id, {
       previousStatus: order.status,
       status,

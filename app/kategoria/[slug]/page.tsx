@@ -1,3 +1,5 @@
+import { ViewEvent } from "@/components/Analytics";
+import { productFacts } from "@/lib/product-facts";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -82,6 +84,16 @@ export default async function Category({
           { name: c.name, path: `/kategoria/${slug}` },
         ]}
       />
+      {!total && (q || grade) && (
+        <ViewEvent
+          name="search_no_results"
+          params={{
+            grade: productFacts(q).grade || grade,
+            series: productFacts(q).series,
+            results: 0,
+          }}
+        />
+      )}
       <CatalogToolbar
         title={c.name}
         base={`/kategoria/${slug}`}
@@ -112,7 +124,7 @@ export default async function Category({
             ))}
         </div>
       )}
-      <ProductGrid products={items} />
+      <ProductGrid products={items} listId={slug} />
       {!items.length && (
         <div className="empty-state">
           <h2>Nie znaleźliśmy takiego produktu</h2>

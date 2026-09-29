@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { PRIVACY_OPEN } from "@/lib/consent";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart";
@@ -199,6 +200,13 @@ export function Footer({
             </div>
           ))}
         </div>
+        <button
+          type="button"
+          className="privacy-settings"
+          onClick={() => window.dispatchEvent(new Event(PRIVACY_OPEN))}
+        >
+          Ustawienia prywatności
+        </button>
         <div className="foot-note">
           <span>
             © {new Date().getFullYear()} {brand.name}. {brand.copyright}{" "}

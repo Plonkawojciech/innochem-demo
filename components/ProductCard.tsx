@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { item, track } from "@/lib/analytics";
+import { useViewEvent } from "./Analytics";
 import { useState } from "react";
 import { money, type StoreProduct } from "@/lib/store-types";
 import { useCart } from "@/lib/cart";
@@ -8,16 +10,27 @@ import { productFacts } from "@/lib/product-facts";
 export function ProductCard({
   p,
   priority = false,
+  listId,
 }: {
   p: StoreProduct;
   priority?: boolean;
+  listId?: string;
 }) {
   const { add } = useCart();
   const [added, setAdded] = useState(false);
   const facts = productFacts(p.name);
   const inStock = p.saleMode === "retail" && p.available > 0;
   return (
-    <article className="card">
+    <article
+      className="card"
+      onClick={(e) => {
+        if (
+          listId &&
+          (e.target as Element).closest(`a[href="/produkt/${p.slug}"]`)
+        )
+          track("select_item", { item_list_id: listId, items: [item(p)] });
+      }}
+    >
       <Link className="ph" href={`/produkt/${p.slug}`}>
         {p.imagePath ? (
           <img
@@ -63,7 +76,7 @@ export function ProductCard({
             className="add"
             disabled={!inStock}
             onClick={() => {
-              add(p.id);
+              add(p.id, 1, p);
               setAdded(true);
             }}
           >
@@ -90,11 +103,22 @@ export function ProductCard({
     </article>
   );
 }
-export function ProductGrid({ products }: { products: StoreProduct[] }) {
+export function ProductGrid({
+  products,
+  listId,
+}: {
+  products: StoreProduct[];
+  listId?: string;
+}) {
+  useViewEvent(
+    "view_item_list",
+    { item_list_id: listId, items: products.map((p) => item(p)) },
+    !!listId && products.length > 0,
+  );
   return (
     <div className="grid" id="prodGrid">
       {products.map((p, i) => (
-        <ProductCard key={p.id} p={p} priority={i < 3} />
+        <ProductCard key={p.id} p={p} priority={i < 3} listId={listId} />
       ))}
     </div>
   );

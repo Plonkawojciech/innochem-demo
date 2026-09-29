@@ -1,3 +1,4 @@
+import { analyticsInput, enqueueAnalytics } from "./analytics";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { enqueueMailInTransaction } from "./mail";
 import { z } from "zod";
@@ -26,6 +27,7 @@ const linesSchema = z
   );
 export const checkoutSchema = z
   .object({
+    analytics: analyticsInput.nullable().optional(),
     idempotencyKey: z.uuid(),
     lines: linesSchema,
     buyer: z
@@ -95,10 +97,15 @@ async function event(
 export async function createOrder(
   raw: unknown,
   customerId: string | null = null,
+  analyticsConsentId: string | null = null,
 ) {
   const input = checkoutSchema.parse(raw);
   input.lines.sort((a, b) => a.productId.localeCompare(b.productId));
-  const fingerprint = tokenHash(JSON.stringify({ input, customerId }));
+  // Optional analytics changes must not invalidate checkout retries.
+  const { analytics: _analytics, ...businessInput } = input;
+  const fingerprint = tokenHash(
+    JSON.stringify({ input: businessInput, customerId }),
+  );
   return transaction(async (db) => {
     await db.query("SELECT pg_advisory_xact_lock(hashtextextended($1,0))", [
       input.idempotencyKey,
@@ -259,6 +266,30 @@ export async function createOrder(
         settings.termsVersion,
       ],
     );
+    if (input.analytics && analyticsConsentId) {
+      const c = (
+        await db.query(
+          "SELECT * FROM analytics_consents WHERE id=$1 AND revoked_at IS NULL AND expires_at>now() FOR SHARE",
+          [analyticsConsentId],
+        )
+      ).rows[0];
+      if (
+        c &&
+        c.version === input.analytics.v &&
+        new Date(c.granted_at).toISOString() === input.analytics.at
+      ) {
+        await db.query(
+          "UPDATE orders SET ga_client_id=$2,ga_session_id=$3,analytics_consent_at=$4,analytics_consent_id=$5 WHERE id=$1",
+          [
+            order.id,
+            input.analytics.client_id,
+            input.analytics.session_id,
+            c.granted_at,
+            c.id,
+          ],
+        );
+      }
+    }
     const accessToken = tokenFor(order.id, input.idempotencyKey);
     await db.query(
       "UPDATE orders SET access_hash=$1,legal_version=terms_version WHERE id=$2",
@@ -293,6 +324,7 @@ export async function createOrder(
           [item.quantity, item.productId],
         );
     }
+    if (cod) await enqueueAnalytics(db, order.id, "order_submitted");
     await event(db, order.id, "created", {
       paymentMethod: input.paymentMethod,
       termsVersion: settings.termsVersion,
@@ -454,6 +486,7 @@ export async function markOrderPaidInTransaction(
     `Potwierdzamy płatność ${(amount / 100).toFixed(2)} zł za zamówienie ${order.number}.`,
     `order:${orderId}:paid`,
   );
+  await enqueueAnalytics(db, orderId, "purchase");
   return { status: "paid", replayed: false };
 }
 

@@ -1,3 +1,4 @@
+import { consentId } from "@/lib/server/analytics";
 import { NextResponse } from "next/server";
 import { createOrder } from "@/lib/server/orders";
 import { customerForSession } from "@/lib/server/auth";
@@ -14,6 +15,7 @@ export async function POST(request: Request) {
     const result = await createOrder(
       await jsonBody(request),
       await customerForSession(request.headers),
+      consentId(request),
     );
     const response = NextResponse.json(
       { id: result.id, number: result.number, url: `/zamowienie/${result.id}` },

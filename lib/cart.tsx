@@ -4,15 +4,18 @@ import {
   useContext,
   useEffect,
   useState,
+  useRef,
   type ReactNode,
 } from "react";
+import { item, track } from "./analytics";
+import type { StoreProduct } from "./store-types";
 type Cart = Record<string, number>;
 type CartContext = {
   cart: Cart;
   count: number;
   ready: boolean;
-  add: (id: string, quantity?: number) => void;
-  setQuantity: (id: string, quantity: number) => void;
+  add: (id: string, quantity?: number, product?: StoreProduct) => void;
+  setQuantity: (id: string, quantity: number, product?: StoreProduct) => void;
   clear: () => void;
 };
 const Context = createContext<CartContext | null>(null);
@@ -57,20 +60,32 @@ export function CartProvider({ children }: { children: ReactNode }) {
       } catch {}
     }
   }, [cart, ready]);
-  const add = (id: string, quantity = 1) =>
-    setCart((c) =>
-      valid({
-        ...c,
-        [id]: Math.min(999, (c[id] || 0) + Math.max(1, Math.floor(quantity))),
-      }),
+  const current = useRef(cart);
+  current.current = cart;
+  const change = (id: string, quantity: number, product?: StoreProduct) => {
+    const before = current.current[id] || 0;
+    const next = valid({ ...current.current, [id]: quantity });
+    current.current = next;
+    setCart(next);
+    const delta = (next[id] || 0) - before;
+    if (product && delta)
+      track(delta > 0 ? "add_to_cart" : "remove_from_cart", {
+        currency: "PLN",
+        value: (product.priceCents * Math.abs(delta)) / 100,
+        items: [item(product, Math.abs(delta))],
+      });
+  };
+  const add = (id: string, quantity = 1, product?: StoreProduct) =>
+    change(
+      id,
+      Math.min(
+        999,
+        (current.current[id] || 0) + Math.max(1, Math.floor(quantity)),
+      ),
+      product,
     );
-  const setQuantity = (id: string, quantity: number) =>
-    setCart((c) => {
-      const next = { ...c };
-      if (quantity <= 0) delete next[id];
-      else next[id] = Math.min(999, Math.floor(quantity));
-      return valid(next);
-    });
+  const setQuantity = (id: string, quantity: number, product?: StoreProduct) =>
+    change(id, Math.min(999, Math.floor(quantity)), product);
   return (
     <Context.Provider
       value={{
@@ -79,7 +94,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         ready,
         add,
         setQuantity,
-        clear: () => setCart({}),
+        clear: () => {
+          current.current = {};
+          setCart({});
+        },
       }}
     >
       {children}

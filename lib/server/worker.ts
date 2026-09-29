@@ -1,3 +1,4 @@
+import { deliverAnalyticsBatch } from "./analytics";
 import { createHash, timingSafeEqual } from "node:crypto";
 import { expireReservations } from "./orders";
 import { deliverMailBatch } from "./mail";
@@ -21,5 +22,6 @@ export async function runWorker() {
   const payments = await reconcileStripePayments();
   const expired = await expireReservations();
   const mail = await deliverMailBatch();
-  return { enabled: true, expired, payments, mail };
+  const analytics = await deliverAnalyticsBatch();
+  return { enabled: true, expired, payments, mail, analytics };
 }
