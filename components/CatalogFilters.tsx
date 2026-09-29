@@ -14,7 +14,9 @@ function href(base: string, params: { q?: string; grade?: string | null }) {
   return query.size ? `${base}?${query}` : base;
 }
 
-export function CatalogFilters({
+/** Compact catalog toolbar: title, count and search on one line, category and grade chips on the next. */
+export function CatalogToolbar({
+  title,
   base,
   categories,
   activeCategory,
@@ -23,6 +25,7 @@ export function CatalogFilters({
   q,
   total,
 }: {
+  title: string;
   base: string;
   categories: StoreCategory[];
   activeCategory: string | null;
@@ -32,10 +35,47 @@ export function CatalogFilters({
   total: number;
 }) {
   return (
-    <div className="filters">
-      <div className="filter-row">
-        <span className="filter-name">Kategoria</span>
-        <div className="chips">
+    <div className="toolbar">
+      <div className="toolbar-top">
+        <h1 className="display">
+          {title}
+          <span className="result-count" aria-live="polite">
+            {total === 1 ? "1 produkt" : `${total} produktów`}
+            {q ? ` dla „${q}”` : ""}
+          </span>
+        </h1>
+        <form className="search-box" role="search" action={base}>
+          <label htmlFor="product-search" className="sr-only">
+            Szukaj produktu
+          </label>
+          <input
+            id="product-search"
+            name="q"
+            type="search"
+            defaultValue={q}
+            placeholder="Szukaj: 5W30, HPS, Max ATF"
+            maxLength={120}
+          />
+          {grade && <input type="hidden" name="g" value={grade} />}
+          <button type="submit" aria-label="Szukaj">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              aria-hidden
+            >
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+          </button>
+        </form>
+      </div>
+      <div className="toolbar-chips">
+        <div className="chips" aria-label="Kategoria">
           <Link
             href={href("/katalog", { q, grade })}
             className={!activeCategory ? "chip on" : "chip"}
@@ -57,11 +97,9 @@ export function CatalogFilters({
             Przemysł
           </Link>
         </div>
-      </div>
-      {grades.length > 1 && (
-        <div className="filter-row">
-          <span className="filter-name">Lepkość</span>
-          <div className="chips">
+        {grades.length > 1 && (
+          <div className="chips chips-grades" aria-label="Klasa lepkości">
+            <span className="chips-name">Lepkość</span>
             <Link
               href={href(base, { q, grade: null })}
               className={!grade ? "chip on" : "chip"}
@@ -79,32 +117,11 @@ export function CatalogFilters({
                 aria-pressed={g.grade === grade}
               >
                 {g.grade}
-                <small>{g.count}</small>
               </Link>
             ))}
           </div>
-        </div>
-      )}
-      <form className="filter-row search-row" role="search" action={base}>
-        <label htmlFor="product-search" className="filter-name">
-          Szukaj
-        </label>
-        <div className="search-box">
-          <input
-            id="product-search"
-            name="q"
-            defaultValue={q}
-            placeholder="np. 5W30, HPS, Max ATF"
-            maxLength={120}
-          />
-          {grade && <input type="hidden" name="g" value={grade} />}
-          <button type="submit">Szukaj</button>
-        </div>
-        <span className="result-count" aria-live="polite">
-          {total === 1 ? "1 produkt" : `${total} produktów`}
-          {q ? ` dla „${q}”` : ""}
-        </span>
-      </form>
+        )}
+      </div>
     </div>
   );
 }

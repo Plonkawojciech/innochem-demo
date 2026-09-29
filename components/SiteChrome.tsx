@@ -199,14 +199,29 @@ export function Footer({
             </div>
           ))}
         </div>
-        <p>
-          <Link href="/odstapienie">Odstąp od umowy</Link>
-        </p>
         <div className="foot-note">
           <span>
-            © {new Date().getFullYear()} {brand.name}. {brand.copyright}
+            © {new Date().getFullYear()} {brand.name}. {brand.copyright}{" "}
+            <Link href="/odstapienie" className="foot-withdraw">
+              Formularz odstąpienia od umowy
+            </Link>
           </span>
-          <a href="https://programo.pl">Wykonanie: Programo</a>
+          <a
+            className="foot-credit"
+            href="https://programo.pl"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Stworzone przez
+            <img
+              src="/programo-logo.svg"
+              alt="Programo"
+              width={78}
+              height={11}
+              loading="lazy"
+            />
+            <span>· Programo s.j., Poznań</span>
+          </a>
         </div>
       </div>
     </footer>

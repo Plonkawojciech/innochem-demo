@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { CatalogPagination } from "@/components/CatalogPagination";
-import { CatalogFilters } from "@/components/CatalogFilters";
+import { CatalogToolbar } from "@/components/CatalogFilters";
 import Link from "next/link";
 import {
   products,
@@ -55,18 +55,8 @@ export default async function Catalog({
   const { items, total } = catalog;
   return (
     <main className="wrap catalog-page">
-      <p className="crumbs">
-        <Link href="/">Strona główna</Link> / Produkty
-      </p>
-      <div className="catalog-heading">
-        <h1 className="display">Oleje Royal Purple</h1>
-        <p>
-          Oryginalne produkty z importu, sprzedawane w Polsce od 2009 roku.
-          Wybierz kategorię lub klasę lepkości zalecaną przez producenta
-          pojazdu.
-        </p>
-      </div>
-      <CatalogFilters
+      <CatalogToolbar
+        title="Oleje Royal Purple"
         base="/katalog"
         categories={cats}
         activeCategory={null}
@@ -84,7 +74,9 @@ export default async function Catalog({
             Spróbuj krótszej nazwy albo samej lepkości, na przykład „5W30”.
             Możesz też napisać do nas, dobierzemy olej do silnika.
           </p>
-          <Link href="/katalog">Pokaż cały katalog</Link>
+          <Link className="btn btn-primary" href="/katalog">
+            Pokaż cały katalog
+          </Link>
         </div>
       )}
       <CatalogPagination

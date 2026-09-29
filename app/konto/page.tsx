@@ -7,6 +7,7 @@ import { orderLabels } from "@/lib/order-labels";
 import { AddressBook, ProfileForm } from "./AccountForms";
 import { money } from "@/lib/store-types";
 import { AuthPanel, SignOut } from "./AuthPanel";
+import { AuthShell } from "./AuthShell";
 export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Moje konto — INNOCHEM",
@@ -21,9 +22,9 @@ export default async function Account({
   const current = await session(requestHeaders);
   if (!current)
     return (
-      <main className="wrap account-page">
+      <AuthShell>
         <AuthPanel forgot={(await searchParams).tryb === "haslo"} />
-      </main>
+      </AuthShell>
     );
   const customerId = await customerForSession(requestHeaders);
   if (!customerId)

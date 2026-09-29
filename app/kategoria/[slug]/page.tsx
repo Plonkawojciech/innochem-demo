@@ -7,7 +7,7 @@ import {
   catalogGrades,
 } from "@/lib/server/catalog";
 import { CatalogPagination } from "@/components/CatalogPagination";
-import { CatalogFilters } from "@/components/CatalogFilters";
+import { CatalogToolbar } from "@/components/CatalogFilters";
 import { ProductGrid } from "@/components/ProductCard";
 export const dynamic = "force-dynamic";
 type Search = { page?: string; g?: string };
@@ -70,19 +70,8 @@ export default async function Category({
   const parentSlug = all.find((x) => x.id === c.parentId)?.slug ?? null;
   return (
     <main className="wrap catalog-page">
-      <p className="crumbs">
-        <Link href="/katalog">Produkty</Link> / {c.name}
-      </p>
-      <div className="catalog-heading">
-        <h1 className="display">{c.name}</h1>
-        {c.descriptionHtml && (
-          <div
-            className="prose"
-            dangerouslySetInnerHTML={{ __html: c.descriptionHtml }}
-          />
-        )}
-      </div>
-      <CatalogFilters
+      <CatalogToolbar
+        title={c.name}
         base={`/kategoria/${slug}`}
         categories={all}
         activeCategory={parentSlug || slug}
@@ -91,6 +80,15 @@ export default async function Category({
         q=""
         total={total}
       />
+      {c.descriptionHtml && (
+        <details className="catalog-intro">
+          <summary>O kategorii</summary>
+          <div
+            className="prose"
+            dangerouslySetInnerHTML={{ __html: c.descriptionHtml }}
+          />
+        </details>
+      )}
       {all.some((x) => x.parentId === c.id) && (
         <div className="category-links">
           {all
@@ -106,7 +104,9 @@ export default async function Category({
       {!items.length && (
         <div className="empty-state">
           <p>Obecnie nie ma produktów w tej kategorii.</p>
-          <Link href="/kontakt">Zapytaj o dostępność</Link>
+          <Link className="btn btn-primary" href="/kontakt">
+            Zapytaj o dostępność
+          </Link>
         </div>
       )}
       <CatalogPagination

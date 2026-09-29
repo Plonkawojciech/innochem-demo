@@ -7,7 +7,7 @@ import {
   products,
 } from "@/lib/server/catalog";
 import { ProductGallery } from "@/components/ProductGallery";
-import { ProductCard } from "@/components/ProductCard";
+import { ProductCarousel } from "@/components/ProductCarousel";
 import { productFacts } from "@/lib/product-facts";
 import { BuyBox } from "./BuyBox";
 export const dynamic = "force-dynamic";
@@ -47,7 +47,7 @@ export default async function ProductPage({
     : media;
   const suggestions = (related?.items ?? [])
     .filter((x) => x.id !== p.id && x.saleMode === "retail")
-    .slice(0, 4);
+    .slice(0, 12);
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -143,38 +143,51 @@ export default async function ProductPage({
               </span>
             </li>
           </ul>
+          <section className="pdp-section" id="opis">
+            <h2 className="display">Opis i zastosowanie</h2>
+            <div
+              className="prose pdp-desc"
+              dangerouslySetInnerHTML={{ __html: p.descriptionHtml }}
+            />
+          </section>
+          {!!documents.length && (
+            <section className="pdp-section" id="dokumenty">
+              <h2 className="display">Dokumenty do pobrania</h2>
+              <ul className="doc-list">
+                {documents.map((d) => (
+                  <li key={d.path}>
+                    <a href={d.path} target="_blank" rel="noopener noreferrer">
+                      <span className="doc-icon" aria-hidden>
+                        PDF
+                      </span>
+                      <span>
+                        <b>{d.label}</b>
+                        {d.archival && (
+                          <small>
+                            Dokument archiwalny ze wcześniejszej strony
+                          </small>
+                        )}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+              {documents.some((d) => d.archival) && (
+                <p className="muted">
+                  Dokumenty archiwalne zachowujemy jako materiały źródłowe.
+                  Przed zastosowaniem oleju sprawdź zgodność specyfikacji z
+                  etykietą posiadanego opakowania. Aktualne dokumenty uzyskasz
+                  przez{" "}
+                  <Link href={`/kontakt?produkt=${encodeURIComponent(p.name)}`}>
+                    kontakt ze sklepem
+                  </Link>
+                  .
+                </p>
+              )}
+            </section>
+          )}
         </div>
       </div>
-      <section className="product-description prose">
-        <h2 className="display">Opis i zastosowanie</h2>
-        <div dangerouslySetInnerHTML={{ __html: p.descriptionHtml }} />
-      </section>
-      {!!documents.length && (
-        <section className="product-description prose">
-          <h2 className="display">Dokumenty do pobrania</h2>
-          <ul>
-            {documents.map((d) => (
-              <li key={d.path}>
-                <a href={d.path} target="_blank" rel="noopener noreferrer">
-                  {d.label}
-                </a>
-                {d.archival && " — dokument archiwalny ze wcześniejszej strony"}
-              </li>
-            ))}
-          </ul>
-          {documents.some((d) => d.archival) && (
-            <p>
-              Dokumenty archiwalne zachowujemy jako materiały źródłowe. Przed
-              zastosowaniem oleju sprawdź zgodność specyfikacji z etykietą
-              posiadanego opakowania. Aktualne dokumenty uzyskasz przez{" "}
-              <Link href={`/kontakt?produkt=${encodeURIComponent(p.name)}`}>
-                kontakt ze sklepem
-              </Link>
-              .
-            </p>
-          )}
-        </section>
-      )}
       {suggestions.length > 0 && (
         <section className="related">
           <div className="sec-head">
@@ -187,11 +200,7 @@ export default async function ProductPage({
               </Link>
             )}
           </div>
-          <div className="grid related-grid">
-            {suggestions.map((x) => (
-              <ProductCard key={x.id} p={x} />
-            ))}
-          </div>
+          <ProductCarousel products={suggestions} />
         </section>
       )}
     </main>

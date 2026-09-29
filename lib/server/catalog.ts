@@ -70,14 +70,15 @@ export async function products(
     );
   }
   if (options.search?.trim()) {
-    values.push(
-      `%${options.search
-        .trim()
-        .slice(0, 120)
-        .replace(/[\\%_]/g, "\\$&")}%`,
-    );
+    const term = options.search
+      .trim()
+      .slice(0, 120)
+      .replace(/[\\%_]/g, "\\$&");
+    // Product names spell grades without a hyphen ("5W30"); accept "5W-30" and "5w 30" too.
+    const compact = term.replace(/(\d{1,2}W)[\s-]+(\d{2,3})/gi, "$1$2");
+    values.push(`%${term}%`, `%${compact}%`);
     where.push(
-      `(p.name ILIKE $${values.length} OR p.sku ILIKE $${values.length})`,
+      `(p.name ILIKE $${values.length - 1} OR p.sku ILIKE $${values.length - 1} OR p.name ILIKE $${values.length})`,
     );
   }
   const page =

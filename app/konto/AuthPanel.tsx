@@ -100,16 +100,19 @@ export function AuthPanel({
     reset: "Nowe hasło",
   }[mode];
   return (
-    <section className="auth-panel panel">
+    <section className="auth-panel">
+      <span className="label">Konto klienta</span>
       <h1 className="display">{title}</h1>
-      <p>
+      <p className="auth-lead">
         {mode === "login"
           ? "Sprawdź zamówienia i dane zapisane na Twoim koncie."
-          : mode === "forgot"
-            ? "Masz konto ze starego sklepu? Użyj tego samego adresu e-mail, aby ustawić nowe hasło."
-            : ""}
+          : mode === "register"
+            ? "Konto pozwala śledzić zamówienia i zapisać adresy dostawy."
+            : mode === "forgot"
+              ? "Masz konto ze starego sklepu? Użyj tego samego adresu e-mail, aby ustawić nowe hasło."
+              : "Wpisz nowe hasło do konta."}
       </p>
-      <form onSubmit={submit}>
+      <form onSubmit={submit} className="auth-card">
         {mode === "register" && (
           <label className="f">
             Imię i nazwisko
@@ -165,6 +168,13 @@ export function AuthPanel({
       </form>
       {mode !== "reset" && (
         <div className="auth-links">
+          <span>
+            {mode === "login"
+              ? "Nie masz konta?"
+              : mode === "register"
+                ? "Masz już konto?"
+                : ""}
+          </span>
           {(["login", "register", "forgot"] as Mode[])
             .filter((m) => m !== mode)
             .map((m) => (

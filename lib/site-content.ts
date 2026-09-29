@@ -328,12 +328,12 @@ export const defaultSiteContent: SiteContent = {
     featured: {
       enabled: true,
       label: "Seria HPS",
-      title: "Royal Purple HPS 5W-30",
-      text: "Syntetyczny olej serii High Performance Street do silników benzynowych i Diesla — z pakietem Synerlec i dodatkami cynku i fosforu, opracowany dla silników wysokiej wydajności i po modyfikacjach. Sprawdź zastosowanie, dostępność i opis produktu.",
+      title: "HPS – High Performance Street",
+      text: "Seria syntetycznych olejów silnikowych do aut po gwarancji, tuningowanych i mocno eksploatowanych. Pakiet Synerlec oraz podwyższona zawartość cynku i fosforu chronią silnik przy wysokich obciążeniach. Dostępna w pięciu klasach lepkości.",
       image: { path: "/img/rp-hps-5w30-hd.png", alt: "Royal Purple HPS 5W-30" },
       productId: null,
       link: {
-        name: "Zobacz kartę produktu",
+        name: "Najpopularniejszy: HPS 5W-30",
         href: "/produkt/hps-5w30",
       },
     },

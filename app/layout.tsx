@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
 import { Manrope, Inter, IBM_Plex_Mono } from "next/font/google";
 import { CartProvider } from "@/lib/cart";
-import {
-  PreviewBar,
-  CmsPreviewBar,
-  Header,
-  CatBar,
-  Footer,
-} from "@/components/SiteChrome";
+import { CmsPreviewBar, Header, CatBar, Footer } from "@/components/SiteChrome";
 import "./globals.css";
 import { requestSite } from "@/lib/server/site-request";
 import { themeBootScript } from "@/components/ThemeToggle";
@@ -67,7 +61,6 @@ export default async function RootLayout({
       </head>
       <body>
         <CartProvider>
-          {process.env.STOREFRONT_PREVIEW !== "false" && <PreviewBar />}
           {draft && <CmsPreviewBar />}
           <Header brand={content.brand} navigation={content.navigation} />
           <CatBar navigation={content.navigation} />

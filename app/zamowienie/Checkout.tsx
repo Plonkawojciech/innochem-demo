@@ -168,7 +168,9 @@ export function Checkout({
         <div className="empty-state">
           <h1 className="display">Twój koszyk jest pusty</h1>
           <p>Wybierz produkty z katalogu, aby złożyć zamówienie.</p>
-          <Link href="/katalog">Przejdź do produktów</Link>
+          <Link className="btn btn-primary" href="/katalog">
+            Przejdź do produktów
+          </Link>
         </div>
       </main>
     );

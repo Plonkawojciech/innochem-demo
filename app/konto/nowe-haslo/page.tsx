@@ -1,4 +1,5 @@
 import { AuthPanel } from "../AuthPanel";
+import { AuthShell } from "../AuthShell";
 export const metadata = {
   title: "Ustaw nowe hasło — INNOCHEM",
   robots: { index: false, follow: false },
@@ -10,15 +11,15 @@ export default async function Reset({
 }) {
   const { token } = await searchParams;
   return (
-    <main className="wrap account-page">
+    <AuthShell>
       {token ? (
         <AuthPanel resetToken={token} />
       ) : (
-        <p>
+        <p className="notice">
           Brak poprawnego linku. Wróć do konta i poproś o nowy link do zmiany
           hasła.
         </p>
       )}
-    </main>
+    </AuthShell>
   );
 }

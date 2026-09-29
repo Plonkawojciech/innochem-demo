@@ -82,7 +82,7 @@ export function ProductCard({
           </Link>
         )}
         {added && (
-          <Link className="cart-shortcut" href="/zamowienie">
+          <Link className="add ghost cart-shortcut" href="/zamowienie">
             Przejdź do koszyka
           </Link>
         )}

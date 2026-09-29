@@ -2,7 +2,17 @@ import Link from "next/link";
 import { Reveal } from "./Reveal";
 import type { SiteContent } from "@/lib/site-content";
 import { mediaSrc, mediaSrcSet } from "@/lib/media";
-export function HomeContent({ home }: { home: SiteContent["home"] }) {
+import { productFacts } from "@/lib/product-facts";
+import type { StoreProduct } from "@/lib/store-types";
+export function HomeContent({
+  home,
+  series,
+  seriesProducts,
+}: {
+  home: SiteContent["home"];
+  series: string;
+  seriesProducts: StoreProduct[];
+}) {
   const { hero, benefits, categories, technology, featured } = home;
   return (
     <>
@@ -141,8 +151,40 @@ export function HomeContent({ home }: { home: SiteContent["home"] }) {
                 <span className="label">{featured.label}</span>
                 <h2 className="display">{featured.title}</h2>
                 <p>{featured.text}</p>
+                {seriesProducts.length > 0 && (
+                  <div className="series-list">
+                    <span className="series-list-name">Produkty w serii</span>
+                    <div className="series-chips">
+                      {seriesProducts.map((p) => {
+                        const facts = productFacts(p.name);
+                        return (
+                          <Link
+                            key={p.id}
+                            href={`/produkt/${p.slug}`}
+                            className="series-chip"
+                          >
+                            <b>{facts.grade || facts.title}</b>
+                            {facts.volume && <small>{facts.volume}</small>}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <div className="cta-row">
-                  <Link className="btn btn-primary" href={featured.link.href}>
+                  <Link
+                    className="btn btn-primary"
+                    href={
+                      seriesProducts.length > 1
+                        ? `/katalog?q=${encodeURIComponent(series)}`
+                        : featured.link.href
+                    }
+                  >
+                    {seriesProducts.length > 1
+                      ? `Zobacz całą serię ${series}`
+                      : featured.link.name}
+                  </Link>
+                  <Link className="btn btn-ghost" href={featured.link.href}>
                     {featured.link.name}
                   </Link>
                 </div>
