@@ -65,7 +65,7 @@ export default async function RootLayout({
     email: content.contact.email,
     address: {
       "@type": "PostalAddress",
-      streetAddress: "ul. Okrzei 64",
+      streetAddress: "ul. Okrzei 64/74",
       postalCode: "25-526",
       addressLocality: "Kielce",
       addressCountry: "PL",

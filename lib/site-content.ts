@@ -159,7 +159,7 @@ export const defaultSiteContent: SiteContent = {
     company: "INNOCHEM Aneta Zalewska",
     email: "kontakt@innochem.pl",
     phone: "602 155 919",
-    address: "ul. Okrzei 64\n25-526 Kielce",
+    address: "ul. Okrzei 64/74\n25-526 Kielce",
     hours: "Poniedziałek–piątek, 8:00–16:00",
     nip: "9591542469",
     regon: "292849045",
