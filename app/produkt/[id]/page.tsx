@@ -69,7 +69,8 @@ export default async function ProductPage({
       ]
     : media;
   const shippingPrices = settings.shippingMethods
-    .filter((method) => method.enabled)
+    // Free personal pickup must not be advertised as the courier price.
+    .filter((method) => method.enabled && method.priceCents > 0)
     .map((method) => method.priceCents);
   const shippingFromCents = shippingPrices.length
     ? Math.min(...shippingPrices)
