@@ -83,3 +83,27 @@ Zaproponowany harmonogram eksploatacji: kopia przed każdym wydaniem i regularna
 Sprawdzaj `/api/health`, stan kontenera workera, wolne miejsce, datę poprawnej kopii, błędy webhooków i kolejkę wiadomości w panelu. Wiadomość ze stanem `uncertain` mogła zostać przyjęta przez SMTP: wyjaśnij wynik u dostawcy przed ponowieniem. Nie traktuj wpisu do kolejki jako wysłania maila.
 
 Rollback kodu korzysta z wcześniej zachowanego obrazu. Jeśli po uruchomieniu wpłynęły nowe zamówienia, zachowaj nową bazę i jej kopię; nie przywracaj starego dumpa na działającą bazę. Zamknij checkout, uzgodnij płatności i dopiero wybierz sposób naprawy. Każda destrukcyjna migracja lub odtworzenie istniejącej produkcyjnej bazy wymaga oddzielnej zgody.
+
+## Apaczka
+
+Integracja służy do nadawania przesyłek w panelu zamówień. Koszyk nadal używa stałych stawek `shippingMethods` z Ustawień sklepu. Wycena API jest dostępna w kliencie serwerowym, ale nie zmienia ceny zamówienia.
+
+Ustaw na serwerze `APACZKA_APP_ID` i `APACZKA_APP_SECRET`. Obie zmienne są wymagane; bez nich panel pokazuje „Integracja Apaczka nie jest skonfigurowana”, a API zwraca `APACZKA_DISABLED`. Nie zapisuj kluczy w repozytorium ani w formularzu ustawień. Po zmianie środowiska uruchom ponownie aplikację.
+
+Według [oficjalnej dokumentacji Web API v2](https://panel.apaczka.pl/dokumentacja_api_v2.php), odczytanej 2026-10-01, dostęp do API wymaga umowy i aktywacji przez wsparcie lub opiekuna Apaczki. W panelu Apaczki otwórz zakładkę **Web API**, dodaj aplikację i pobierz wygenerowane App ID oraz App Secret. Oficjalny SDK jest podlinkowany jako [archiwum PHP](https://panel.apaczka.pl/files/sdk-apiv2-0.3.zip); w tej sesji odczyt ZIP nie był dostępny, a wyszukiwanie nie wykazało oficjalnego repozytorium GitHub.
+
+Przed uruchomieniem zastosuj migrację `015_shipments.sql` standardowym poleceniem `npm run db:migrate` w środowisku docelowej bazy. Tworzy tabelę `shipments`, indeks zamówienia, unikalność identyfikatora operatora i unikalność aktywnej przesyłki zamówienia. Nie zmienia istniejących zamówień. Panel używa `orders.shipping_address`, `buyer`, `email` oraz `tracking_number`.
+
+W **Ustawieniach sklepu → Apaczka: nadawca i paczki** sprawdź adres, osobę kontaktową, telefon i e-mail. Początkowy telefon i e-mail pochodzą z istniejących domyślnych danych kontaktowych serwisu; nie synchronizują się automatycznie z późniejszymi zmianami kontaktu. Preset „Karton 4 butelki” 30 × 20 × 25 cm, 5 kg jest przykładem do zmiany. Dodaj rzeczywiste presety opakowań. Dla pobrania uzupełnij `bankAccount` polskim NRB (26 cyfr; spacje i prefiks PL są usuwane). Kwota pobrania to `total_cents`, razem z dostawą, w groszach PLN.
+
+Przyjęte ograniczenia i kwestie do potwierdzenia na koncie:
+
+- Lista obejmuje krajowe usługi drzwi–drzwi. Punkty odbioru i przesyłki zagraniczne wymagają dodatkowych danych, których obecny model zamówienia nie przechowuje.
+- Bez daty wysyłamy `pickup.type=SELF`. Data wybiera `COURIER`; godziny pochodzą z `pickup_hours` dla tej usługi, kodu nadawcy i daty. Usługi wymagające kuriera nie pozwalają pominąć daty. Trzeba potwierdzić dostępność usług, terminy i umowę na koncie. Nie zgadujemy godzin odbioru. Cache godzin trwa 30 minut; przyjęto, że pole `hours[date].services[].service` zawiera identyfikator usługi. Dokumentacja pokazuje puste wartości tego pola, więc ten format trzeba potwierdzić na koncie. Inny format przerwie nadanie przed `order_send`.
+- `order` przekazujemy jako obiekt wewnątrz JSON w polu formularza `request`, zgodnie z przykładami endpointów. Fragment dokumentacji struktury zawiera również `json_encode`; nie kodujemy obiektu drugi raz. `option` to pusty obiekt, bez dodatkowo płatnych opcji; zawartość to „Produkty INNOCHEM”, paczka standardowa `PACZKA`, `is_zebra=0`. Zgodność zawartości i opakowania z warunkami przewoźnika trzeba potwierdzić przed rzeczywistym nadaniem.
+- Cache listy usług w pamięci trwa 1 h zgodnie z zadaniem, choć dokumentacja zaleca nie częściej niż 24 h. Restart procesu usuwa cache. Uzgodnij tę częstotliwość z Apaczką przed uruchomieniem na dużej liczbie instancji.
+- Brak numeru listu po przyjęciu zlecenia nie powoduje ponownego nadania. Pobranie etykiety odczytuje wtedy szczegóły przez `order/:id/` i uzupełnia numer.
+
+Każda próba nadania najpierw zapisuje `order_events.kind=shipment_pending` i audyt. Blokada zamówienia chroni przed równoległym kliknięciem. Po sukcesie wpis przechodzi do `shipment_created`. Jawne odrzucenie API przechodzi do `shipment_rejected` i pozwala poprawić dane. Timeout, niepoprawna odpowiedź lub błąd zapisu po stronie sklepu pozostawia blokadę. Nie ponawiaj nadania w ciemno: administrator techniczny musi sprawdzić konto Apaczki, powiązać istniejące zlecenie z zamówieniem lub potwierdzić brak zlecenia i dopiero wtedy rozliczyć wpis oczekujący. API nie dokumentuje klucza idempotencji, więc integracja go nie wymyśla. Nie usuwa automatycznie blokady po czasie.
+
+Anulowanie dotyczy przesyłki, nie zamówienia ani płatności. Po potwierdzeniu operatora ustawiamy `cancelled`, zapisujemy historię i audyt oraz usuwamy numer zamówienia wyłącznie, jeśli nadal odpowiada anulowanemu listowi. Przy niejednoznacznym wyniku anulowania sprawdź stan zlecenia w Apaczce przed następną próbą. Trwały wpis `shipment_cancel_pending` blokuje powtórne anulowanie po utracie odpowiedzi; po jawnym odrzuceniu zmienia się na `shipment_cancel_rejected`. Nie ma automatycznego śledzenia doręczeń. Nadanie nie oznacza automatycznie zamówienia jako wysłanego.

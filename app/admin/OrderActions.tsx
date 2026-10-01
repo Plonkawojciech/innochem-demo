@@ -7,12 +7,14 @@ export function OrderActions({
   method,
   total,
   stockCommitted,
+  trackingNumber,
 }: {
   id: string;
   status: string;
   method: string;
   total: number;
   stockCommitted: boolean;
+  trackingNumber?: string | null;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
@@ -143,7 +145,11 @@ export function OrderActions({
         {action === "ship" && (
           <label className="f">
             Numer przesyłki
-            <input name="trackingNumber" maxLength={180} />
+            <input
+              name="trackingNumber"
+              maxLength={180}
+              defaultValue={trackingNumber || ""}
+            />
           </label>
         )}
         {action === "record_refund" && (

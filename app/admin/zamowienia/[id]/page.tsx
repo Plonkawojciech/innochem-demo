@@ -5,6 +5,15 @@ import { adminOrder } from "@/lib/server/admin-orders";
 import { money } from "@/lib/store-types";
 import { orderLabels } from "@/lib/order-labels";
 import { OrderActions } from "../../OrderActions";
+import { ShipmentActions } from "../../ShipmentActions";
+import {
+  apaczkaConfigured,
+  services,
+  type ApaczkaService,
+} from "@/lib/server/apaczka";
+import { activeShipment, shipmentPending } from "@/lib/server/shipments";
+import { storeSettings } from "@/lib/server/settings";
+import { StoreError } from "@/lib/server/errors";
 export default async function Order({
   params,
 }: {
@@ -16,6 +25,28 @@ export default async function Order({
   const data = await adminOrder(id);
   if (!data) notFound();
   const { order: o, items, events, payment } = data;
+  const configured = apaczkaConfigured();
+  const [settings, shipment, pending] = await Promise.all([
+    storeSettings(),
+    activeShipment(id),
+    shipmentPending(id),
+  ]);
+  const blocked =
+    !!o.legacy_id || ["cancelled", "legacy", "refunded"].includes(o.status);
+  let availableServices: ApaczkaService[] = [];
+  let serviceError = "";
+  if (configured && !shipment && !pending && !blocked) {
+    try {
+      availableServices = (await services()).filter(
+        (s) => s.domestic === "1" && s.door_to_door === "1",
+      );
+    } catch (e) {
+      serviceError =
+        e instanceof StoreError
+          ? e.message
+          : "Nie udało się pobrać usług Apaczki.";
+    }
+  }
   return (
     <>
       <h2 className="display">
@@ -121,8 +152,20 @@ export default async function Order({
           method={o.payment_method}
           total={o.total_cents}
           stockCommitted={o.stock_committed}
+          trackingNumber={o.tracking_number}
         />
       )}
+      <ShipmentActions
+        key={`${shipment?.id || "none"}:${shipment?.waybill_number || ""}:${pending}`}
+        id={id}
+        configured={configured}
+        services={availableServices}
+        presets={settings.parcelPresets}
+        shipment={shipment}
+        pending={pending}
+        blocked={blocked}
+        serviceError={serviceError}
+      />
       <section className="panel">
         <h3>Historia zmian</h3>
         <ol className="event-list">
@@ -133,6 +176,15 @@ export default async function Order({
                 {e.data?.statusName ||
                   (
                     {
+                      shipment_cancel_pending:
+                        "Anulowanie przesyłki oczekuje na potwierdzenie",
+                      shipment_cancel_rejected:
+                        "Odrzucono anulowanie przesyłki",
+                      shipment_pending:
+                        "Nadanie w Apaczce oczekuje na potwierdzenie",
+                      shipment_created: "Nadano przesyłkę przez Apaczkę",
+                      shipment_cancelled: "Anulowano przesyłkę w Apaczce",
+                      shipment_rejected: "Nie przyjęto zlecenia przesyłki",
                       created: "Utworzono zamówienie",
                       paid: "Potwierdzono płatność",
                       ship: "Wysłano",

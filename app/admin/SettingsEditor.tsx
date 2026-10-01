@@ -1,5 +1,6 @@
 "use client";
 import { useState, type FormEvent } from "react";
+import { parcelFields } from "@/lib/parcel";
 import type { StoreSettings } from "@/lib/server/settings";
 export function SettingsEditor({
   value,
@@ -8,6 +9,7 @@ export function SettingsEditor({
   value: StoreSettings;
   version: number;
 }) {
+  const [presets, setPresets] = useState(value.parcelPresets);
   const [shipping, setShipping] = useState(value.shippingMethods);
   const [version, setVersion] = useState(initialVersion);
   const [busy, setBusy] = useState(false);
@@ -24,6 +26,10 @@ export function SettingsEditor({
       version,
       value: {
         ...value,
+        sender: Object.fromEntries(
+          Object.keys(value.sender).map((key) => [key, s(`sender.${key}`)]),
+        ),
+        parcelPresets: presets,
         shippingMethods: shipping,
         paymentMethods: f.getAll("paymentMethods"),
         bankAccount: s("bankAccount"),
@@ -165,6 +171,120 @@ export function SettingsEditor({
           }
         >
           Dodaj metodę dostawy
+        </button>
+      </section>
+      <section className="panel">
+        <h3>Apaczka: nadawca i paczki</h3>
+        <div className="field-grid">
+          {(
+            [
+              ["name", "Nazwa nadawcy"],
+              ["contactPerson", "Osoba kontaktowa"],
+              ["street", "Ulica i numer"],
+              ["postalCode", "Kod pocztowy"],
+              ["city", "Miasto"],
+              ["phone", "Telefon"],
+              ["email", "E-mail nadawcy"],
+            ] as const
+          ).map(([key, label]) => (
+            <label className="f" key={key}>
+              {label}
+              <input
+                name={`sender.${key}`}
+                defaultValue={value.sender[key]}
+                required
+                type={key === "email" ? "email" : "text"}
+                maxLength={key === "email" ? 254 : 180}
+              />
+            </label>
+          ))}
+        </div>
+        <p className="notice">
+          „Karton 4 butelki”, 30 × 20 × 25 cm i 5 kg to przykład do zmiany.
+          Zmierz i zważ gotową paczkę. Dla pobrania uzupełnij rachunek bankowy
+          poniżej.
+        </p>
+        {presets.map((p, i) => (
+          <fieldset key={i} className="shipping-editor">
+            <legend>Paczka {i + 1}</legend>
+            <div className="field-grid">
+              {(
+                [
+                  ["id", "Identyfikator"],
+                  ["label", "Nazwa paczki"],
+                ] as const
+              ).map(([key, label]) => (
+                <label className="f" key={key}>
+                  {label}
+                  <input
+                    required
+                    value={p[key]}
+                    pattern={key === "id" ? "[a-z0-9-]+" : undefined}
+                    maxLength={key === "id" ? 60 : 100}
+                    onChange={(e) =>
+                      setPresets((list) =>
+                        list.map((item, n) =>
+                          n === i ? { ...item, [key]: e.target.value } : item,
+                        ),
+                      )
+                    }
+                  />
+                </label>
+              ))}
+              {parcelFields.map(([key, label]) => (
+                <label className="f" key={key}>
+                  {label}
+                  <input
+                    required
+                    type="number"
+                    min={key === "weightKg" ? 0.1 : 1}
+                    max={key === "weightKg" ? 100 : 300}
+                    step={key === "weightKg" ? 0.1 : 1}
+                    value={p[key]}
+                    onChange={(e) =>
+                      setPresets((list) =>
+                        list.map((item, n) =>
+                          n === i
+                            ? { ...item, [key]: Number(e.target.value) }
+                            : item,
+                        ),
+                      )
+                    }
+                  />
+                </label>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="text-button"
+              disabled={presets.length === 1}
+              onClick={() =>
+                setPresets((list) => list.filter((_, n) => n !== i))
+              }
+            >
+              Usuń preset paczki
+            </button>
+          </fieldset>
+        ))}
+        <button
+          type="button"
+          className="btn btn-outline"
+          disabled={presets.length >= 20}
+          onClick={() =>
+            setPresets((list) => [
+              ...list,
+              {
+                id: "",
+                label: "",
+                lengthCm: 30,
+                widthCm: 20,
+                heightCm: 25,
+                weightKg: 5,
+              },
+            ])
+          }
+        >
+          Dodaj preset paczki
         </button>
       </section>
       <section className="panel">
