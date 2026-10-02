@@ -21,5 +21,16 @@ const nextConfig = {
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },
+  // One canonical host: www.innochem.pl answers only with a permanent redirect to the apex domain.
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.innochem.pl" }],
+        destination: "https://innochem.pl/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 export default nextConfig;
