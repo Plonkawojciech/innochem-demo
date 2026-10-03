@@ -241,6 +241,16 @@ export async function createOrder(
         "Cena lub koszt dostawy zmieniły się. Sprawdź aktualne podsumowanie.",
         409,
       );
+    if (
+      input.paymentMethod === "cod" &&
+      settings.codLimitCents > 0 &&
+      total > settings.codLimitCents
+    )
+      throw new StoreError(
+        "COD_LIMIT",
+        `Płatność przy odbiorze jest dostępna do kwoty ${(settings.codLimitCents / 100).toFixed(2).replace(".", ",")} zł. Wybierz przelew albo płatność online.`,
+        422,
+      );
     const cod = input.paymentMethod === "cod";
     const {
       rows: [order],

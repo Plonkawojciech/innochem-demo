@@ -200,3 +200,53 @@ test("preview correspondence stays blocked after SMTP is enabled later", async (
     null,
   );
 });
+
+test("SMTP 550 retries after 15 minutes and stops after eight attempts", async () =>
+  withDelivery(async () => {
+    const key = await fixture();
+    let calls = 0;
+    const transport = {
+      sendMail: async () => {
+        calls++;
+        throw Object.assign(new Error("Synthetic rejection"), {
+          responseCode: 550,
+          command: "DATA",
+        });
+      },
+      close() {},
+    };
+    for (let attempt = 1; attempt <= 8; attempt++) {
+      if (attempt > 1)
+        await query(
+          "UPDATE mail_outbox SET available_at=now()-interval '1 second' WHERE event_key=$1",
+          [key],
+        );
+      assert.equal((await deliverMailBatch(transport)).failed, 1);
+      const row = (
+        await query(
+          "SELECT delivery_state,attempts,sent_at,extract(epoch FROM available_at-now()) AS delay FROM mail_outbox WHERE event_key=$1",
+          [key],
+        )
+      ).rows[0];
+      assert.equal(row.delivery_state, "failed");
+      assert.equal(row.attempts, attempt);
+      assert.equal(row.sent_at, null);
+      assert.ok(Number(row.delay) > 890 && Number(row.delay) <= 900);
+      await deliverMailBatch(transport);
+      assert.equal(calls, attempt);
+    }
+    await query(
+      "UPDATE mail_outbox SET available_at=now()-interval '1 second' WHERE event_key=$1",
+      [key],
+    );
+    await deliverMailBatch(transport);
+    assert.equal(calls, 8);
+    assert.equal(
+      (
+        await query("SELECT attempts FROM mail_outbox WHERE event_key=$1", [
+          key,
+        ])
+      ).rows[0].attempts,
+      8,
+    );
+  }));

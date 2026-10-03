@@ -34,6 +34,7 @@ export default async function OrderPage() {
       payments={settings.paymentMethods.filter(
         (p) => p !== "stripe" || stripeCheckoutReady(),
       )}
+      codLimitCents={settings.codLimitCents}
       termsVersion={settings.termsVersion}
       enabled={checkoutReady(settings)}
       account={

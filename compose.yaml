@@ -25,6 +25,8 @@ x-store-environment: &store-environment
   SMTP_USER: ${INNOCHEM_SMTP_USER:-}
   SMTP_PASSWORD: ${INNOCHEM_SMTP_PASSWORD:-}
   MAIL_FROM: ${INNOCHEM_MAIL_FROM:-}
+  NEXT_PUBLIC_GA4_MEASUREMENT_ID: ${NEXT_PUBLIC_GA4_MEASUREMENT_ID:-}
+  GA4_API_SECRET: ${GA4_API_SECRET:-}
 services:
   database:
     image: postgres:17-bookworm
@@ -42,7 +44,10 @@ services:
       timeout: 5s
       retries: 5
   web:
-    build: .
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_GA4_MEASUREMENT_ID: ${NEXT_PUBLIC_GA4_MEASUREMENT_ID:-}
     image: innochem-store:${INNOCHEM_RELEASE:-local}
     restart: unless-stopped
     environment: *store-environment

@@ -7,18 +7,33 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useCart } from "@/lib/cart";
 import { mediaSrc } from "@/lib/media";
 import { money, type StoreProduct } from "@/lib/store-types";
+import {
+  checkoutFingerprint,
+  resolveCheckoutKey,
+  clearCheckoutKey,
+  type CheckoutKey,
+} from "@/lib/checkout-key";
+function checkoutStorage() {
+  try {
+    return window.sessionStorage;
+  } catch {
+    return undefined;
+  }
+}
 type Delivery = { id: string; label: string; priceCents: number; cod: boolean };
 type Payment = "bank_transfer" | "cod" | "stripe";
 export function Checkout({
   shipping,
   payments,
   termsVersion,
+  codLimitCents,
   enabled,
   account,
 }: {
   shipping: Delivery[];
   payments: Payment[];
   termsVersion: string;
+  codLimitCents: number;
   enabled: boolean;
   account: {
     firstName: string;
@@ -78,7 +93,7 @@ export function Checkout({
   });
   const [invoiceRequested, setInvoiceRequested] = useState(false);
   const companyInvoice = invoiceRequested || !!(fields.company || fields.nip);
-  const key = useRef<string | null>(null);
+  const key = useRef<CheckoutKey | null>(null);
   const delivery = shipping.find((s) => s.id === shippingId);
   const items = Object.entries(cart).map(([id, quantity]) => ({
     id,
@@ -96,7 +111,26 @@ export function Checkout({
     0,
   );
   const total = subtotal + (delivery?.priceCents || 0);
-  const allowedPayments = payments.filter((p) => p !== "cod" || delivery?.cod);
+  const visiblePayments = payments.filter((p) => p !== "cod" || delivery?.cod);
+  const codOverLimit = codLimitCents > 0 && total > codLimitCents;
+  const allowedPayments = visiblePayments.filter(
+    (p) => p !== "cod" || !codOverLimit,
+  );
+  const fingerprint = checkoutFingerprint({
+    cart,
+    shippingMethod: shippingId,
+    paymentMethod: payment,
+    totalCents: total,
+    termsVersion,
+  });
+  useEffect(() => {
+    if (ready && catalogReady && allowedPayments.includes(payment))
+      key.current = resolveCheckoutKey(
+        checkoutStorage(),
+        fingerprint,
+        key.current,
+      );
+  }, [ready, catalogReady, fingerprint, payment, allowedPayments.join(",")]);
   useEffect(() => {
     if (!allowedPayments.includes(payment))
       setPayment(allowedPayments[0] || "bank_transfer");
@@ -144,13 +178,17 @@ export function Checkout({
     setError("");
     const data = new FormData(event.currentTarget);
     const field = (name: string) => String(data.get(name) || "");
-    key.current ??= crypto.randomUUID();
+    key.current = resolveCheckoutKey(
+      checkoutStorage(),
+      fingerprint,
+      key.current,
+    );
     try {
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          idempotencyKey: key.current,
+          idempotencyKey: key.current.key,
           analytics: analyticsIdentity(),
           lines: items.map((i) => ({ productId: i.id, quantity: i.quantity })),
           buyer: {
@@ -176,10 +214,18 @@ export function Checkout({
       });
       const result = await response.json();
       if (!response.ok) {
-        if (result.code === "IDEMPOTENCY_CONFLICT") key.current = null;
+        if (result.code === "IDEMPOTENCY_CONFLICT") {
+          clearCheckoutKey(checkoutStorage());
+          key.current = null;
+        }
         throw new Error(result.error || "Nie udało się zapisać zamówienia.");
       }
-      sessionStorage.setItem("innochem-last-order", result.id);
+      clearCheckoutKey(checkoutStorage());
+      try {
+        checkoutStorage()?.setItem("innochem-last-order", result.id);
+      } catch {
+        /* Navigation does not depend on storage. */
+      }
       window.location.assign(result.url);
     } catch (e) {
       setError(
@@ -443,11 +489,12 @@ export function Checkout({
               </fieldset>
               <fieldset className="checkout-options">
                 <legend>Płatność</legend>
-                {allowedPayments.map((p) => (
+                {visiblePayments.map((p) => (
                   <label className="opt" key={p}>
                     <input
                       type="radio"
                       name="payment"
+                      disabled={p === "cod" && codOverLimit}
                       checked={payment === p}
                       onChange={() => selectPayment(p)}
                       onClick={() => selectPayment(p)}
@@ -456,7 +503,7 @@ export function Checkout({
                       {p === "bank_transfer"
                         ? "Przelew tradycyjny"
                         : p === "cod"
-                          ? "Płatność przy odbiorze"
+                          ? `Za pobraniem${codOverLimit ? ` — dostępne do ${money(codLimitCents)}` : ""}`
                           : "Płatność online: BLIK, Przelewy24 lub karta"}
                     </span>
                   </label>

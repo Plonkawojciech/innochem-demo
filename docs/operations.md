@@ -107,3 +107,19 @@ Przyjęte ograniczenia i kwestie do potwierdzenia na koncie:
 Każda próba nadania najpierw zapisuje `order_events.kind=shipment_pending` i audyt. Blokada zamówienia chroni przed równoległym kliknięciem. Po sukcesie wpis przechodzi do `shipment_created`. Jawne odrzucenie API przechodzi do `shipment_rejected` i pozwala poprawić dane. Timeout, niepoprawna odpowiedź lub błąd zapisu po stronie sklepu pozostawia blokadę. Nie ponawiaj nadania w ciemno: administrator techniczny musi sprawdzić konto Apaczki, powiązać istniejące zlecenie z zamówieniem lub potwierdzić brak zlecenia i dopiero wtedy rozliczyć wpis oczekujący. API nie dokumentuje klucza idempotencji, więc integracja go nie wymyśla. Nie usuwa automatycznie blokady po czasie.
 
 Anulowanie dotyczy przesyłki, nie zamówienia ani płatności. Po potwierdzeniu operatora ustawiamy `cancelled`, zapisujemy historię i audyt oraz usuwamy numer zamówienia wyłącznie, jeśli nadal odpowiada anulowanemu listowi. Przy niejednoznacznym wyniku anulowania sprawdź stan zlecenia w Apaczce przed następną próbą. Trwały wpis `shipment_cancel_pending` blokuje powtórne anulowanie po utracie odpowiedzi; po jawnym odrzuceniu zmienia się na `shipment_cancel_rejected`. Nie ma automatycznego śledzenia doręczeń. Nadanie nie oznacza automatycznie zamówienia jako wysłanego.
+
+## Preflight konfiguracji wydania
+
+Przed otwarciem sklepu uruchom w kontenerze aplikacji, jako użytkownik aplikacji:
+
+```sh
+docker compose exec web node operations/preflight.mjs
+```
+
+Lokalny odpowiednik to `node --import tsx scripts/preflight.ts`; skrypt korzysta wyłącznie ze środowiska procesu. Wypisuje `OK`, `BRAK` lub `BŁĄD` przy każdej sprawdzanej zmiennej, bez jej wartości ani fragmentów. Błąd daje kod wyjścia 1. Sprawdza URL HTTPS bez końcowego ukośnika, różne sekrety auth i workera o długości co najmniej 32 znaków, obecność konfiguracji DB, dostępność zapisu w katalogu mediów oraz przełączniki. Włączenie poczty lub płatności wymaga odpowiednich zmiennych integracji; publiczne ID GA4 wymaga `GA4_API_SECRET`. Kontrola nie łączy się z bazą ani dostawcami i nie potwierdza działania ich usług.
+
+`NEXT_PUBLIC_GA4_MEASUREMENT_ID` trafia do obrazu przez argument builda oraz do środowiska runtime. Zmiana ID wymaga **przebudowy obrazu**; w Coolify zaznacz dla tej zmiennej **Build variable** i zapewnij tę samą wartość runtime. `GA4_API_SECRET` pozostaje wyłącznie zmienną runtime. Compose przekazuje obie zmienne pod tymi nazwami.
+
+`/api/health` porównuje `schema_migrations.name` z manifestem wydania `lib/server/migrations-manifest.ts`. Brak migracji daje HTTP 503 i listę `missing`; błędy połączenia nie ujawniają szczegółów. Przy dodaniu migracji uzupełnij manifest; zgodność sprawdza test.
+
+W panelu płatności pole „Limit pobrania (zł, 0 = bez limitu)” zapisuje `codLimitCents` w groszach. Limit obejmuje produkty i dostawę, a kwota równa limitowi jest dozwolona. Istniejące ustawienia bez pola przyjmują 0. Zmiana limitu wymaga nowej zatwierdzonej wersji warunków, tak jak zmiana metod dostawy.

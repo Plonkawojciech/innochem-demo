@@ -67,6 +67,7 @@ export const settingsSchema = z.object({
   termsVersion: z.string().min(1).max(80),
   shippingMethods: z.array(shippingSchema).max(20),
   paymentMethods: z.array(z.enum(["bank_transfer", "cod", "stripe"])),
+  codLimitCents: z.number().int().min(0).max(10_000_000).default(0),
   bankAccount: z.string().max(80),
   orderEmail: z.email(),
   contactEmail: z.email(),

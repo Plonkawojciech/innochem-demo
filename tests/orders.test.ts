@@ -303,3 +303,58 @@ test("a weight-limited delivery cannot treat unknown product weights as zero", a
     reserved: 0,
   });
 });
+
+for (const [label, limit, price, accepted] of [
+  ["one cent below", 9500, 7999, true],
+  ["exactly at", 9500, 8000, true],
+  ["one cent above", 9500, 8001, false],
+  ["unlimited", 0, 8001, true],
+] as const) {
+  test(`COD amount including shipping: ${label} limit`, async () => {
+    const input = await fixture();
+    await query(
+      "UPDATE settings SET value=jsonb_set(value,'{codLimitCents}',$1::jsonb) WHERE key='store'",
+      [JSON.stringify(limit)],
+    );
+    await query("UPDATE products SET price_cents=$1 WHERE id=$2", [
+      price,
+      input.lines[0].productId,
+    ]);
+    const payload = {
+      ...input,
+      paymentMethod: "cod",
+      expectedTotalCents: price + 1500,
+    };
+    if (accepted) {
+      const order = await createOrder(payload);
+      const row = (
+        await query(
+          "SELECT total_cents,payment_method FROM orders WHERE id=$1",
+          [order.id],
+        )
+      ).rows[0];
+      assert.equal(row.total_cents, price + 1500);
+      assert.equal(row.payment_method, "cod");
+    } else {
+      await assert.rejects(
+        createOrder(payload),
+        (e) =>
+          e instanceof StoreError && e.code === "COD_LIMIT" && e.status === 422,
+      );
+      assert.deepEqual(await stock(input.lines[0].productId), {
+        stock: 5,
+        reserved: 0,
+      });
+      assert.equal(
+        (
+          await query("SELECT id FROM orders WHERE idempotency_key=$1", [
+            input.idempotencyKey,
+          ])
+        ).rowCount,
+        0,
+      );
+      // The same total remains available by bank transfer.
+      await createOrder({ ...payload, paymentMethod: "bank_transfer" });
+    }
+  });
+}

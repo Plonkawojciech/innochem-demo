@@ -123,3 +123,41 @@ test("approved versions are immutable, and editing a legal page closes checkout 
     actor,
   );
 });
+
+test("changing the COD limit requires a new approved legal version", async () => {
+  await documents();
+  let c = await config();
+  const version = `cod-${randomUUID()}`;
+  await saveSettings(
+    {
+      ...c,
+      value: {
+        ...c.value,
+        legalApproved: true,
+        termsVersion: version,
+        codLimitCents: 10000,
+      },
+    },
+    actor,
+  );
+  c = await config();
+  await assert.rejects(
+    saveSettings({ ...c, value: { ...c.value, codLimitCents: 20000 } }, actor),
+    error("LEGAL_VERSION_REUSED"),
+  );
+  await saveSettings(
+    {
+      ...c,
+      value: { ...c.value, codLimitCents: 20000, termsVersion: version + "-2" },
+    },
+    actor,
+  );
+  c = await config();
+  await saveSettings(
+    {
+      ...c,
+      value: { ...c.value, legalApproved: false, checkoutEnabled: false },
+    },
+    actor,
+  );
+});

@@ -32,6 +32,7 @@ export function SettingsEditor({
         parcelPresets: presets,
         shippingMethods: shipping,
         paymentMethods: f.getAll("paymentMethods"),
+        codLimitCents: Math.round(Number(s("codLimit")) * 100),
         bankAccount: s("bankAccount"),
         orderEmail: s("orderEmail"),
         contactEmail: s("contactEmail"),
@@ -289,6 +290,18 @@ export function SettingsEditor({
       </section>
       <section className="panel">
         <h3>Płatności</h3>
+        <label className="f">
+          Limit pobrania (zł, 0 = bez limitu)
+          <input
+            name="codLimit"
+            type="number"
+            min="0"
+            max="100000"
+            step="0.01"
+            required
+            defaultValue={value.codLimitCents / 100}
+          />
+        </label>
         {[
           ["bank_transfer", "Przelew tradycyjny"],
           ["cod", "Za pobraniem"],

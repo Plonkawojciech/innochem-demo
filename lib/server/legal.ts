@@ -15,6 +15,7 @@ export function legalCommerce(s: StoreSettings) {
   return {
     shippingMethods: s.shippingMethods,
     paymentMethods: s.paymentMethods,
+    codLimitCents: s.codLimitCents,
     bankAccount: s.bankAccount,
     orderEmail: s.orderEmail,
     contactEmail: s.contactEmail,

@@ -1,9 +1,15 @@
 import { z } from "zod";
 import { cartProducts } from "@/lib/server/catalog";
-import { requireSameOrigin, jsonBody, errorResponse } from "@/lib/server/http";
+import {
+  requireSameOrigin,
+  jsonBody,
+  errorResponse,
+  rateLimit,
+} from "@/lib/server/http";
 export async function POST(request: Request) {
   try {
     requireSameOrigin(request);
+    await rateLimit(request, "cart", 60);
     const data = z
       .object({ ids: z.array(z.uuid()).max(50) })
       .strict()
