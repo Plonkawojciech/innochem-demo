@@ -28,7 +28,7 @@ def assess(state):
         and state.get('workerStartupGrace') is not True
     ):
         failures.append('worker')
-    if state.get('backupValid') is not True or state.get('backupAgeHours', 999999) > 34:
+    if state.get('backupValid') is not True or state.get('backupAgeHours', 999999) > 34 or state.get('backupFailed') is True:
         failures.append('backup')
     if state.get('diskUsedPercent', 100) >= 90:
         failures.append('disk')
@@ -71,6 +71,7 @@ def collect(app, database, backup_directory, health_url):
       'analyticsOverdue',(SELECT count(*) FROM analytics_outbox WHERE status IN ('pending','failed') AND next_attempt_at<=now() AND created_at<now()-interval '30 minutes'))"""
     state.update(json.loads(command(['docker', 'exec', database, 'psql', '-U', 'innochem', '-d', 'innochem', '-X', '-At', '-c', sql])))
     root = Path(backup_directory)
+    state['backupFailed'] = (root / 'LAST_BACKUP_FAILED').exists()
     copies = list(root.glob('innochem-*.sql.gz'))
     state['backupValid'] = False
     state['backupAgeHours'] = 999999

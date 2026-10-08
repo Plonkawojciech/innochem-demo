@@ -14,7 +14,7 @@ Wprowadź wartości w menedżerze sekretów wdrożenia. Nie zapisuj ich w repo, 
 | `INNOCHEM_WORKER_SECRET` | Inny losowy sekret, co najmniej 32 znaki. |
 | `INNOCHEM_BACKUP_KEY` | Losowe 32 bajty zapisane jako base64. Przechowuj oddzielnie od archiwów. |
 | `INNOCHEM_STRIPE_SECRET_KEY`, `INNOCHEM_STRIPE_WEBHOOK_SECRET` | Sekret serwerowy Stripe i podpis konkretnego endpointu webhook. |
-| `INNOCHEM_SMTP_HOST/PORT/USER/PASSWORD`, `INNOCHEM_MAIL_FROM` | Potwierdzony serwer poczty i nadawca. Port 465 albo 587 z TLS. |
+| `INNOCHEM_SMTP_HOST/PORT/USER/PASSWORD`, `INNOCHEM_MAIL_FROM` | Potwierdzony serwer poczty i nadawca. Port 465/2465 z TLS albo 587 z STARTTLS; istniejący Resend zweryfikowano na 2465. |
 | `INNOCHEM_BACKUP_DIRECTORY` | Trwały katalog kopii poza wolumenem aplikacji. |
 
 Przełączniki `INNOCHEM_PREVIEW`, `INNOCHEM_MAIL_ENABLED`, `INNOCHEM_WORKER_ENABLED`, `INNOCHEM_PAYMENTS_ENABLED` są niezależne. Stan domyślny: `true`, `false`, `false`, `false`. W podglądzie nie można wysyłać maili ani pobierać rzeczywistych płatności, nawet po przypadkowym włączeniu pozostałych przełączników.
@@ -141,3 +141,15 @@ Worker zwraca osobno `enabled`, `healthy`, `errors` i `warnings`. Wyłączona ko
 Rozliczenie refundacji dopuszcza osobną korektę kwoty z ilością 0; przyjęcie sztuk do magazynu nadal wymaga dodatniej ilości i osobnego zdarzenia. Zwrot samej dostawy lub korekta kwoty nie wysyła standardowego GA4 `refund` bez poprawnych pozycji: jest zachowany lokalnie jako `skipped / refund_adjustment`, aby nie raportować nieprawdziwego pełnego zwrotu ani dzielenia przez zero. Przy mieszanym rozliczeniu GA4 otrzymuje dodatnie ilości i ich kwoty; korekty z ilością 0 pozostają w finansowej historii zamówienia, a nie w standardowych metrykach refundowanych produktów. Standardowe zwroty wskazanych produktów trafiają do GA4 z osobnym identyfikatorem każdej operacji.
 
 Format kopii v2 używa sortowania `COLLATE "C"` dla fingerprintu tabel, wierszy i sekwencji. Dzięki temu odtworzenie między Linuxem i macOS nie zależy od różnic bibliotek lokalizacji. Odczyt v1 pozostaje obsługiwany z oryginalnym sposobem liczenia; przy odtwarzaniu historycznych kopii na innej platformie nie wolno ignorować różnicy fingerprintu. Klucz szyfrowania jest ten sam i nie trafia do manifestu.
+
+## Codzienna kopia na VM
+
+Źródło istniejącego zadania `/root/backup-innochem.sh` jest w `ops/backup-host.sh`. Cron nadal wykonuje je o 03:15. Skrypt korzysta z istniejącej roli `innochem` w kontenerze bazy i z istniejącego wolumenu mediów; nie wypisuje danych kupujących ani sekretów. Wymaga Linuxowego `flock`, `mktemp`, `gzip` i Dockera.
+
+Zrzut trafia do prywatnego pliku `.innochem-*.partial.*`, który nie pasuje do wzorca gotowych kopii. Dopiero poprawny `pg_dump`, integralność gzip i minimalny rozmiar pozwalają utworzyć końcowe `innochem-*.sql.gz` przez atomowy hard link bez nadpisywania. Awaria kopiowania mediów zachowuje poprawny SQL, ale ustawia `LAST_BACKUP_FAILED` i nie raportuje sukcesu całego zadania. Błąd lub obsłużony sygnał usuwa wyłącznie plik roboczy danego uruchomienia; poprzednie kopie pozostają zachowane. Blokada zapobiega równoległym uruchomieniom; drugi proces zapisuje `SKIP`, nie udaje wykonanej kopii.
+
+Lustro mediów używa `rsync -a` bez `--delete`, z wyłączeniem plików roboczych `*.tmp`. Nie zastępuje spójnego, wstrzymanego snapshotu bazy i mediów ani niezależnej kopii poza VM. Pruning/retencja usuwająca kopie pozostaje wyłączona zgodnie z decyzją właściciela; obowiązek przechowywania i stała lokalizacja offsite wymagają osobnego domknięcia.
+
+Monitor hosta sprawdza teraz `LAST_BACKUP_FAILED`, więc nie uznaje poprzedniej poprawnej kopii za dowód sukcesu ostatniego zadania. Flaga jest usuwana dopiero po udanym SQL i mediach. Codzienny backup, monitor i aplikacja są usługami utrzymania; nie kończyć ich podczas sprzątania procesów testowych.
+
+Testy `tests/backup-host.test.mjs` używają wyłącznie syntetycznych danych i osobnych katalogów; uruchamiają prawdziwy gzip, hard link, blokadę jądra oraz przerwanie własnej grupy procesów. Docker jest atrapą, więc testy nie dowodzą wykonania kopii produkcyjnej. Rzeczywisty przebieg na VM trzeba potwierdzić kodem wyjścia, końcowym plikiem, gzip i licznikiem mediów. Sekrety nie są potrzebne w raporcie.
