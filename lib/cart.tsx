@@ -8,47 +8,62 @@ import {
   type ReactNode,
 } from "react";
 import { item, track } from "./analytics";
+import {
+  CART_KEY,
+  addToCart,
+  cartCount,
+  parseCart,
+  setCartQuantity,
+  type Cart,
+  type CartResult,
+} from "./cart-state";
 import type { StoreProduct } from "./store-types";
-type Cart = Record<string, number>;
+export type { CartResult } from "./cart-state";
 type CartContext = {
   cart: Cart;
   count: number;
   ready: boolean;
-  add: (id: string, quantity?: number, product?: StoreProduct) => void;
-  setQuantity: (id: string, quantity: number, product?: StoreProduct) => void;
+  /** Returns what actually changed; `delta` 0 means nothing was added. */
+  add: (id: string, quantity?: number, product?: StoreProduct) => CartResult;
+  setQuantity: (
+    id: string,
+    quantity: number,
+    product?: StoreProduct,
+  ) => CartResult;
   clear: () => void;
 };
 const Context = createContext<CartContext | null>(null);
-const KEY = "innochem-cart-v2";
-function valid(value: unknown): Cart {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-  return Object.fromEntries(
-    Object.entries(value)
-      .filter(
-        ([id, q]) =>
-          /^[a-f0-9-]{36}$/.test(id) &&
-          typeof q === "number" &&
-          Number.isInteger(q) &&
-          q > 0 &&
-          q <= 999,
-      )
-      .slice(0, 50),
-  );
+function read(raw: string | null): Cart {
+  try {
+    return parseCart(JSON.parse(raw || "{}"));
+  } catch {
+    return {};
+  }
 }
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Cart>({});
   const [ready, setReady] = useState(false);
+  // The ref is the source of truth between renders, so rapid clicks accumulate.
+  const current = useRef(cart);
+  const commit = (next: Cart) => {
+    current.current = next;
+    setCart(next);
+  };
   useEffect(() => {
     try {
-      setCart(valid(JSON.parse(localStorage.getItem(KEY) || "{}")));
-    } catch {}
+      commit(read(localStorage.getItem(CART_KEY)));
+    } catch {
+      // Storage blocked: the cart still works in memory for this page view.
+    }
     setReady(true);
     const sync = (e: StorageEvent) => {
-      if (e.key === KEY) {
-        try {
-          setCart(valid(JSON.parse(e.newValue || "{}")));
-        } catch {}
-      }
+      try {
+        if (
+          e.storageArea === localStorage &&
+          (e.key === CART_KEY || e.key === null)
+        )
+          commit(read(e.newValue));
+      } catch {}
     };
     window.addEventListener("storage", sync);
     return () => window.removeEventListener("storage", sync);
@@ -56,48 +71,34 @@ export function CartProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (ready) {
       try {
-        localStorage.setItem(KEY, JSON.stringify(cart));
+        localStorage.setItem(CART_KEY, JSON.stringify(cart));
       } catch {}
     }
   }, [cart, ready]);
-  const current = useRef(cart);
-  current.current = cart;
-  const change = (id: string, quantity: number, product?: StoreProduct) => {
-    const before = current.current[id] || 0;
-    const next = valid({ ...current.current, [id]: quantity });
-    current.current = next;
-    setCart(next);
-    const delta = (next[id] || 0) - before;
-    if (product && delta)
-      track(delta > 0 ? "add_to_cart" : "remove_from_cart", {
+  const apply = (r: CartResult, product?: StoreProduct) => {
+    if (r.cart !== current.current) commit(r.cart);
+    if (product && r.delta)
+      track(r.delta > 0 ? "add_to_cart" : "remove_from_cart", {
         currency: "PLN",
-        value: (product.priceCents * Math.abs(delta)) / 100,
-        items: [item(product, Math.abs(delta))],
+        value: (product.priceCents * Math.abs(r.delta)) / 100,
+        items: [item(product, Math.abs(r.delta))],
       });
+    return r;
   };
-  const add = (id: string, quantity = 1, product?: StoreProduct) =>
-    change(
-      id,
-      Math.min(
-        999,
-        (current.current[id] || 0) + Math.max(1, Math.floor(quantity)),
-      ),
-      product,
-    );
-  const setQuantity = (id: string, quantity: number, product?: StoreProduct) =>
-    change(id, Math.min(999, Math.floor(quantity)), product);
   return (
     <Context.Provider
       value={{
         cart,
-        count: Object.values(cart).reduce((a, b) => a + b, 0),
+        count: cartCount(cart),
         ready,
-        add,
-        setQuantity,
-        clear: () => {
-          current.current = {};
-          setCart({});
-        },
+        add: (id, quantity = 1, product) =>
+          apply(addToCart(current.current, id, quantity, product), product),
+        setQuantity: (id, quantity, product) =>
+          apply(
+            setCartQuantity(current.current, id, quantity, product),
+            product,
+          ),
+        clear: () => commit({}),
       }}
     >
       {children}

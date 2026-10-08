@@ -1,3 +1,4 @@
+import { AddToCartPopup } from "@/components/AddToCartPopup";
 import { Analytics } from "@/components/Analytics";
 import { ConsentBanner } from "@/components/ConsentBanner";
 import type { Metadata } from "next";
@@ -104,6 +105,7 @@ export default async function RootLayout({
             contact={content.contact}
             footer={content.footer}
           />
+          <AddToCartPopup />
         </CartProvider>
       </body>
     </html>

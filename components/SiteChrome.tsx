@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { PRIVACY_OPEN } from "@/lib/consent";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/lib/cart";
 import { phoneHref, type SiteContent } from "@/lib/site-content";
 import { ThemeToggle } from "./ThemeToggle";
@@ -49,19 +49,34 @@ export function Header({
 }: Pick<SiteContent, "brand" | "navigation">) {
   const { count } = useCart();
   const [open, setOpen] = useState(false);
+  const header = useRef<HTMLElement>(null);
+  const burger = useRef<HTMLButtonElement>(null);
   const pathname = usePathname();
   useEffect(() => setOpen(false), [pathname]);
   useEffect(() => {
-    const close = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+    if (!open) return;
+    const key = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      setOpen(false);
+      if (header.current?.contains(document.activeElement))
+        burger.current?.focus();
     };
-    document.addEventListener("keydown", close);
-    return () => document.removeEventListener("keydown", close);
-  }, []);
+    const outside = (e: PointerEvent) => {
+      if (!header.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("keydown", key);
+    document.addEventListener("pointerdown", outside);
+    return () => {
+      document.removeEventListener("keydown", key);
+      document.removeEventListener("pointerdown", outside);
+    };
+  }, [open]);
   return (
-    <header className="site">
+    <header className="site" ref={header}>
       <div className="wrap site-inner">
         <button
+          ref={burger}
+          type="button"
           className={open ? "burger is-open" : "burger"}
           aria-label={open ? "Zamknij menu" : "Otwórz menu"}
           aria-expanded={open}

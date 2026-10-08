@@ -4,7 +4,8 @@ import { item, track } from "@/lib/analytics";
 import { useViewEvent } from "./Analytics";
 import { useState } from "react";
 import { money, type StoreProduct } from "@/lib/store-types";
-import { useCart } from "@/lib/cart";
+import { cartLimitMessage } from "@/lib/cart-state";
+import { useAddToCart } from "./AddToCartPopup";
 import { mediaSrc, mediaSrcSet } from "@/lib/media";
 import { productFacts } from "@/lib/product-facts";
 export function ProductCard({
@@ -16,8 +17,8 @@ export function ProductCard({
   priority?: boolean;
   listId?: string;
 }) {
-  const { add } = useCart();
-  const [added, setAdded] = useState(false);
+  const addToCart = useAddToCart();
+  const [notice, setNotice] = useState<string | null>(null);
   const facts = productFacts(p.name);
   const inStock = p.saleMode === "retail" && p.available > 0;
   return (
@@ -73,18 +74,15 @@ export function ProductCard({
         </div>
         {p.saleMode === "retail" ? (
           <button
+            type="button"
             className="add"
             disabled={!inStock}
-            onClick={() => {
-              add(p.id, 1, p);
-              setAdded(true);
+            onClick={(e) => {
+              const result = addToCart(p, 1, e.currentTarget);
+              setNotice(result.delta > 0 ? null : cartLimitMessage(result));
             }}
           >
-            {added
-              ? "Dodano do koszyka"
-              : inStock
-                ? "Do koszyka"
-                : "Brak w magazynie"}
+            {inStock ? "Do koszyka" : "Brak w magazynie"}
           </button>
         ) : (
           <Link
@@ -94,11 +92,13 @@ export function ProductCard({
             Zapytaj o produkt
           </Link>
         )}
-        {added && (
-          <Link className="add ghost cart-shortcut" href="/zamowienie">
-            Przejdź do koszyka
-          </Link>
-        )}
+        <p className="card-cart-note" role="status">
+          {notice && (
+            <>
+              {notice} <Link href="/zamowienie">Zobacz koszyk</Link>
+            </>
+          )}
+        </p>
       </div>
     </article>
   );
