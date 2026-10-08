@@ -186,7 +186,8 @@ export async function startStripePayment(
         metadata: { orderId, integration: "innochem-v1" },
       },
       customer_email: order.email,
-      payment_method_types: ["card", "blik", "p24"],
+      // Dashboard eligibility governs methods: an ineligible P24 must not break cards/BLIK.
+      // P24 becomes available only after Stripe approves and enables it on this account.
       adaptive_pricing: { enabled: false },
       allow_promotion_codes: false,
       line_items: [

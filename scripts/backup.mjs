@@ -133,7 +133,9 @@ async function* mediaBundle(root, files) {
       throw new Error("Media changed during backup");
   }
 }
-async function databaseFingerprint() {
+async function databaseFingerprint(canonical = true) {
+  // Linux and macOS libc can order the same locale differently. V2 uses byte ordering.
+  const order = canonical ? ' COLLATE "C"' : "";
   const tables = JSON.parse(
     await output("psql", [
       "-X",
@@ -141,7 +143,7 @@ async function databaseFingerprint() {
       "-v",
       "ON_ERROR_STOP=1",
       "-c",
-      "SELECT coalesce(json_agg(tablename ORDER BY tablename),'[]'::json) FROM pg_tables WHERE schemaname='public'",
+      `SELECT coalesce(json_agg(tablename ORDER BY tablename${order}),'[]'::json) FROM pg_tables WHERE schemaname='public'`,
     ]),
   );
   const result = {};
@@ -153,7 +155,7 @@ async function databaseFingerprint() {
       "-v",
       "ON_ERROR_STOP=1",
       "-c",
-      `SET timezone='UTC'; SELECT row_to_json(t)::text FROM public.${identifier} t ORDER BY to_jsonb(t)::text`,
+      `SET timezone='UTC'; SELECT row_to_json(t)::text FROM public.${identifier} t ORDER BY to_jsonb(t)::text${order}`,
     ]);
     result[table] = await digest(child.stdout);
     await done;
@@ -165,7 +167,7 @@ async function databaseFingerprint() {
       "-v",
       "ON_ERROR_STOP=1",
       "-c",
-      "SELECT coalesce(json_agg(json_build_object('name',sequencename,'lastValue',last_value) ORDER BY sequencename),'[]'::json) FROM pg_sequences WHERE schemaname='public'",
+      `SELECT coalesce(json_agg(json_build_object('name',sequencename,'lastValue',last_value) ORDER BY sequencename${order}),'[]'::json) FROM pg_sequences WHERE schemaname='public'`,
     ]),
   );
   return { tables: result, sequences };
@@ -204,7 +206,7 @@ export async function backup(destination) {
       Buffer.from(
         JSON.stringify(
           {
-            version: 1,
+            version: 2,
             createdAt: new Date().toISOString(),
             database: before,
             files,
@@ -220,7 +222,7 @@ export async function backup(destination) {
     path.join(destination, "manifest.json"),
     JSON.stringify(
       {
-        version: 1,
+        version: 2,
         createdAt: new Date().toISOString(),
         algorithm: "AES-256-GCM",
         database: db,
@@ -309,7 +311,8 @@ export async function restore(source, destination, databaseName) {
   const manifest = JSON.parse(
     await readFile(path.join(source, "manifest.json"), "utf8"),
   );
-  if (manifest.version !== 1) throw new Error("Unsupported manifest");
+  if (![1, 2].includes(manifest.version))
+    throw new Error("Unsupported manifest");
   for (const [file, field] of [
     ["database", "database"],
     ["media", "media"],
@@ -328,7 +331,7 @@ export async function restore(source, destination, databaseName) {
   const contents = JSON.parse(
     await readFile(path.join(destination, "contents.verified"), "utf8"),
   );
-  if (contents.version !== 1 || !Array.isArray(contents.files))
+  if (contents.version !== manifest.version || !Array.isArray(contents.files))
     throw new Error("Invalid inventory");
   const mediaRoot = path.join(destination, "media");
   await mkdir(mediaRoot, { mode: 0o700 });
@@ -350,7 +353,7 @@ export async function restore(source, destination, databaseName) {
   process.env.PGDATABASE = databaseName;
   let actual;
   try {
-    actual = await databaseFingerprint();
+    actual = await databaseFingerprint(contents.version >= 2);
   } finally {
     if (previous === undefined) delete process.env.PGDATABASE;
     else process.env.PGDATABASE = previous;

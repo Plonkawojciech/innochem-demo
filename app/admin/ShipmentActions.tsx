@@ -1,9 +1,10 @@
 "use client";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { ApaczkaService } from "@/lib/server/apaczka";
 import type { StoreSettings } from "@/lib/server/settings";
 import type { Shipment } from "@/lib/server/shipments";
+import { money } from "@/lib/store-types";
 import { parcelFields, type Parcel } from "@/lib/parcel";
 export function ShipmentActions({
   id,
@@ -14,6 +15,7 @@ export function ShipmentActions({
   pending,
   blocked,
   serviceError,
+  pickup,
 }: {
   id: string;
   configured: boolean;
@@ -23,19 +25,58 @@ export function ShipmentActions({
   pending: boolean;
   blocked: boolean;
   serviceError: string;
+  pickup: boolean;
 }) {
   const router = useRouter();
   const [serviceId, setServiceId] = useState("");
-  const [presetId, setPresetId] = useState(presets[0]?.id || "");
-  const [parcel, setParcel] = useState<Parcel>(
-    presets[0] || { lengthCm: 30, widthCm: 20, heightCm: 25, weightKg: 5 },
-  );
+  const blankParcel: Parcel = {
+    lengthCm: 0,
+    widthCm: 0,
+    heightCm: 0,
+    weightKg: 0,
+  };
+  const [parcels, setParcels] = useState<Parcel[]>([blankParcel]);
+  const [quote, setQuote] = useState<{
+    quoteId: string;
+    grossCents: number;
+    netCents: number;
+    expiresAt: string;
+    mode: string;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [pickupDate, setPickupDate] = useState("");
   const [uncertain, setUncertain] = useState(false);
   const [current, setCurrent] = useState(shipment);
   const service = services.find((s) => s.service_id === serviceId);
+  useEffect(() => {
+    setQuote(null);
+  }, [parcels, serviceId, pickupDate]);
+  const payload = () => ({
+    serviceId,
+    parcels: parcels.map((parcel) =>
+      Object.fromEntries(parcelFields.map(([key]) => [key, parcel[key]])),
+    ),
+    ...(pickupDate ? { pickupDate } : {}),
+  });
+  async function estimate() {
+    setBusy(true);
+    setError("");
+    try {
+      const r = await fetch(`/api/admin/orders/${id}/shipment/quote`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload()),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      setQuote(data);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Nie udało się pobrać wyceny.");
+    } finally {
+      setBusy(false);
+    }
+  }
   async function mutate(method: "POST" | "DELETE") {
     setBusy(true);
     setError("");
@@ -45,18 +86,18 @@ export function ShipmentActions({
         headers: { "Content-Type": "application/json" },
         ...(method === "POST"
           ? {
-              body: JSON.stringify({
-                serviceId,
-                parcel: Object.fromEntries(
-                  parcelFields.map(([key]) => [key, parcel[key]]),
-                ),
-                ...(pickupDate ? { pickupDate } : {}),
-              }),
+              body: JSON.stringify({ ...payload(), quoteId: quote?.quoteId }),
             }
           : {}),
       });
       const data = await r.json();
       if (!r.ok) {
+        if (
+          ["SHIPMENT_QUOTE_REQUIRED", "SHIPMENT_QUOTE_CHANGED"].includes(
+            data.code,
+          )
+        )
+          setQuote(null);
         if (
           [
             "APACZKA_UNCERTAIN",
@@ -145,12 +186,17 @@ export function ShipmentActions({
               skontaktuj się z administratorem technicznym przed kolejną próbą.
             </p>
           ) : blocked ? (
-            <p>Dla tego zamówienia nadanie nie jest dostępne.</p>
+            <p>
+              {pickup
+                ? "Odbiór osobisty w Kielcach po uzgodnieniu terminu — nie zamawiaj kuriera."
+                : "Nadanie wymaga opłaconego lub realizowanego zamówienia z zatwierdzonym stanem magazynu."}
+            </p>
           ) : (
             <form
               onSubmit={(e: FormEvent) => {
                 e.preventDefault();
-                void mutate("POST");
+                if (quote) void mutate("POST");
+                else void estimate();
               }}
             >
               {serviceError && (
@@ -176,48 +222,85 @@ export function ShipmentActions({
                   ))}
                 </select>
               </label>
-              <label className="f">
-                Preset paczki
-                <select
-                  value={presetId}
-                  onChange={(e) => {
-                    setPresetId(e.target.value);
-                    const p = presets.find((p) => p.id === e.target.value);
-                    if (p) setParcel(p);
-                  }}
-                >
-                  {presets.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
               <p className="muted">
-                „Karton 4 butelki”, 30 × 20 × 25 cm i 5 kg to przykład do
-                zmiany. Wpisz rzeczywiste wymiary i wagę zapakowanej przesyłki.
+                Wpisz rzeczywiste zewnętrzne wymiary i wagę każdej zapakowanej
+                paczki. Zapisane szablony są pomocą; obsługa potwierdza ich
+                zgodność z aktualnym opakowaniem.
               </p>
-              <div className="field-grid">
-                {parcelFields.map(([key, label]) => (
-                  <label className="f" key={key}>
-                    {label}
-                    <input
-                      type="number"
-                      required
-                      min={key === "weightKg" ? 0.1 : 1}
-                      max={key === "weightKg" ? 100 : 300}
-                      step={key === "weightKg" ? 0.1 : 1}
-                      value={parcel[key]}
-                      onChange={(e) =>
-                        setParcel((p) => ({
-                          ...p,
-                          [key]: Number(e.target.value),
-                        }))
-                      }
-                    />
+              {parcels.map((parcel, index) => (
+                <fieldset key={index} disabled={busy}>
+                  <legend>Paczka {index + 1}</legend>
+                  <label className="f">
+                    Szablon opakowania
+                    <select
+                      defaultValue=""
+                      onChange={(e) => {
+                        const preset = presets.find(
+                          (p) => p.id === e.target.value,
+                        );
+                        if (preset)
+                          setParcels((old) =>
+                            old.map((p, i) =>
+                              i === index ? { ...preset } : p,
+                            ),
+                          );
+                      }}
+                    >
+                      <option value="">Własne wymiary</option>
+                      {presets.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.label}
+                        </option>
+                      ))}
+                    </select>
                   </label>
-                ))}
-              </div>
+                  <div className="field-grid">
+                    {parcelFields.map(([key, label]) => (
+                      <label className="f" key={key}>
+                        {label}
+                        <input
+                          type="number"
+                          required
+                          min={key === "weightKg" ? 0.1 : 1}
+                          max={key === "weightKg" ? 100 : 300}
+                          step={key === "weightKg" ? 0.1 : 1}
+                          value={parcel[key] || ""}
+                          onChange={(e) =>
+                            setParcels((old) =>
+                              old.map((p, i) =>
+                                i === index
+                                  ? { ...p, [key]: Number(e.target.value) }
+                                  : p,
+                              ),
+                            )
+                          }
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  {parcels.length > 1 && (
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={() =>
+                        setParcels((old) => old.filter((_, i) => i !== index))
+                      }
+                    >
+                      Usuń paczkę {index + 1}
+                    </button>
+                  )}
+                </fieldset>
+              ))}
+              <button
+                type="button"
+                className="btn btn-outline"
+                disabled={busy || parcels.length >= 20}
+                onClick={() =>
+                  setParcels((old) => [...old, { ...blankParcel }])
+                }
+              >
+                Dodaj kolejną paczkę
+              </button>
               {service && service.pickup_courier !== "0" && (
                 <label className="f">
                   Data odbioru przez kuriera{" "}
@@ -237,12 +320,33 @@ export function ShipmentActions({
                 godzinach dostępnych w Apaczce. Nadanie może obciążyć konto
                 Apaczki według umowy.
               </p>
-              <label className="check-label">
-                <input type="checkbox" required />
-                Potwierdzam usługę, dane odbiorcy i parametry paczki.
-              </label>
+              {quote && (
+                <>
+                  <p className="notice">
+                    Wycena Apaczki: <b>{money(quote.grossCents)} brutto</b> (
+                    {money(quote.netCents)} netto), liczba paczek:{" "}
+                    {parcels.length}.
+                    {quote.mode === "sandbox"
+                      ? " Środowisko testowe."
+                      : " Nadanie obciąży konto Apaczki."}{" "}
+                    Wycena ważna do{" "}
+                    {new Date(quote.expiresAt).toLocaleTimeString("pl-PL")}.
+                    Końcowe rozliczenie i ewentualne dopłaty określa umowa z
+                    przewoźnikiem.
+                  </p>
+                  <label className="check-label">
+                    <input type="checkbox" required />
+                    Potwierdzam wycenę, usługę, dane odbiorcy i parametry
+                    wszystkich paczek.
+                  </label>
+                </>
+              )}
               <button className="btn btn-primary" disabled={busy || !serviceId}>
-                {busy ? "Nadawanie…" : "Nadaj przez Apaczkę"}
+                {busy
+                  ? "Przetwarzanie…"
+                  : quote
+                    ? "Nadaj przez Apaczkę"
+                    : "Sprawdź koszt nadania"}
               </button>
             </form>
           )}

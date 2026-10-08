@@ -10,7 +10,7 @@ import {
   saveSettings,
   adminProduct,
 } from "../lib/server/admin";
-import { actOnOrder } from "../lib/server/admin-orders";
+import { actOnOrder, adminOrder } from "../lib/server/admin-orders";
 import { StoreError } from "../lib/server/orders";
 import { validateUpload } from "../lib/server/uploads";
 import { settingsSchema } from "../lib/server/settings";
@@ -300,6 +300,154 @@ test("manual bank confirmation cannot apply to a different payment method", asyn
     ),
     isError("PAYMENT_METHOD_MISMATCH"),
   );
+});
+test("a partial amount can be settled later without refunding its quantity twice", async () => {
+  const o = await orderFixture("bank_transfer", "paid");
+  await query(
+    "UPDATE orders SET shipping_cents=2400,total_cents=10400 WHERE id=$1",
+    [o.id],
+  );
+  const item = (await adminOrder(o.id))!.items[0];
+  const base = {
+    action: "record_refund",
+    expectedStatus: "paid",
+    reference: "PROOF",
+    note: "Actual refund verified",
+  };
+  await actOnOrder(
+    o.id,
+    {
+      ...base,
+      idempotencyKey: randomUUID(),
+      amountCents: 4000,
+      refundItems: [{ itemId: item.id, quantity: 1, amountCents: 4000 }],
+      shippingRefundCents: 0,
+    },
+    actor,
+  );
+  const first = (await adminOrder(o.id))!;
+  assert.equal(first.order.status, "paid");
+  assert.equal(first.refunds.lines[0].refundedQuantity, 1);
+  await actOnOrder(
+    o.id,
+    { ...base, idempotencyKey: randomUUID(), amountCents: 6400 },
+    actor,
+  );
+  const final = (await adminOrder(o.id))!;
+  assert.equal(final.order.status, "refunded");
+  assert.equal(final.refunds.refundedCents, 10400);
+  assert.equal(final.refunds.lines[0].refundedQuantity, 1);
+  assert.equal(final.refunds.lines[0].refundedCents, 8000);
+  assert.equal(final.refunds.shippingRefundedCents, 2400);
+  assert.equal((await adminProduct(o.product))!.stock, 10);
+  const analytics = (
+    await query(
+      "SELECT status,last_error,payload FROM analytics_outbox WHERE order_id=$1 AND event_type='refund' ORDER BY created_at",
+      [o.id],
+    )
+  ).rows;
+  assert.equal(analytics[1].status, "skipped");
+  assert.equal(analytics[1].last_error, "refund_adjustment");
+  assert.deepEqual(analytics[1].payload.items, []);
+});
+test("partial refunds preserve the other item; returns and replay cannot duplicate money or stock", async () => {
+  const o = await orderFixture("bank_transfer", "paid");
+  const second = await saveProduct(input(), actor);
+  await query(
+    "UPDATE orders SET subtotal_cents=16000,total_cents=16000 WHERE id=$1",
+    [o.id],
+  );
+  await query(
+    "INSERT INTO order_items(order_id,product_id,product_name,sku,quantity,unit_price_cents,tax_rate,total_cents) VALUES($1,$2,'Second','SECOND',1,8000,23,8000)",
+    [o.id, second.id],
+  );
+  const detail = (await adminOrder(o.id))!;
+  const first = detail.items.find((i) => i.product_id === o.product)!;
+  const other = detail.items.find((i) => i.product_id === second.id)!;
+  const action = {
+    action: "record_refund",
+    expectedStatus: "paid",
+    idempotencyKey: randomUUID(),
+    amountCents: 8000,
+    refundItems: [{ itemId: first.id, quantity: 1, amountCents: 8000 }],
+    shippingRefundCents: 0,
+    reference: "REFUND-FIRST",
+    note: "Confirmed partial refund",
+  };
+  await actOnOrder(o.id, action, actor);
+  await actOnOrder(o.id, action, actor);
+  assert.equal((await adminOrder(o.id))!.order.status, "paid");
+  assert.equal((await adminProduct(o.product))?.stock, 10);
+  assert.equal((await adminProduct(second.id))?.stock, 10);
+  await assert.rejects(
+    actOnOrder(o.id, { ...action, idempotencyKey: randomUUID() }, actor),
+    isError("REFUND_LIMIT"),
+  );
+  await assert.rejects(
+    actOnOrder(
+      o.id,
+      {
+        ...action,
+        idempotencyKey: randomUUID(),
+        refundItems: [{ itemId: randomUUID(), quantity: 1, amountCents: 8000 }],
+      },
+      actor,
+    ),
+    isError("REFUND_LIMIT"),
+  );
+  const returned = {
+    action: "record_return",
+    expectedStatus: "paid",
+    idempotencyKey: randomUUID(),
+    reference: "WAREHOUSE-FIRST",
+    note: "Received one saleable item",
+    returnItems: [{ itemId: first.id, quantity: 1 }],
+  };
+  await Promise.all([
+    actOnOrder(o.id, returned, actor),
+    actOnOrder(o.id, returned, actor),
+  ]);
+  assert.equal((await adminProduct(o.product))?.stock, 11);
+  assert.equal((await adminProduct(second.id))?.stock, 10);
+  await assert.rejects(
+    actOnOrder(o.id, { ...returned, idempotencyKey: randomUUID() }, actor),
+    isError("RETURN_LIMIT"),
+  );
+  assert.equal((await adminOrder(o.id))!.order.stock_committed, true);
+  await actOnOrder(
+    o.id,
+    {
+      ...action,
+      idempotencyKey: randomUUID(),
+      reference: "REFUND-SECOND",
+      refundItems: [{ itemId: other.id, quantity: 1, amountCents: 8000 }],
+    },
+    actor,
+  );
+  assert.equal((await adminOrder(o.id))!.order.status, "refunded");
+  assert.equal((await adminOrder(o.id))!.refunds.refundedCents, 16000);
+  assert.equal(
+    (
+      await query(
+        "SELECT count(*)::int AS n FROM analytics_outbox WHERE order_id=$1 AND event_type='refund'",
+        [o.id],
+      )
+    ).rows[0].n,
+    2,
+  );
+  await actOnOrder(
+    o.id,
+    {
+      ...returned,
+      expectedStatus: "refunded",
+      idempotencyKey: randomUUID(),
+      reference: "WAREHOUSE-SECOND",
+      returnItems: [{ itemId: other.id, quantity: 1 }],
+    },
+    actor,
+  );
+  assert.equal((await adminProduct(second.id))?.stock, 11);
+  assert.equal((await adminOrder(o.id))!.order.stock_committed, false);
 });
 
 test("CMS page and category renames preserve links, including restoring a previous slug", async () => {

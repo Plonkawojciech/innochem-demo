@@ -202,11 +202,7 @@ test("concurrent payment starts reuse an immutable amount and one provider idemp
         JSON.stringify(c.request) === JSON.stringify(f.calls[0].request),
     ),
   );
-  assert.deepEqual(f.calls[0].request.payment_method_types, [
-    "card",
-    "blik",
-    "p24",
-  ]);
+  assert.equal(f.calls[0].request.payment_method_types, undefined);
   assert.equal(
     f.calls[0].request.line_items?.reduce(
       (n, i) => n + (i.quantity || 0) * (i.price_data?.unit_amount || 0),

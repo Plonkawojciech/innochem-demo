@@ -5,8 +5,10 @@ import { analyticsIdentity } from "@/lib/consent";
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useCart } from "@/lib/cart";
+import { cartLimitMessage } from "@/lib/cart-state";
 import { mediaSrc } from "@/lib/media";
 import { money, type StoreProduct } from "@/lib/store-types";
+import { quoteShipping, shippingKind, type ShippingRate } from "@/lib/shipping";
 import {
   checkoutFingerprint,
   resolveCheckoutKey,
@@ -20,7 +22,7 @@ function checkoutStorage() {
     return undefined;
   }
 }
-type Delivery = { id: string; label: string; priceCents: number; cod: boolean };
+type Delivery = ShippingRate & { label: string; cod: boolean };
 type Payment = "bank_transfer" | "cod" | "stripe";
 export function Checkout({
   shipping,
@@ -85,6 +87,7 @@ export function Checkout({
     payments[0] || "bank_transfer",
   );
   const [error, setError] = useState("");
+  const [cartNotice, setCartNotice] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [fields, setFields] = useState<Record<string, string>>({
     firstName: account?.firstName || "",
@@ -110,9 +113,20 @@ export function Checkout({
     (sum, i) => sum + (i.product?.priceCents || 0) * i.quantity,
     0,
   );
-  const total = subtotal + (delivery?.priceCents || 0);
+  const shippingLines = items.map(({ quantity, product }) => ({
+    quantity,
+    weightGrams: product?.weightGrams,
+    eligible: product?.saleMode === "retail",
+  }));
+  const deliveryQuote = delivery
+    ? quoteShipping(delivery, shippingLines, payment)
+    : null;
+  const total = subtotal + (deliveryQuote?.priceCents || 0);
   const visiblePayments = payments.filter((p) => p !== "cod" || delivery?.cod);
-  const codOverLimit = codLimitCents > 0 && total > codLimitCents;
+  const codTotal =
+    subtotal +
+    (delivery ? quoteShipping(delivery, shippingLines, "cod").priceCents : 0);
+  const codOverLimit = codLimitCents > 0 && codTotal > codLimitCents;
   const allowedPayments = visiblePayments.filter(
     (p) => p !== "cod" || !codOverLimit,
   );
@@ -137,7 +151,11 @@ export function Checkout({
   }, [shippingId, payment, allowedPayments.join(",")]);
   const cartEvent = {
     currency: "PLN",
-    value: subtotal / 100,
+    value: items.reduce(
+      (sum, i) =>
+        sum + (i.product ? item(i.product, i.quantity).price * i.quantity : 0),
+      0,
+    ),
     items: items.flatMap((i) =>
       i.product ? [item(i.product, i.quantity)] : [],
     ),
@@ -308,18 +326,27 @@ export function Checkout({
                         max={999}
                         value={quantity}
                         aria-label={`Ilość: ${p?.name || "produkt"}`}
-                        onChange={(e) =>
-                          setQuantity(
+                        onChange={(e) => {
+                          const result = setQuantity(
                             id,
                             Math.max(1, Number(e.target.value) || 1),
                             p,
-                          )
-                        }
+                          );
+                          setCartNotice((before) => ({
+                            ...before,
+                            [id]: cartLimitMessage(result) || "",
+                          }));
+                        }}
                       />
                     </label>
                     {p && quantity > p.available && (
                       <small className="form-error">
                         Dostępne: {p.available} szt.
+                      </small>
+                    )}
+                    {cartNotice[id] && (
+                      <small className="form-error" role="status">
+                        {cartNotice[id]}
                       </small>
                     )}
                     <button
@@ -480,13 +507,23 @@ export function Checkout({
                       onClick={() => selectShipping(s.id)}
                     />
                     <span>{s.label}</span>
-                    <strong>{money(s.priceCents)}</strong>
+                    <strong>
+                      {money(
+                        quoteShipping(s, shippingLines, payment).priceCents,
+                      )}
+                    </strong>
                   </label>
                 ))}
                 {!shipping.length && (
                   <p>Metody dostawy oczekują na zatwierdzenie.</p>
                 )}
               </fieldset>
+              {delivery && shippingKind(delivery) === "pickup" && (
+                <p className="notice">
+                  Odbiór w Kielcach po wcześniejszym uzgodnieniu ze sklepem.
+                  Termin ustalimy po złożeniu zamówienia.
+                </p>
+              )}
               <fieldset className="checkout-options">
                 <legend>Płatność</legend>
                 {visiblePayments.map((p) => (
@@ -504,7 +541,7 @@ export function Checkout({
                         ? "Przelew tradycyjny"
                         : p === "cod"
                           ? `Za pobraniem${codOverLimit ? ` — dostępne do ${money(codLimitCents)}` : ""}`
-                          : "Płatność online: BLIK, Przelewy24 lub karta"}
+                          : "Płatność online — dostępne metody pokaże Stripe"}
                     </span>
                   </label>
                 ))}
@@ -524,7 +561,9 @@ export function Checkout({
               <div>
                 <dt>Dostawa</dt>
                 <dd>
-                  {delivery ? money(delivery.priceCents) : "Do ustalenia"}
+                  {deliveryQuote
+                    ? money(deliveryQuote.priceCents)
+                    : "Do ustalenia"}
                 </dd>
               </div>
               <div className="total">
@@ -534,6 +573,18 @@ export function Checkout({
                 </dd>
               </div>
             </dl>
+            {catalogReady && !catalogError && deliveryQuote?.freeEligible && (
+              <p className="notice" aria-live="polite">
+                {deliveryQuote.remainingUnits > 0
+                  ? `Do darmowej dostawy brakuje ${deliveryQuote.remainingUnits} szt.`
+                  : "Darmowa dostawa dla tego zamówienia."}
+              </p>
+            )}
+            {deliveryQuote?.error && (
+              <p className="form-error" role="alert">
+                {deliveryQuote.error.message}
+              </p>
+            )}
             <label className="check-label">
               <input type="checkbox" name="terms" required />{" "}
               <span>
@@ -558,6 +609,9 @@ export function Checkout({
               disabled={
                 !enabled ||
                 busy ||
+                !catalogReady ||
+                !!catalogError ||
+                !!deliveryQuote?.error ||
                 unavailable ||
                 !delivery ||
                 !allowedPayments.length

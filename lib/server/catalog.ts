@@ -14,6 +14,7 @@ type ProductRow = {
   tax_rate: string;
   stock: number;
   reserved: number;
+  weight_grams: number;
   image_path: string | null;
   image_alt: string;
   sale_mode: "retail" | "inquiry";
@@ -32,6 +33,7 @@ function mapProduct(row: ProductRow): StoreProduct {
     priceCents: row.price_cents,
     taxRate: Number(row.tax_rate),
     available: Math.max(0, row.stock - row.reserved),
+    weightGrams: row.weight_grams,
     imagePath: row.image_path,
     imageAlt: row.image_alt,
     saleMode: row.sale_mode,

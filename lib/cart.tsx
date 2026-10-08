@@ -80,7 +80,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (product && r.delta)
       track(r.delta > 0 ? "add_to_cart" : "remove_from_cart", {
         currency: "PLN",
-        value: (product.priceCents * Math.abs(r.delta)) / 100,
+        value: item(product, Math.abs(r.delta)).price * Math.abs(r.delta),
         items: [item(product, Math.abs(r.delta))],
       });
     return r;

@@ -3,6 +3,14 @@ import { enqueueMailInTransaction } from "./mail";
 import { z } from "zod";
 import { query, transaction } from "./db";
 import { audit } from "./admin";
+import {
+  refundLineSchema,
+  returnLineSchema,
+  refundSummary,
+  validateRefund,
+  validateReturn,
+  type RefundItem,
+} from "./refunds";
 import { cancelStripePayment, refreshStripePayment } from "./stripe-payments";
 import {
   cancelPendingOrder,
@@ -21,6 +29,7 @@ export const orderActionInput = z
       "complete",
       "cancel_cod",
       "record_refund",
+      "record_return",
       "refresh_payment",
     ]),
     expectedStatus: z.string().min(1).max(40),
@@ -30,6 +39,9 @@ export const orderActionInput = z
     note: z.string().trim().max(2000).default(""),
     amountCents: z.number().int().min(0).optional(),
     restock: z.boolean().default(false),
+    refundItems: z.array(refundLineSchema).max(50).optional(),
+    shippingRefundCents: z.number().int().nonnegative().optional(),
+    returnItems: z.array(returnLineSchema).max(50).optional(),
   })
   .strict();
 export async function actOnOrder(id: string, raw: unknown, actor: string) {
@@ -139,6 +151,14 @@ export async function actOnOrder(id: string, raw: unknown, actor: string) {
         "completed",
         "payment_review",
       ],
+      record_return: [
+        "paid",
+        "processing",
+        "shipped",
+        "completed",
+        "refunded",
+        "payment_review",
+      ],
     };
     if (!allowed[p.action]?.includes(order.status))
       throw new StoreError(
@@ -155,16 +175,50 @@ export async function actOnOrder(id: string, raw: unknown, actor: string) {
         "Anulowanie dotyczy wyłącznie niewysłanego zamówienia za pobraniem.",
         409,
       );
-    if (
-      p.action === "record_refund" &&
-      (!p.reference || !p.note || p.amountCents !== order.total_cents)
-    )
+    const items = (
+      await db.query<RefundItem>(
+        "SELECT * FROM order_items WHERE order_id=$1 ORDER BY product_id,id",
+        [id],
+      )
+    ).rows;
+    const events = (
+      await db.query(
+        "SELECT kind,data FROM order_events WHERE order_id=$1 AND kind IN ('record_refund','record_return')",
+        [id],
+      )
+    ).rows;
+    const summary = refundSummary(items, events);
+    const accounting =
+      p.action === "record_refund" || p.action === "record_return";
+    if (accounting && (!p.reference || !p.note))
       throw new StoreError(
         "REFUND_PROOF_REQUIRED",
-        "Zapisz pełną kwotę zwrotu, potwierdzenie oraz uzasadnienie. Ta operacja nie wykonuje przelewu.",
+        "Zapisz potwierdzenie oraz uzasadnienie faktycznie wykonanej operacji. Ta operacja nie wysyła pieniędzy.",
       );
-    const restock =
-      p.action === "cancel_cod" || (p.action === "record_refund" && p.restock);
+    const refund =
+      p.action === "record_refund"
+        ? validateRefund(summary, order.total_cents, order.shipping_cents, p)
+        : null;
+    if (refund && p.restock && !refund.full)
+      throw new StoreError(
+        "RETURN_ITEMS",
+        "Częściowo zwrócony towar przyjmij osobną operacją z podaniem ilości.",
+      );
+    const allRemaining = summary.lines
+      .filter((i) => i.quantity > i.returnedQuantity)
+      .map((i) => ({
+        itemId: i.id,
+        quantity: i.quantity - i.returnedQuantity,
+      }));
+    const returnItems =
+      p.action === "record_return"
+        ? validateReturn(summary, p.returnItems || [])
+        : p.action === "record_refund" && p.restock
+          ? validateReturn(summary, allRemaining)
+          : p.action === "cancel_cod"
+            ? allRemaining
+            : [];
+    const restock = returnItems.length > 0;
     if (restock && !order.stock_committed)
       throw new StoreError(
         "NO_COMMITTED_STOCK",
@@ -172,11 +226,8 @@ export async function actOnOrder(id: string, raw: unknown, actor: string) {
         409,
       );
     if (restock) {
-      const { rows: items } = await db.query(
-        "SELECT product_id,quantity FROM order_items WHERE order_id=$1 ORDER BY product_id",
-        [id],
-      );
-      for (const item of items) {
+      for (const r of returnItems) {
+        const item = items.find((i) => i.id === r.itemId)!;
         if (!item.product_id)
           throw new StoreError(
             "MISSING_PRODUCT",
@@ -185,26 +236,35 @@ export async function actOnOrder(id: string, raw: unknown, actor: string) {
           );
         await db.query(
           "UPDATE products SET stock=stock+$1,version=version+1,updated_at=now() WHERE id=$2",
-          [item.quantity, item.product_id],
+          [r.quantity, item.product_id],
         );
         await db.query(
           "INSERT INTO stock_movements(product_id,order_id,quantity,reason,actor_id) VALUES($1,$2,$3,$4,$5)",
-          [item.product_id, id, item.quantity, p.action, actor],
+          [item.product_id, id, r.quantity, p.action, actor],
         );
       }
     }
+    const allReturned =
+      restock &&
+      summary.lines.every(
+        (i) =>
+          i.returnedQuantity +
+            (returnItems.find((r) => r.itemId === i.id)?.quantity || 0) ===
+          i.quantity,
+      );
     const status: string = (
       {
         process: "processing",
         ship: "shipped",
         complete: "completed",
         cancel_cod: "cancelled",
-        record_refund: "refunded",
+        record_refund: refund?.full ? "refunded" : order.status,
+        record_return: order.status,
       } as Record<string, string>
     )[p.action];
     await db.query(
       "UPDATE orders SET status=$1,tracking_number=CASE WHEN $2='ship' THEN $3 ELSE tracking_number END,stock_committed=CASE WHEN $4 THEN false ELSE stock_committed END,updated_at=now() WHERE id=$5",
-      [status, p.action, p.trackingNumber, restock, id],
+      [status, p.action, p.trackingNumber, allReturned, id],
     );
     await db.query(
       "INSERT INTO order_events(order_id,event_key,kind,data,actor_id) VALUES($1,$2,$3,$4,$5)",
@@ -212,11 +272,22 @@ export async function actOnOrder(id: string, raw: unknown, actor: string) {
         id,
         eventKey,
         p.action,
-        JSON.stringify({ ...p, status, fingerprint }),
+        JSON.stringify({
+          ...p,
+          ...(refund || {}),
+          returnItems,
+          status,
+          fingerprint,
+        }),
         actor,
       ],
     );
-    if (p.action === "record_refund") await enqueueAnalytics(db, id, "refund");
+    if (refund)
+      await enqueueAnalytics(db, id, "refund", {
+        eventKey,
+        lines: refund.refundItems,
+        shippingCents: refund.shippingRefundCents,
+      });
     await audit(db, actor, `order.${p.action}`, id, {
       previousStatus: order.status,
       status,
@@ -246,10 +317,16 @@ export async function adminOrder(id: string) {
   } = await query("SELECT * FROM orders WHERE id=$1", [id]);
   if (!order) return null;
   const [{ rows: items }, { rows: events }] = await Promise.all([
-    query("SELECT * FROM order_items WHERE order_id=$1 ORDER BY product_name", [
-      id,
-    ]),
-    query(
+    query<RefundItem>(
+      "SELECT * FROM order_items WHERE order_id=$1 ORDER BY product_name",
+      [id],
+    ),
+    query<{
+      kind: string;
+      data: Record<string, any>;
+      actor_id: string;
+      created_at: string;
+    }>(
       "SELECT kind,data,actor_id,created_at FROM order_events WHERE order_id=$1 ORDER BY created_at DESC",
       [id],
     ),
@@ -263,5 +340,11 @@ export async function adminOrder(id: string) {
         [id],
       )
     ).rows[0] || null;
-  return { order: safeOrder, items, events, payment };
+  return {
+    order: safeOrder,
+    items,
+    events,
+    payment,
+    refunds: refundSummary(items, events),
+  };
 }

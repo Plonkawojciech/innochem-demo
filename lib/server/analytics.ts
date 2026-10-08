@@ -49,6 +49,11 @@ export async function enqueueAnalytics(
   db: PoolClient,
   orderId: string,
   type: "purchase" | "refund" | "order_submitted",
+  refund?: {
+    eventKey: string;
+    lines: { itemId: string; quantity: number; amountCents: number }[];
+    shippingCents: number;
+  },
 ) {
   const {
     rows: [o],
@@ -59,38 +64,49 @@ export async function enqueueAnalytics(
     [orderId],
   );
   if (type === "purchase" && o.payment_method === "cod") return;
-  const { rows: items } = await db.query(
+  const { rows: originalItems } = await db.query(
     "SELECT * FROM order_items WHERE order_id=$1 ORDER BY id",
     [orderId],
   );
+  const items = refund
+    ? refund.lines
+        .filter((r) => r.quantity > 0)
+        .map((r) => {
+          const i = originalItems.find((i) => i.id === r.itemId);
+          return { ...i, quantity: r.quantity, total_cents: r.amountCents };
+        })
+    : originalItems;
   const net = items.map((i) =>
     Math.round((i.total_cents * 100) / (100 + Number(i.tax_rate))),
   );
   const valueCents = net.reduce((a, b) => a + b, 0);
   const reason =
-    o.payment_method === "cod"
-      ? "cod"
-      : !o.ga_client_id || !o.analytics_consent_at || !o.consent_valid
-        ? "no_consent"
-        : null;
+    refund && !items.length
+      ? "refund_adjustment"
+      : o.payment_method === "cod"
+        ? "cod"
+        : !o.ga_client_id || !o.analytics_consent_at || !o.consent_valid
+          ? "no_consent"
+          : null;
   const payload = {
     transaction_id: String(o.number),
     currency: "PLN",
     value: valueCents / 100,
-    tax: (o.subtotal_cents - valueCents) / 100,
-    shipping: o.shipping_cents / 100,
+    tax: (items.reduce((sum, i) => sum + i.total_cents, 0) - valueCents) / 100,
+    shipping: (refund?.shippingCents ?? o.shipping_cents) / 100,
+    ...(refund ? { refund_id: refund.eventKey } : {}),
     items: items.map((i, index) => ({
       item_id: i.sku || i.product_id || i.id,
       item_name: i.product_name,
       item_category: productFacts(i.product_name).series || "Inne",
       // Unit net price retains precision so quantity agrees with rounded line net.
-      price: net[index] / i.quantity / 100,
+      price: net[index] / Math.max(1, i.quantity) / 100,
       quantity: i.quantity,
     })),
   };
   await db.query(
-    `INSERT INTO analytics_outbox(order_id,event_type,payload,client_id,session_id,consent_version,status,last_error)
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT(order_id,event_type,destination) DO NOTHING`,
+    `INSERT INTO analytics_outbox(order_id,event_type,payload,client_id,session_id,consent_version,status,last_error,event_key)
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT(order_id,event_type,destination,event_key) DO NOTHING`,
     [
       orderId,
       type,
@@ -100,6 +116,7 @@ export async function enqueueAnalytics(
       o.consent_version,
       reason ? "skipped" : "pending",
       reason,
+      refund?.eventKey ?? "singleton",
     ],
   );
 }

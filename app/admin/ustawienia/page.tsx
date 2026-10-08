@@ -36,9 +36,10 @@ export default async function Settings() {
           warunków sklepu.
         </p>
         <p>
-          Obsługiwane metody: BLIK, Przelewy24 i karty. Apple Pay jest dostępne
-          przy płatności kartą na zgodnym urządzeniu. Metody muszą być aktywne
-          na koncie Stripe.
+          Stripe pokaże metody zatwierdzone i aktywne na podpiętym koncie.
+          Portfele wymagają zgodnego urządzenia. Status niedostępnej metody,
+          takiej jak Przelewy24, trzeba wyjaśnić z operatorem; sam kod jej nie
+          aktywuje.
         </p>
         <p>
           Klucze operatora konfiguruje się w bezpiecznych ustawieniach serwera.

@@ -1,6 +1,7 @@
 "use client";
 import { useState, type FormEvent } from "react";
 import { parcelFields } from "@/lib/parcel";
+import { shippingKind } from "@/lib/shipping";
 import type { StoreSettings } from "@/lib/server/settings";
 export function SettingsEditor({
   value,
@@ -97,7 +98,19 @@ export function SettingsEditor({
                 />
               </label>
               <label className="f">
-                Cena (zł)
+                Rodzaj dostawy
+                <select
+                  value={shippingKind(s)}
+                  onChange={(e) =>
+                    change(i, { kind: e.target.value as "courier" | "pickup" })
+                  }
+                >
+                  <option value="courier">Kurier</option>
+                  <option value="pickup">Odbiór osobisty</option>
+                </select>
+              </label>
+              <label className="f">
+                Cena przy przedpłacie (zł)
                 <input
                   type="number"
                   min="0"
@@ -109,6 +122,39 @@ export function SettingsEditor({
                     change(i, {
                       priceCents: Math.round(Number(e.target.value) * 100),
                     })
+                  }
+                />
+              </label>
+              <label className="f">
+                Cena przy pobraniu (zł, puste = cena przedpłaty)
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  max="1000"
+                  disabled={!s.cod}
+                  value={s.codPriceCents === null ? "" : s.codPriceCents / 100}
+                  onChange={(e) =>
+                    change(i, {
+                      codPriceCents:
+                        e.target.value === ""
+                          ? null
+                          : Math.round(Number(e.target.value) * 100),
+                    })
+                  }
+                />
+              </label>
+              <label className="f">
+                Darmowa dostawa od liczby sztuk (0 = bez progu)
+                <input
+                  type="number"
+                  min="0"
+                  max="50000"
+                  step="1"
+                  required
+                  value={s.freeFromUnits}
+                  onChange={(e) =>
+                    change(i, { freeFromUnits: Number(e.target.value) })
                   }
                 />
               </label>
@@ -133,6 +179,16 @@ export function SettingsEditor({
                 onChange={(e) => change(i, { enabled: e.target.checked })}
               />
               Aktywna
+            </label>
+            <label className="check-label">
+              <input
+                type="checkbox"
+                checked={s.freeShippingIncludesCod}
+                onChange={(e) =>
+                  change(i, { freeShippingIncludesCod: e.target.checked })
+                }
+              />
+              Darmowa dostawa obejmuje także pobranie
             </label>
             <label className="check-label">
               <input
@@ -164,6 +220,10 @@ export function SettingsEditor({
                 id: "",
                 label: "",
                 priceCents: 0,
+                kind: "courier",
+                codPriceCents: null,
+                freeFromUnits: 0,
+                freeShippingIncludesCod: true,
                 maxWeightGrams: 0,
                 cod: false,
                 enabled: false,
@@ -307,7 +367,7 @@ export function SettingsEditor({
           ["cod", "Za pobraniem"],
           [
             "stripe",
-            "Stripe: BLIK, Przelewy24, karta i Apple Pay (wymaga podpięcia konta)",
+            "Stripe: metody zatwierdzone i aktywne na podpiętym koncie",
           ],
         ].map(([v, l]) => (
           <label className="check-label" key={v}>

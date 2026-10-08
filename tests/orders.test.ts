@@ -90,6 +90,95 @@ async function fixture(stock = 5, mode = "retail") {
 const stock = async (id: string) =>
   (await query("SELECT stock,reserved FROM products WHERE id=$1", [id]))
     .rows[0];
+test("approved 24/28 pricing and mixed twelve-unit free delivery are persisted and mailed", async () => {
+  for (const paymentMethod of ["bank_transfer", "cod"]) {
+    for (const quantity of [11, 12, 13]) {
+      const input = await fixture(30);
+      const rate = {
+        ...settings.shippingMethods[0],
+        kind: "courier",
+        priceCents: 2400,
+        codPriceCents: 2800,
+        freeFromUnits: 12,
+        maxWeightGrams: 30000,
+      };
+      await query("UPDATE settings SET value=$1 WHERE key='store'", [
+        JSON.stringify({ ...settings, shippingMethods: [rate] }),
+      ]);
+      await query("UPDATE products SET weight_grams=1000 WHERE id=$1", [
+        input.lines[0].productId,
+      ]);
+      const cost = quantity >= 12 ? 0 : paymentMethod === "cod" ? 2800 : 2400;
+      const result = await createOrder({
+        ...input,
+        paymentMethod,
+        lines: [{ ...input.lines[0], quantity }],
+        expectedTotalCents: 8000 * quantity + cost,
+      });
+      const order = (
+        await query(
+          "SELECT shipping_cents,total_cents,stock_committed FROM orders WHERE id=$1",
+          [result.id],
+        )
+      ).rows[0];
+      assert.equal(order.shipping_cents, cost);
+      assert.equal(order.total_cents, 8000 * quantity + cost);
+      assert.equal(order.stock_committed, paymentMethod === "cod");
+      const mails = (
+        await query(
+          "SELECT body_text FROM mail_outbox WHERE event_key LIKE $1",
+          [`order:${result.id}:created:%`],
+        )
+      ).rows;
+      assert.equal(mails.length, 2);
+      for (const mail of mails) {
+        assert.ok(
+          mail.body_text.includes(
+            `Dostawa: Testowy kurier — ${(cost / 100).toFixed(2)} zł`,
+          ),
+        );
+        if (paymentMethod === "bank_transfer") {
+          assert.ok(mail.body_text.includes("Termin płatności i rezerwacji:"));
+          assert.ok(!mail.body_text.includes("Invalid Date"));
+        }
+      }
+      assert.equal(
+        (
+          await query(
+            "SELECT data->'shipping'->>'kind' AS kind FROM order_events WHERE order_id=$1 AND kind='created'",
+            [result.id],
+          )
+        ).rows[0].kind,
+        "courier",
+      );
+    }
+  }
+});
+test("COD cap uses its own delivery rate and a failed quote never reserves stock", async () => {
+  const input = await fixture();
+  await query("UPDATE settings SET value=$1 WHERE key='store'", [
+    JSON.stringify({
+      ...settings,
+      codLimitCents: 10500,
+      shippingMethods: [
+        {
+          ...settings.shippingMethods[0],
+          priceCents: 2400,
+          codPriceCents: 2800,
+        },
+      ],
+    }),
+  ]);
+  await assert.rejects(
+    createOrder({ ...input, paymentMethod: "cod", expectedTotalCents: 10800 }),
+    { code: "COD_LIMIT" },
+  );
+  assert.deepEqual(await stock(input.lines[0].productId), {
+    stock: 5,
+    reserved: 0,
+  });
+  await createOrder({ ...input, expectedTotalCents: 10400 });
+});
 test("two buyers cannot reserve the same last unit", async () => {
   const input = await fixture(1);
   const second = { ...input, idempotencyKey: randomUUID() };

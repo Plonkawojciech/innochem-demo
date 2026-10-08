@@ -15,4 +15,6 @@ export const requiredMigrations = [
   "013_withdrawals.sql",
   "014_analytics.sql",
   "015_shipments.sql",
+  "016_analytics_event_keys.sql",
+  "017_provider_isolation.sql",
 ] as const;

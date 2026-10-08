@@ -1,9 +1,33 @@
-/** Apaczka Web API v2: https://panel.apaczka.pl/dokumentacja_api_v2.php
- * Read: 2026-10-01. POST form field request contains JSON; routes include trailing slash.
+/** Apaczka Web API v2: https://api-docs.apaczka.pl/reference/v2-legacy/orders
+ * Verified 2026-10-08. POST form field request contains JSON; routes include trailing slash.
  */
 import { createHmac } from "node:crypto";
 import { z } from "zod";
 import { StoreError } from "./errors";
+
+export function apaczkaMode() {
+  const mode = process.env.APACZKA_MODE || "sandbox";
+  if (mode !== "sandbox" && mode !== "live")
+    throw new StoreError(
+      "APACZKA_MODE",
+      "Niepoprawny tryb integracji Apaczka.",
+      503,
+    );
+  return mode;
+}
+export function requireApaczkaMutation() {
+  requireApaczka();
+  if (
+    apaczkaMode() === "live" &&
+    (process.env.STOREFRONT_PREVIEW !== "false" ||
+      process.env.APACZKA_LIVE_SHIPPING_ENABLED !== "true")
+  )
+    throw new StoreError(
+      "APACZKA_LIVE_DISABLED",
+      "Nadania i anulowanie w produkcyjnej Apaczce są wyłączone. Sprawdź środowisko i zgodę na rzeczywiste zlecenie.",
+      503,
+    );
+}
 
 export function apaczkaConfigured() {
   return !!(
@@ -50,6 +74,27 @@ const serviceSchema = z.object({
     .transform(String),
 });
 export type ApaczkaService = z.infer<typeof serviceSchema>;
+export function parseApaczkaValuation(raw: unknown, serviceId: string) {
+  const parsed = z
+    .object({
+      price_table: z.record(
+        z.string(),
+        z.object({
+          price: z.number().int().nonnegative(),
+          price_gross: z.number().int().nonnegative(),
+        }),
+      ),
+    })
+    .safeParse(raw);
+  const price = parsed.success ? parsed.data.price_table[serviceId] : undefined;
+  if (!price)
+    throw new StoreError(
+      "APACZKA_VALUATION",
+      "Brak poprawnej wyceny wybranej usługi. Nadanie nie zostało wykonane.",
+      502,
+    );
+  return { netCents: price.price, grossCents: price.price_gross };
+}
 export type ApaczkaOrder = {
   service_id: number;
   address: { sender: ApaczkaAddress; receiver: ApaczkaAddress };
@@ -116,6 +161,18 @@ export function createApaczkaClient(fetcher: typeof fetch = globalThis.fetch) {
   let pending: { key: string; promise: Promise<ApaczkaService[]> } | undefined;
   async function request(route: string, data: unknown = []): Promise<unknown> {
     requireApaczka();
+    const mode = apaczkaMode();
+    if (
+      route === "order_send/" ||
+      route.startsWith("cancel_order/") ||
+      route === "pickup/" ||
+      route === "batch_pickup/"
+    )
+      requireApaczkaMutation();
+    const base =
+      mode === "sandbox"
+        ? "https://panel-sandbox.apaczka.pl/api/v2/"
+        : "https://www.apaczka.pl/api/v2/";
     const appId = process.env.APACZKA_APP_ID!;
     const secret = process.env.APACZKA_APP_SECRET!;
     const payload = JSON.stringify(data);
@@ -123,7 +180,7 @@ export function createApaczkaClient(fetcher: typeof fetch = globalThis.fetch) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 15000);
     try {
-      const res = await fetcher(`https://www.apaczka.pl/api/v2/${route}`, {
+      const res = await fetcher(`${base}${route}`, {
         method: "POST",
         cache: "no-store",
         redirect: "error",
@@ -160,7 +217,7 @@ export function createApaczkaClient(fetcher: typeof fetch = globalThis.fetch) {
   async function services() {
     requireApaczka();
     const key = createHmac("sha256", process.env.APACZKA_APP_SECRET!)
-      .update(process.env.APACZKA_APP_ID!)
+      .update(`${apaczkaMode()}:${process.env.APACZKA_APP_ID}`)
       .digest("hex");
     if (cached?.key === key && cached.until > Date.now()) return cached.value;
     if (pending?.key === key) return pending.promise;
@@ -203,7 +260,9 @@ export function createApaczkaClient(fetcher: typeof fetch = globalThis.fetch) {
     async pickupHours(postalCode: string, serviceId: string, date: string) {
       requireApaczka();
       const key = createHmac("sha256", process.env.APACZKA_APP_SECRET!)
-        .update(`${process.env.APACZKA_APP_ID}:${postalCode}:${serviceId}`)
+        .update(
+          `${apaczkaMode()}:${process.env.APACZKA_APP_ID}:${postalCode}:${serviceId}`,
+        )
         .digest("hex");
       for (const [k, entry] of pickupCache)
         if (entry.until <= Date.now()) pickupCache.delete(k);

@@ -27,7 +27,7 @@ export function BuyBox({
   const addToCart = useAddToCart();
   useViewEvent("view_item", {
     currency: "PLN",
-    value: product.priceCents / 100,
+    value: item(product).price,
     items: [item(product)],
   });
   const [quantity, setQuantity] = useState(1);

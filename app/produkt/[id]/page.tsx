@@ -169,7 +169,7 @@ export default async function ProductPage({
             <li>
               <b>14 dni na zwrot</b>
               <span>
-                Nieotwarte opakowanie zwrócisz bez podania przyczyny.{" "}
+                Możesz odstąpić od umowy na zasadach opisanych w sklepie.{" "}
                 <Link href="/zwroty-i-reklamacje">Zasady zwrotów</Link>
               </span>
             </li>

@@ -21,6 +21,7 @@ COPY --from=build --chown=store:store /app/public ./public
 COPY --from=build --chown=store:store /app/operations ./operations
 COPY --from=build --chown=store:store /app/db/migrations ./db/migrations
 COPY --chown=store:store ops/worker.mjs ./operations/worker.mjs
+COPY --chown=store:store ops/worker-once.mjs ./operations/worker-once.mjs
 RUN mkdir -p /app/media && chown store:store /app/media
 USER store
 EXPOSE 3000

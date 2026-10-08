@@ -225,11 +225,119 @@ test("analytics: full approved refund uses original amounts and is unique", asyn
   };
   await actOnOrder(f.order.id, action, "test-admin");
   await actOnOrder(f.order.id, action, "test-admin");
-  assert.deepEqual(
-    (await entry(f.order.id, "refund")).payload,
-    (await entry(f.order.id)).payload,
-  );
+  const { refund_id, ...payload } = (await entry(f.order.id, "refund")).payload;
+  assert.equal(refund_id, `admin-order:${action.idempotencyKey}`);
+  assert.deepEqual(payload, (await entry(f.order.id)).payload);
   assert.equal((await entry(f.order.id, "refund")).status, "pending");
+});
+test("analytics: shipping-only refunds stay in the ledger without a misleading full-refund event", async () => {
+  const f = await paid();
+  await actOnOrder(
+    f.order.id,
+    {
+      action: "record_refund",
+      expectedStatus: "paid",
+      idempotencyKey: randomUUID(),
+      reference: "SHIPPING-PROOF",
+      note: "Actual shipping refund",
+      amountCents: 1500,
+      refundItems: [],
+      shippingRefundCents: 1500,
+    },
+    "test-admin",
+  );
+  const a = await entry(f.order.id, "refund");
+  assert.equal(a.status, "skipped");
+  assert.equal(a.last_error, "refund_adjustment");
+  assert.deepEqual(a.payload.items, []);
+  assert.equal(a.payload.shipping, 15);
+  assert.equal(
+    (await query("SELECT status FROM orders WHERE id=$1", [f.order.id])).rows[0]
+      .status,
+    "paid",
+  );
+});
+test("analytics: a mixed refund still reports actual item returns while money-only corrections stay in the ledger", async () => {
+  const input = await fixture(),
+    consent = await consentFixture();
+  const p = (
+    await query(
+      "INSERT INTO products(slug,name,price_cents,stock,status,sale_mode) VALUES($1,'Second test oil',8000,5,'active','retail') RETURNING id",
+      [randomUUID()],
+    )
+  ).rows[0];
+  const o = await createOrder(
+    {
+      ...input,
+      lines: [...input.lines, { productId: p.id, quantity: 1 }],
+      expectedTotalCents: 17500,
+      analytics: consent.analytics,
+    },
+    null,
+    consent.id,
+  );
+  await markOrderPaid(o.id, randomUUID(), 17500, "PLN");
+  const items = (
+    await query(
+      "SELECT id,product_id FROM order_items WHERE order_id=$1 ORDER BY id",
+      [o.id],
+    )
+  ).rows;
+  const first = items.find((i) => i.product_id === input.lines[0].productId)!,
+    other = items.find((i) => i.product_id === p.id)!;
+  const base = {
+    action: "record_refund",
+    expectedStatus: "paid",
+    reference: "PROOF",
+    note: "Actual item and money refunds",
+  };
+  await actOnOrder(
+    o.id,
+    {
+      ...base,
+      idempotencyKey: randomUUID(),
+      amountCents: 4000,
+      refundItems: [{ itemId: first.id, quantity: 1, amountCents: 4000 }],
+      shippingRefundCents: 0,
+    },
+    "test-admin",
+  );
+  await actOnOrder(
+    o.id,
+    { ...base, idempotencyKey: randomUUID(), amountCents: 13500 },
+    "test-admin",
+  );
+  const a = (
+    await query(
+      "SELECT * FROM analytics_outbox WHERE order_id=$1 AND event_type='refund' ORDER BY created_at",
+      [o.id],
+    )
+  ).rows[1];
+  assert.equal(a.status, "pending");
+  assert.equal(a.payload.items.length, 1);
+  assert.equal(a.payload.items[0].item_id, p.id);
+  assert.equal(a.payload.items[0].quantity, 1);
+  assert.equal(a.payload.value, 65.04);
+  assert.equal(a.payload.shipping, 15);
+});
+test("analytics: a different event key cannot duplicate purchase at the database boundary", async () => {
+  const f = await paid();
+  await assert.rejects(
+    query(
+      "INSERT INTO analytics_outbox(order_id,event_type,payload,status,event_key) VALUES($1,'purchase','{}','pending',$2)",
+      [f.order.id, randomUUID()],
+    ),
+    { code: "23514" },
+  );
+  assert.equal(
+    (
+      await query(
+        "SELECT count(*)::int n FROM analytics_outbox WHERE order_id=$1 AND event_type='purchase'",
+        [f.order.id],
+      )
+    ).rows[0].n,
+    1,
+  );
 });
 test("analytics: concurrent workers send once; HTTP payload has no buyer data", async () => {
   await configured(async () => {

@@ -75,7 +75,7 @@ export function PaymentControls({
       <p>
         {processing
           ? "Czekamy na potwierdzenie od operatora. Towar pozostaje zarezerwowany; nie opłacaj zamówienia ponownie."
-          : "Wybierzesz metodę na bezpiecznej stronie płatności: BLIK, Przelewy24 lub karta. Apple Pay pojawi się na obsługiwanym urządzeniu z aktywnym portfelem."}
+          : "Wybierzesz jedną z dostępnych metod na bezpiecznej stronie Stripe. Dostępność portfeli, takich jak Apple Pay, zależy także od urządzenia."}
       </p>
       {!available && (
         <p className="notice">

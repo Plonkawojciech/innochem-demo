@@ -108,7 +108,7 @@ export default async function Catalog({
         </div>
         <div>
           <b>14 dni na zwrot</b>
-          <span>Nieotwarte produkty zwrócisz bez podawania przyczyny.</span>
+          <span>Odstąpienie od umowy na zasadach opisanych w sklepie.</span>
         </div>
         <div>
           <b>Pomoc w doborze</b>

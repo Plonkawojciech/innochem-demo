@@ -6,7 +6,11 @@ import { defaultSiteContent } from "../site-content";
 export const shippingSchema = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
   label: z.string().min(1).max(100),
+  kind: z.enum(["courier", "pickup"]).optional(),
   priceCents: z.number().int().min(0).max(100000),
+  codPriceCents: z.number().int().min(0).max(100000).nullable().default(null),
+  freeFromUnits: z.number().int().min(0).max(50000).default(0),
+  freeShippingIncludesCod: z.boolean().default(true),
   cod: z.boolean(),
   enabled: z.boolean(),
   maxWeightGrams: z.number().int().min(0).default(0),
@@ -65,7 +69,14 @@ export const settingsSchema = z.object({
   shippingApproved: z.boolean(),
   legalApproved: z.boolean(),
   termsVersion: z.string().min(1).max(80),
-  shippingMethods: z.array(shippingSchema).max(20),
+  shippingMethods: z
+    .array(shippingSchema)
+    .max(20)
+    .refine(
+      (methods) =>
+        new Set(methods.map((method) => method.id)).size === methods.length,
+      "Identyfikatory metod dostawy muszą być różne.",
+    ),
   paymentMethods: z.array(z.enum(["bank_transfer", "cod", "stripe"])),
   codLimitCents: z.number().int().min(0).max(10_000_000).default(0),
   bankAccount: z.string().max(80),

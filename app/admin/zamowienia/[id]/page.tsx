@@ -14,6 +14,7 @@ import {
 import { activeShipment, shipmentPending } from "@/lib/server/shipments";
 import { storeSettings } from "@/lib/server/settings";
 import { StoreError } from "@/lib/server/errors";
+import { shippingKind } from "@/lib/shipping";
 export default async function Order({
   params,
 }: {
@@ -24,15 +25,28 @@ export default async function Order({
   if (!z.uuid().safeParse(id).success) notFound();
   const data = await adminOrder(id);
   if (!data) notFound();
-  const { order: o, items, events, payment } = data;
+  const { order: o, items, events, payment, refunds } = data;
   const configured = apaczkaConfigured();
   const [settings, shipment, pending] = await Promise.all([
     storeSettings(),
     activeShipment(id),
     shipmentPending(id),
   ]);
+  const shippingSnapshot = events.find((e) => e.kind === "created")?.data
+    ?.shipping?.kind;
+  const method = settings.shippingMethods.find(
+    (m) => m.id === o.shipping_method,
+  );
+  const pickup =
+    shippingKind({
+      id: o.shipping_method,
+      kind: shippingSnapshot || method?.kind,
+    }) === "pickup";
   const blocked =
-    !!o.legacy_id || ["cancelled", "legacy", "refunded"].includes(o.status);
+    !!o.legacy_id ||
+    !["paid", "processing"].includes(o.status) ||
+    !o.stock_committed ||
+    pickup;
   let availableServices: ApaczkaService[] = [];
   let serviceError = "";
   if (configured && !shipment && !pending && !blocked) {
@@ -147,12 +161,15 @@ export default async function Order({
       </div>
       {!o.legacy_id && (
         <OrderActions
+          key={`${o.status}:${refunds.refundedCents}:${refunds.lines.reduce((sum, i) => sum + i.returnedQuantity, 0)}`}
           id={id}
           status={o.status}
           method={o.payment_method}
           total={o.total_cents}
           stockCommitted={o.stock_committed}
           trackingNumber={o.tracking_number}
+          refunds={refunds}
+          shippingCents={o.shipping_cents}
         />
       )}
       <ShipmentActions
@@ -165,6 +182,7 @@ export default async function Order({
         pending={pending}
         blocked={blocked}
         serviceError={serviceError}
+        pickup={pickup}
       />
       <section className="panel">
         <h3>Historia zmian</h3>
@@ -185,6 +203,7 @@ export default async function Order({
                       shipment_created: "Nadano przesyłkę przez Apaczkę",
                       shipment_cancelled: "Anulowano przesyłkę w Apaczce",
                       shipment_rejected: "Nie przyjęto zlecenia przesyłki",
+                      shipment_quoted: "Pobrano wycenę przesyłki",
                       created: "Utworzono zamówienie",
                       paid: "Potwierdzono płatność",
                       ship: "Wysłano",
@@ -193,6 +212,7 @@ export default async function Order({
                       cancelled: "Anulowano",
                       reservation_expired: "Rezerwacja wygasła",
                       record_refund: "Zapisano rozliczenie zwrotu",
+                      record_return: "Przyjęto zwrócony towar do magazynu",
                       late_payment: "Płatność po anulowaniu",
                       cancel_cod: "Anulowano pobranie",
                     } as Record<string, string>

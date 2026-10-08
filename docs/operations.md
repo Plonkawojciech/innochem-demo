@@ -36,7 +36,7 @@ Wiadomości powstałe w podglądzie mają trwałe oznaczenie `preview`. Worker p
 
 ## Stripe
 
-Przygotowany jest Stripe Checkout na stronie operatora: `card`, `blik`, `p24`, PLN. Apple Pay udostępnia Stripe w płatności kartą na obsługiwanym urządzeniu z aktywnym portfelem. Nie jest osobną wartością `payment_method_types`.
+Przygotowany jest Stripe Checkout na stronie operatora, PLN. Metody pochodzą z aktywnej konfiguracji Dashboard i kwalifikacji konta; żądanie nie wymusza statycznie niedostępnej metody. Weryfikacja 08.10.2026 na koncie INNOCHEM: BLIK, Cards, Apple Pay i Google Pay Enabled; P24 Ineligible / Unsupported business. Wymaga wyjaśnienia przez operatora, zanim można potwierdzić obsługę P24. Apple Pay udostępnia Stripe w płatności kartą na obsługiwanym urządzeniu z aktywnym portfelem. Nie jest osobną wartością `payment_method_types`.
 
 W panelu operatora aktywuj wymagane metody i zakończ weryfikację firmy. Endpoint:
 
@@ -94,7 +94,7 @@ Według [oficjalnej dokumentacji Web API v2](https://panel.apaczka.pl/dokumentac
 
 Przed uruchomieniem zastosuj migrację `015_shipments.sql` standardowym poleceniem `npm run db:migrate` w środowisku docelowej bazy. Tworzy tabelę `shipments`, indeks zamówienia, unikalność identyfikatora operatora i unikalność aktywnej przesyłki zamówienia. Nie zmienia istniejących zamówień. Panel używa `orders.shipping_address`, `buyer`, `email` oraz `tracking_number`.
 
-W **Ustawieniach sklepu → Apaczka: nadawca i paczki** sprawdź adres, osobę kontaktową, telefon i e-mail. Początkowy telefon i e-mail pochodzą z istniejących domyślnych danych kontaktowych serwisu; nie synchronizują się automatycznie z późniejszymi zmianami kontaktu. Preset „Karton 4 butelki” 30 × 20 × 25 cm, 5 kg jest przykładem do zmiany. Dodaj rzeczywiste presety opakowań. Dla pobrania uzupełnij `bankAccount` polskim NRB (26 cyfr; spacje i prefiks PL są usuwane). Kwota pobrania to `total_cents`, razem z dostawą, w groszach PLN.
+W **Ustawieniach sklepu → Apaczka: nadawca i paczki** sprawdź adres, osobę kontaktową, telefon i e-mail. Początkowy telefon i e-mail pochodzą z istniejących domyślnych danych kontaktowych serwisu; nie synchronizują się automatycznie z późniejszymi zmianami kontaktu. Istniejący preset „Karton 4 butelki” 30 × 20 × 25 cm, 5 kg jest przykładem do usunięcia lub zastąpienia po otrzymaniu prawdziwych wymiarów i masy. Nie traktuj go jako potwierdzonego opakowania INNOCHEM. Dodaj rzeczywiste presety opakowań. Dla pobrania uzupełnij `bankAccount` polskim NRB (26 cyfr; spacje i prefiks PL są usuwane). Kwota pobrania to `total_cents`, razem z dostawą, w groszach PLN.
 
 Przyjęte ograniczenia i kwestie do potwierdzenia na koncie:
 
@@ -123,3 +123,17 @@ Lokalny odpowiednik to `node --import tsx scripts/preflight.ts`; skrypt korzysta
 `/api/health` porównuje `schema_migrations.name` z manifestem wydania `lib/server/migrations-manifest.ts`. Brak migracji daje HTTP 503 i listę `missing`; błędy połączenia nie ujawniają szczegółów. Przy dodaniu migracji uzupełnij manifest; zgodność sprawdza test.
 
 W panelu płatności pole „Limit pobrania (zł, 0 = bez limitu)” zapisuje `codLimitCents` w groszach. Limit obejmuje produkty i dostawę, a kwota równa limitowi jest dozwolona. Istniejące ustawienia bez pola przyjmują 0. Zmiana limitu wymaga nowej zatwierdzonej wersji warunków, tak jak zmiana metod dostawy.
+
+## Tryby integracji i wdrożenie migracji 016–017
+
+Compose przekazuje `APACZKA_APP_ID`, `APACZKA_APP_SECRET`, `APACZKA_MODE` (domyślnie `sandbox`) i `APACZKA_LIVE_SHIPPING_ENABLED` (domyślnie `false`) z odpowiadających im zmiennych `INNOCHEM_APACZKA_*`. Sandbox używa osobnego konta i kluczy operatora. Nadanie lub anulowanie w `live` wymaga jednocześnie `STOREFRONT_PREVIEW=false` i `APACZKA_LIVE_SHIPPING_ENABLED=true`. Sam odczyt wyceny nie składa zlecenia. Panel wymaga aktualnej, pięciominutowej wyceny związanej z operatorem, paczkami, zamówieniem i zalogowaną osobą.
+
+Migracja 017 zapisuje tryb przesyłki i rozdziela unikalność zleceń sandbox/live. Stare przesyłki otrzymują `unknown`: trzeba sprawdzić rzeczywiste środowisko u operatora i udokumentować przypisanie, zanim będą pobierane etykiety lub wykonywane anulowanie. Wpisy o niejednoznacznym wyniku bez historycznego trybu blokują dalsze nadanie. Nie kopiuj identyfikatorów przesyłek między środowiskami. Zamówienie po refundacji lub przyjęciu zwrotu wymaga wyjaśnienia zakresu wysyłki; panel nie nadaje automatycznie pierwotnego pełnego koszyka i pobrania.
+
+Migracja 016 zmienia klucz unikalności kolejki analitycznej. Stary kod wymaga poprzedniego indeksu; nie uruchamiaj starego i nowego wydania równocześnie przy tej migracji. Sekwencja: przygotuj i przetestuj nowy obraz; potwierdź wyłączony checkout i brak trwających transakcji; wykonaj backup; zatrzymaj procesy zapisujące (web/worker); zastosuj migracje nowym obrazem; uruchom wyłącznie nowe wydanie; sprawdź `/api/health`, liczniki danych i kolejki. Cofnięcie samego obrazu do wydania sprzed 016 nie jest zgodnym rollbackiem. W razie problemu popraw nowe wydanie albo przeprowadź uzgodnione odzyskanie kompletnego snapshotu w osobnym środowisku.
+
+Worker zwraca osobno `enabled`, `healthy`, `errors` i `warnings`. Wyłączona kolejka może być osiągalna; nie oznacza to aktywnego przetwarzania. Wyjątek całej kolejki odbiera heartbeat, ale nie blokuje pozostałych kolejek. Błędy pojedynczych zadań trafiają do liczników i `warnings`, wymagających monitorowania; nie oznaczają zatrzymania procesu. Log zawiera nazwy kolejek i liczniki, bez danych kupującego i sekretów.
+
+Rozliczenie refundacji dopuszcza osobną korektę kwoty z ilością 0; przyjęcie sztuk do magazynu nadal wymaga dodatniej ilości i osobnego zdarzenia. Zwrot samej dostawy lub korekta kwoty nie wysyła standardowego GA4 `refund` bez poprawnych pozycji: jest zachowany lokalnie jako `skipped / refund_adjustment`, aby nie raportować nieprawdziwego pełnego zwrotu ani dzielenia przez zero. Przy mieszanym rozliczeniu GA4 otrzymuje dodatnie ilości i ich kwoty; korekty z ilością 0 pozostają w finansowej historii zamówienia, a nie w standardowych metrykach refundowanych produktów. Standardowe zwroty wskazanych produktów trafiają do GA4 z osobnym identyfikatorem każdej operacji.
+
+Format kopii v2 używa sortowania `COLLATE "C"` dla fingerprintu tabel, wierszy i sekwencji. Dzięki temu odtworzenie między Linuxem i macOS nie zależy od różnic bibliotek lokalizacji. Odczyt v1 pozostaje obsługiwany z oryginalnym sposobem liczenia; przy odtwarzaniu historycznych kopii na innej platformie nie wolno ignorować różnicy fingerprintu. Klucz szyfrowania jest ten sam i nie trafia do manifestu.

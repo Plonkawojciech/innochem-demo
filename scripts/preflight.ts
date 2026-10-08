@@ -115,6 +115,32 @@ export async function preflight(env: NodeJS.ProcessEnv): Promise<Check[]> {
     payments,
   );
   check("NEXT_PUBLIC_GA4_MEASUREMENT_ID", undefined, undefined, false);
+  const apaczka = !!(
+    env.APACZKA_APP_ID?.trim() || env.APACZKA_APP_SECRET?.trim()
+  );
+  for (const name of ["APACZKA_APP_ID", "APACZKA_APP_SECRET"])
+    check(name, undefined, undefined, apaczka);
+  check(
+    "APACZKA_MODE",
+    (value) => ["sandbox", "live"].includes(value),
+    "Wymagane sandbox albo live przy konfiguracji Apaczki.",
+    apaczka,
+  );
+  check(
+    "APACZKA_LIVE_SHIPPING_ENABLED",
+    (value) =>
+      ["true", "false"].includes(value) &&
+      (value !== "true" ||
+        (env.APACZKA_MODE === "live" && env.STOREFRONT_PREVIEW === "false")),
+    "Rzeczywiste nadania wymagają trybu live oraz wyłączonego podglądu.",
+    false,
+  );
+  check(
+    "STORE_WORKER_ENABLED",
+    (value) => ["true", "false"].includes(value),
+    "Wymagane true albo false.",
+    false,
+  );
   check(
     "GA4_API_SECRET",
     undefined,

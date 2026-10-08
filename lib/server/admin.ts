@@ -486,18 +486,24 @@ export async function saveInquiry(raw: unknown, actor: string, id: string) {
   });
 }
 export async function saveSettings(raw: unknown, actor: string) {
-  const p = z
+  const parsed = z
     .object({ version, value: settingsSchema.strict() })
     .strict()
-    .parse(raw);
-  if (
-    new Set(p.value.shippingMethods.map((s) => s.id)).size !==
-    p.value.shippingMethods.length
-  )
-    throw new StoreError(
-      "SHIPPING_DUPLICATE",
-      "Identyfikatory dostaw muszą być unikalne.",
-    );
+    .safeParse(raw);
+  if (!parsed.success) {
+    if (
+      parsed.error.issues.some(
+        (i) =>
+          i.code === "custom" && i.path.join(".") === "value.shippingMethods",
+      )
+    )
+      throw new StoreError(
+        "SHIPPING_DUPLICATE",
+        "Identyfikatory dostaw muszą być unikalne.",
+      );
+    throw parsed.error;
+  }
+  const p = parsed.data;
   return transaction(async (db) => {
     const {
       rows: [current],

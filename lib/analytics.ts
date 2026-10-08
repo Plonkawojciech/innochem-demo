@@ -29,14 +29,18 @@ export function safePath(path: string) {
   return pathname;
 }
 export function item(
-  p: Pick<StoreProduct, "sku" | "id" | "name" | "priceCents">,
+  p: Pick<StoreProduct, "sku" | "id" | "name" | "priceCents"> &
+    Partial<Pick<StoreProduct, "taxRate">>,
   quantity = 1,
 ) {
   return {
     item_id: p.sku || p.id,
     item_name: p.name,
     item_category: productFacts(p.name).series || "Inne",
-    price: p.priceCents / 100,
+    price:
+      Math.round((p.priceCents * quantity * 100) / (100 + (p.taxRate ?? 0))) /
+      100 /
+      quantity,
     currency: "PLN",
     quantity,
   };

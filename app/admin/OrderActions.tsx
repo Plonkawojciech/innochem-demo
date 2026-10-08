@@ -1,6 +1,8 @@
 "use client";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import type { refundSummary } from "@/lib/server/refunds";
+import { money } from "@/lib/store-types";
 export function OrderActions({
   id,
   status,
@@ -8,6 +10,8 @@ export function OrderActions({
   total,
   stockCommitted,
   trackingNumber,
+  refunds,
+  shippingCents,
 }: {
   id: string;
   status: string;
@@ -15,11 +19,15 @@ export function OrderActions({
   total: number;
   stockCommitted: boolean;
   trackingNumber?: string | null;
+  refunds: ReturnType<typeof refundSummary>;
+  shippingCents: number;
 }) {
   const router = useRouter();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [action, setAction] = useState("");
+  const requestKey = useRef<{ fingerprint: string; key: string } | null>(null);
+  const remaining = total - refunds.refundedCents;
   const choices = [
     ...(status === "pending_payment"
       ? [
@@ -46,8 +54,18 @@ export function OrderActions({
       "shipped",
       "completed",
       "payment_review",
-    ].includes(status)
+    ].includes(status) && remaining > 0
       ? [["record_refund", "Zapisz wykonany zwrot pieniędzy"]]
+      : []),
+    ...([
+      "paid",
+      "processing",
+      "shipped",
+      "completed",
+      "refunded",
+      "payment_review",
+    ].includes(status) && stockCommitted
+      ? [["record_return", "Przyjmij zwrócone sztuki do magazynu"]]
       : []),
   ];
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -56,25 +74,57 @@ export function OrderActions({
     setError("");
     const f = new FormData(e.currentTarget);
     try {
+      const selected = refunds.lines
+        .map((i) => ({
+          itemId: i.id,
+          quantity: Number(f.get(`quantity:${i.id}`) || 0),
+          amountCents: Math.round(Number(f.get(`refund:${i.id}`) || 0) * 100),
+        }))
+        .filter(
+          (i) =>
+            i.quantity > 0 || (action === "record_refund" && i.amountCents > 0),
+        );
+      const payload = {
+        action,
+        expectedStatus: status,
+        reference: String(f.get("reference") || ""),
+        trackingNumber: String(f.get("trackingNumber") || ""),
+        note: String(f.get("note") || ""),
+        ...(f.has("amount")
+          ? { amountCents: Math.round(Number(f.get("amount")) * 100) }
+          : {}),
+        ...(action === "record_refund"
+          ? {
+              refundItems: selected,
+              shippingRefundCents: Math.round(
+                Number(f.get("shippingRefund") || 0) * 100,
+              ),
+            }
+          : {}),
+        ...(action === "record_return"
+          ? {
+              returnItems: selected.map(({ itemId, quantity }) => ({
+                itemId,
+                quantity,
+              })),
+            }
+          : {}),
+      };
+      const fingerprint = JSON.stringify(payload);
+      if (requestKey.current?.fingerprint !== fingerprint)
+        requestKey.current = { fingerprint, key: crypto.randomUUID() };
       const r = await fetch(`/api/admin/orders/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action,
-          expectedStatus: status,
-          idempotencyKey: crypto.randomUUID(),
-          reference: String(f.get("reference") || ""),
-          trackingNumber: String(f.get("trackingNumber") || ""),
-          note: String(f.get("note") || ""),
-          ...(f.has("amount")
-            ? { amountCents: Math.round(Number(f.get("amount")) * 100) }
-            : {}),
-          restock: f.get("restock") === "on",
+          ...payload,
+          idempotencyKey: requestKey.current.key,
         }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
       setAction("");
+      requestKey.current = null;
       router.refresh();
     } catch (e) {
       setError(
@@ -88,6 +138,13 @@ export function OrderActions({
   return (
     <section className="panel">
       <h3>Obsługa zamówienia</h3>
+      {refunds.refundedCents > 0 && (
+        <p className="notice">
+          Zapisano wykonane zwroty: {money(refunds.refundedCents)}. Pozostała
+          kwota do rozliczenia: {money(remaining)}. Przyjęcie towaru do magazynu
+          jest osobną operacją.
+        </p>
+      )}
       <form onSubmit={submit}>
         <label className="f">
           Operacja
@@ -120,7 +177,10 @@ export function OrderActions({
                   min="0"
                   step="0.01"
                   required
-                  defaultValue={total / 100}
+                  defaultValue={
+                    (action === "record_refund" ? remaining : total) / 100
+                  }
+                  max={action === "record_refund" ? remaining / 100 : undefined}
                 />
               </label>
               <label className="f">
@@ -152,19 +212,86 @@ export function OrderActions({
             />
           </label>
         )}
-        {action === "record_refund" && (
+        {["record_refund", "record_return"].includes(action) && (
           <>
-            <label className="f">
-              Uzasadnienie i sposób zwrotu
-              <textarea name="note" required maxLength={2000} />
-            </label>
-            {stockCommitted && (
-              <label className="check-label">
-                <input name="restock" type="checkbox" />
-                Towar wrócił w całości i nadaje się do sprzedaży — przyjmij go
-                do magazynu.
+            {action === "record_return" && (
+              <>
+                <p className="notice">
+                  Przyjmij tylko towar faktycznie otrzymany i nadający się do
+                  sprzedaży. Ta operacja nie zapisuje zwrotu pieniędzy.
+                </p>
+                <label className="f">
+                  Potwierdzenie przyjęcia
+                  <input name="reference" required maxLength={180} />
+                </label>
+              </>
+            )}
+            {refunds.lines.map((i) => {
+              const quantity =
+                action === "record_return"
+                  ? i.quantity - i.returnedQuantity
+                  : i.quantity - i.refundedQuantity;
+              if (
+                quantity <= 0 &&
+                (action === "record_return" || i.total_cents <= i.refundedCents)
+              )
+                return null;
+              return (
+                <fieldset key={`${action}:${i.id}`}>
+                  <legend>{i.product_name}</legend>
+                  <div className="field-grid">
+                    <label className="f">
+                      {action === "record_return"
+                        ? "Sztuki przyjęte do magazynu"
+                        : "Sztuki objęte refundacją (0 dla korekty kwoty)"}
+                      <input
+                        name={`quantity:${i.id}`}
+                        type="number"
+                        min={0}
+                        max={quantity}
+                        step={1}
+                        required
+                        defaultValue={action === "record_return" ? 0 : quantity}
+                      />
+                    </label>
+                    {action === "record_refund" && (
+                      <label className="f">
+                        Zwrócona kwota pozycji (zł)
+                        <input
+                          name={`refund:${i.id}`}
+                          type="number"
+                          min={0}
+                          max={(i.total_cents - i.refundedCents) / 100}
+                          step="0.01"
+                          required
+                          defaultValue={(i.total_cents - i.refundedCents) / 100}
+                        />
+                      </label>
+                    )}
+                  </div>
+                </fieldset>
+              );
+            })}
+            {action === "record_refund" && (
+              <label className="f">
+                Zwrócony koszt dostawy (zł)
+                <input
+                  name="shippingRefund"
+                  type="number"
+                  min={0}
+                  max={(shippingCents - refunds.shippingRefundedCents) / 100}
+                  step="0.01"
+                  required
+                  defaultValue={
+                    (shippingCents - refunds.shippingRefundedCents) / 100
+                  }
+                />
               </label>
             )}
+            <label className="f">
+              Uzasadnienie i sposób rozliczenia
+              <textarea name="note" required maxLength={2000} />
+            </label>
           </>
         )}
         {action && (

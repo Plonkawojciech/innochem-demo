@@ -7,6 +7,7 @@ import { query, transaction } from "./db";
 import { checkoutReady, settingsSchema } from "./settings";
 import { StoreError } from "./errors";
 import { stripeCheckoutReady } from "./stripe-config";
+import { quoteShipping, shippingKind } from "../shipping";
 export { StoreError } from "./errors";
 import { legalText, type LegalDocument } from "./legal";
 const text = (max: number) => z.string().trim().min(1).max(max);
@@ -189,8 +190,7 @@ export async function createOrder(
         "PRODUCT_UNAVAILABLE",
         "Jeden z produktów nie jest już dostępny.",
       );
-    let subtotal = 0,
-      weight = 0;
+    let subtotal = 0;
     const items = input.lines.map((line) => {
       const p = products.find((p) => p.id === line.productId)!;
       if (
@@ -209,7 +209,6 @@ export async function createOrder(
           409,
         );
       subtotal += p.price_cents * line.quantity;
-      weight += p.weight_grams * line.quantity;
       return {
         ...line,
         name: p.name,
@@ -218,18 +217,22 @@ export async function createOrder(
         tax: p.tax_rate,
       };
     });
-    if (shipping.maxWeightGrams && products.some((p) => p.weight_grams <= 0))
+    const shippingQuote = quoteShipping(
+      shipping,
+      input.lines.map((line) => ({
+        quantity: line.quantity,
+        weightGrams: products.find((p) => p.id === line.productId)!
+          .weight_grams,
+      })),
+      input.paymentMethod,
+    );
+    if (shippingQuote.error)
       throw new StoreError(
-        "SHIPPING_WEIGHT_UNKNOWN",
-        "Nie można potwierdzić masy tej przesyłki. Skontaktuj się ze sklepem, aby ustalić dostawę.",
+        shippingQuote.error.code,
+        shippingQuote.error.message,
         409,
       );
-    if (shipping.maxWeightGrams && weight > shipping.maxWeightGrams)
-      throw new StoreError(
-        "SHIPPING_LIMIT",
-        "Przesyłka przekracza limit wybranej metody dostawy.",
-      );
-    const total = subtotal + shipping.priceCents;
+    const total = subtotal + shippingQuote.priceCents;
     if (!Number.isSafeInteger(total) || total > 100000000)
       throw new StoreError(
         "TOTAL_LIMIT",
@@ -256,7 +259,7 @@ export async function createOrder(
       rows: [order],
     } = await db.query(
       `INSERT INTO orders(customer_id,idempotency_key,request_hash,email,buyer,shipping_address,status,payment_method,subtotal_cents,shipping_cents,total_cents,shipping_method,shipping_label,reservation_expires_at,stock_committed,terms_version)
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,CASE WHEN $14::int=0 THEN NULL ELSE now()+make_interval(mins=>$14) END,$15,$16) RETURNING id,number`,
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,CASE WHEN $14::int=0 THEN NULL ELSE now()+make_interval(mins=>$14) END,$15,$16) RETURNING id,number,reservation_expires_at`,
       [
         customerId,
         input.idempotencyKey,
@@ -267,7 +270,7 @@ export async function createOrder(
         cod ? "processing" : "pending_payment",
         input.paymentMethod,
         subtotal,
-        shipping.priceCents,
+        shippingQuote.priceCents,
         total,
         shipping.id,
         shipping.label,
@@ -338,6 +341,11 @@ export async function createOrder(
     await event(db, order.id, "created", {
       paymentMethod: input.paymentMethod,
       termsVersion: settings.termsVersion,
+      shipping: {
+        ...shippingQuote,
+        methodId: shipping.id,
+        kind: shippingKind(shipping),
+      },
     });
     const lines = items
       .map(
@@ -347,11 +355,11 @@ export async function createOrder(
       .join("\n");
     const payment =
       input.paymentMethod === "bank_transfer"
-        ? `\nRachunek do przelewu: ${settings.bankAccount}\nTytuł: INNOCHEM ${order.number}`
+        ? `\nRachunek do przelewu: ${settings.bankAccount}\nTytuł: INNOCHEM ${order.number}\nTermin płatności i rezerwacji: ${new Date(order.reservation_expires_at).toLocaleString("pl-PL", { timeZone: "Europe/Warsaw" })} (czas polski).`
         : cod
           ? "\nPłatność przy odbiorze."
           : "\nZamówienie oczekuje na potwierdzenie płatności.";
-    const body = `Zamówienie INNOCHEM ${order.number}\n\n${lines}\nDostawa: ${shipping.label} — ${(shipping.priceCents / 100).toFixed(2)} zł\nRazem: ${(total / 100).toFixed(2)} zł${payment}\n\nKontakt: ${settings.contactEmail}`;
+    const body = `Zamówienie INNOCHEM ${order.number}\n\n${lines}\nDostawa: ${shipping.label} — ${(shippingQuote.priceCents / 100).toFixed(2)} zł\nRazem: ${(total / 100).toFixed(2)} zł${payment}\n\nKontakt: ${settings.contactEmail}`;
     for (const [suffix, recipient] of [
       ["customer", input.buyer.email],
       ["store", settings.orderEmail],

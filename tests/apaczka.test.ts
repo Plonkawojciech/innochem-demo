@@ -4,6 +4,7 @@ import {
   createApaczkaClient,
   apaczkaSignature,
   apaczkaConfigured,
+  parseApaczkaValuation,
 } from "../lib/server/apaczka";
 import { mapShipmentOrder, shipmentInput } from "../lib/server/shipments";
 import { settingsSchema } from "../lib/server/settings";
@@ -39,12 +40,62 @@ const source = {
   },
 };
 const parcel = { lengthCm: 30, widthCm: 20, heightCm: 25, weightKg: 5 };
+test("valuation selects the requested service in grosze and rejects missing or malformed prices", () => {
+  assert.deepEqual(
+    parseApaczkaValuation(
+      {
+        price_table: {
+          "1": { price: 2000, price_gross: 2460 },
+          "2": { price: 100, price_gross: 123 },
+        },
+      },
+      "1",
+    ),
+    { netCents: 2000, grossCents: 2460 },
+  );
+  for (const raw of [
+    {},
+    { price_table: {} },
+    { price_table: { "1": { price: -1, price_gross: 10 } } },
+    { price_table: { "1": { price: 20, price_gross: "24.60" } } },
+  ])
+    assert.throws(() => parseApaczkaValuation(raw, "1"), {
+      code: "APACZKA_VALUATION",
+    });
+  const mapped = mapShipmentOrder(source, settings, service, [
+    parcel,
+    { ...parcel, weightKg: 6 },
+  ]);
+  assert.equal(mapped.shipment.length, 2);
+  assert.deepEqual(
+    mapped.shipment.map((p) => p.weight),
+    [5, 6],
+  );
+  assert.equal(mapped.cod?.amount, source.total_cents);
+  assert.equal(
+    shipmentInput.safeParse({ serviceId: "1", parcels: [] }).success,
+    false,
+  );
+  assert.equal(
+    shipmentInput.safeParse({ serviceId: "1", parcel, parcels: [parcel] })
+      .success,
+    false,
+  );
+});
 function configure(t: TestContext, enabled = true) {
-  const previous = [process.env.APACZKA_APP_ID, process.env.APACZKA_APP_SECRET];
+  const keys = [
+    "APACZKA_APP_ID",
+    "APACZKA_APP_SECRET",
+    "APACZKA_MODE",
+    "APACZKA_LIVE_SHIPPING_ENABLED",
+  ];
+  const previous = keys.map((key) => process.env[key]);
   process.env.APACZKA_APP_ID = enabled ? "test-app" : "";
   process.env.APACZKA_APP_SECRET = enabled ? "test-secret" : "";
+  process.env.APACZKA_MODE = "sandbox";
+  process.env.APACZKA_LIVE_SHIPPING_ENABLED = "false";
   t.after(() => {
-    for (const [i, key] of ["APACZKA_APP_ID", "APACZKA_APP_SECRET"].entries()) {
+    for (const [i, key] of keys.entries()) {
       if (previous[i] === undefined) delete process.env[key];
       else process.env[key] = previous[i];
     }
@@ -52,6 +103,39 @@ function configure(t: TestContext, enabled = true) {
 }
 const ok = (response: unknown) =>
   Response.json({ status: 200, message: "", response });
+test("live shipping fails before any provider call; read-only services remain available", async (t) => {
+  configure(t);
+  process.env.APACZKA_MODE = "live";
+  let calls = 0;
+  const client = createApaczkaClient(async () => {
+    calls++;
+    return ok({ services: [service] });
+  });
+  await client.services();
+  assert.equal(calls, 1);
+  await assert.rejects(
+    client.sendOrder(mapShipmentOrder(source, settings, service, parcel)),
+    { code: "APACZKA_LIVE_DISABLED" },
+  );
+  await assert.rejects(client.cancelOrder("123"), {
+    code: "APACZKA_LIVE_DISABLED",
+  });
+  assert.equal(calls, 1);
+});
+test("service caches are separated by environment and sandbox never targets production", async (t) => {
+  configure(t);
+  const hosts: string[] = [];
+  const client = createApaczkaClient(async (url) => {
+    hosts.push(new URL(String(url)).hostname);
+    return ok({ services: [service] });
+  });
+  await client.services();
+  process.env.APACZKA_MODE = "live";
+  await client.services();
+  assert.deepEqual(hosts, ["panel-sandbox.apaczka.pl", "www.apaczka.pl"]);
+  process.env.APACZKA_MODE = "invalid";
+  await assert.rejects(client.services(), { code: "APACZKA_MODE" });
+});
 test("signature: fixed independent HMAC-SHA256 vector and exact form bytes", async (t) => {
   configure(t);
   // Independently calculated with Python hmac/sha256 over the literal UTF-8 message:
@@ -71,7 +155,7 @@ test("signature: fixed independent HMAC-SHA256 vector and exact form bytes", asy
     calls++;
     assert.equal(
       String(url),
-      "https://www.apaczka.pl/api/v2/service_structure/",
+      "https://panel-sandbox.apaczka.pl/api/v2/service_structure/",
     );
     assert.equal(init?.method, "POST");
     assert.equal(init?.cache, "no-store");
@@ -97,7 +181,10 @@ test("sendOrder maps addresses, dimensions, gross COD cents and NRB", async (t) 
   configure(t);
   const order = mapShipmentOrder(source, settings, service, parcel);
   const client = createApaczkaClient(async (url, init) => {
-    assert.equal(String(url), "https://www.apaczka.pl/api/v2/order_send/");
+    assert.equal(
+      String(url),
+      "https://panel-sandbox.apaczka.pl/api/v2/order_send/",
+    );
     const payload = JSON.parse((init!.body as URLSearchParams).get("request")!);
     assert.deepEqual(payload.order.cod, {
       amount: 12345,
@@ -261,7 +348,10 @@ test("pickup hours are selected from the provider and cached for subsequent date
   let count = 0;
   const client = createApaczkaClient(async (url, init) => {
     count++;
-    assert.equal(String(url), "https://www.apaczka.pl/api/v2/pickup_hours/");
+    assert.equal(
+      String(url),
+      "https://panel-sandbox.apaczka.pl/api/v2/pickup_hours/",
+    );
     assert.deepEqual(
       JSON.parse((init!.body as URLSearchParams).get("request")!),
       { postal_code: "25-526", service_id: 1, remove_index: false },

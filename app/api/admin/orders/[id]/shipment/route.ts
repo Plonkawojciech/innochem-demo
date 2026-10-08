@@ -16,7 +16,7 @@ export async function POST(request: Request, context: Context) {
     await rateLimit(request, `shipment:${user.id}`, 10);
     const { id } = await context.params;
     return Response.json(
-      await createShipment(id, await jsonBody(request, 4000), user.id),
+      await createShipment(id, await jsonBody(request, 8000), user.id),
       { status: 201, headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {

@@ -2,7 +2,7 @@ export function stripeConfigured() {
   const mode = process.env.STRIPE_MODE;
   return (
     (mode === "test" || mode === "live") &&
-    !!process.env.STRIPE_SECRET_KEY?.startsWith(`sk_${mode}_`) &&
+    !!process.env.STRIPE_SECRET_KEY?.match(new RegExp(`^(sk|rk)_${mode}_`)) &&
     !!process.env.STRIPE_WEBHOOK_SECRET?.startsWith("whsec_")
   );
 }

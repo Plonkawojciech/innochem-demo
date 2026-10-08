@@ -27,6 +27,10 @@ x-store-environment: &store-environment
   MAIL_FROM: ${INNOCHEM_MAIL_FROM:-}
   NEXT_PUBLIC_GA4_MEASUREMENT_ID: ${NEXT_PUBLIC_GA4_MEASUREMENT_ID:-}
   GA4_API_SECRET: ${GA4_API_SECRET:-}
+  APACZKA_APP_ID: ${INNOCHEM_APACZKA_APP_ID:-}
+  APACZKA_APP_SECRET: ${INNOCHEM_APACZKA_APP_SECRET:-}
+  APACZKA_MODE: ${INNOCHEM_APACZKA_MODE:-sandbox}
+  APACZKA_LIVE_SHIPPING_ENABLED: ${INNOCHEM_APACZKA_LIVE_SHIPPING_ENABLED:-false}
 services:
   database:
     image: postgres:17-bookworm
@@ -57,7 +61,7 @@ services:
     tmpfs: [/tmp]
     networks: [store, egress]
     depends_on:
-      database: {condition: service_healthy}
+      database: { condition: service_healthy }
     security_opt: [no-new-privileges:true]
   migrate:
     image: innochem-store:${INNOCHEM_RELEASE:-local}
@@ -66,7 +70,7 @@ services:
     command: [node, operations/migrate.mjs]
     networks: [store]
     depends_on:
-      database: {condition: service_healthy}
+      database: { condition: service_healthy }
   worker:
     image: innochem-store:${INNOCHEM_RELEASE:-local}
     restart: unless-stopped
@@ -77,15 +81,21 @@ services:
     tmpfs: [/tmp]
     networks: [store]
     depends_on:
-      web: {condition: service_healthy}
+      web: { condition: service_healthy }
     healthcheck:
-      test: [CMD, node, -e, "const fs=require('fs');try{process.exit(Date.now()-Number(fs.readFileSync('/tmp/innochem-worker-heartbeat','utf8'))<300000?0:1)}catch{process.exit(1)}"]
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "const fs=require('fs');try{process.exit(Date.now()-Number(fs.readFileSync('/tmp/innochem-worker-heartbeat','utf8'))<300000?0:1)}catch{process.exit(1)}",
+        ]
       interval: 60s
       timeout: 5s
       start_period: 240s
       retries: 2
   backup:
-    build: {context: ., dockerfile: ops/backup.Dockerfile}
+    build: { context: ., dockerfile: ops/backup.Dockerfile }
     profiles: [operations]
     environment:
       PGHOST: database
@@ -101,7 +111,7 @@ services:
       - ${INNOCHEM_BACKUP_DIRECTORY:-./private/backups}:/backups
     networks: [store]
 networks:
-  store: {internal: true}
+  store: { internal: true }
   egress: {}
 volumes:
   database: {}

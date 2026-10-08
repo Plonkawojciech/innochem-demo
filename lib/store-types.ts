@@ -8,6 +8,7 @@ export type StoreProduct = {
   priceCents: number;
   taxRate: number;
   available: number;
+  weightGrams?: number;
   imagePath: string | null;
   imageAlt: string;
   saleMode: "retail" | "inquiry";

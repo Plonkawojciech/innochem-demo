@@ -31,6 +31,11 @@ test("encrypted backup authenticates contents before restoring and reproduces da
     const target = path.join(directory, "backup");
     const result = await backup(target);
     assert.equal(result.mediaFiles, 1);
+    assert.equal(
+      JSON.parse(await readFile(path.join(target, "manifest.json"), "utf8"))
+        .version,
+      2,
+    );
     const original = process.env.BACKUP_ENCRYPTION_KEY;
     process.env.BACKUP_ENCRYPTION_KEY = randomBytes(32).toString("base64");
     await assert.rejects(
