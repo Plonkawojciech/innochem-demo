@@ -23,7 +23,10 @@ def assess(state):
         failures.append('container')
     if state.get('httpHealthy') is not True:
         failures.append('http')
-    if state.get('workerEnabled') is not True or not 0 <= state.get('heartbeatAgeSeconds', 999999) <= 300:
+    if state.get('workerEnabled') is not True or (
+        not 0 <= state.get('heartbeatAgeSeconds', 999999) <= 300
+        and state.get('workerStartupGrace') is not True
+    ):
         failures.append('worker')
     if state.get('backupValid') is not True or state.get('backupAgeHours', 999999) > 34:
         failures.append('backup')
@@ -41,6 +44,8 @@ def collect(app, database, backup_directory, health_url):
         raise RuntimeError('Store container absent')
     containers = json.loads(command(['docker', 'inspect', *names]))
     container = max(containers, key=lambda c: c['State']['StartedAt'])
+    started = datetime.datetime.fromisoformat(container['State']['StartedAt'].replace('Z', '+00:00'))
+    container_age = max(0, time.time() - started.timestamp())
     # Read only this one non-secret flag from the container's private environment.
     enabled = next((v == 'STORE_WORKER_ENABLED=true' for v in container['Config']['Env'] if v.startswith('STORE_WORKER_ENABLED=')), False)
     state = {'containerHealthy': container['State'].get('Health', {}).get('Status') == 'healthy', 'workerEnabled': enabled}
@@ -54,6 +59,9 @@ def collect(app, database, backup_directory, health_url):
         state['heartbeatAgeSeconds'] = round(max(0, time.time() - heartbeat / 1000))
     except Exception:
         state['heartbeatAgeSeconds'] = 999999
+    # A new healthy container cannot have a heartbeat before its first minute tick.
+    # Grace is bounded to startup with no heartbeat; it cannot hide a stale one.
+    state['workerStartupGrace'] = state['heartbeatAgeSeconds'] == 999999 and container_age < 300
     sql = """SELECT json_build_object(
       'mailUncertain',(SELECT count(*) FROM mail_outbox WHERE NOT preview AND delivery_state='uncertain'),
       'mailExhausted',(SELECT count(*) FROM mail_outbox WHERE NOT preview AND sent_at IS NULL AND attempts>=8),
