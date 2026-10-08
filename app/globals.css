@@ -1560,6 +1560,7 @@ select:focus-visible {
 }
 .checkout-page,
 .order-page {
+  min-height: calc(100svh - 72px);
   padding-top: 32px;
   padding-bottom: 70px;
 }
@@ -1570,6 +1571,11 @@ select:focus-visible {
 }
 .checkout-page .panel {
   margin-bottom: 24px;
+}
+.checkout-loading {
+  /* Keep the footer below the first screen while live cart data loads. */
+  min-height: 100svh;
+  padding: 24px 0;
 }
 .cart-quantity {
   width: 68px;
@@ -3120,6 +3126,16 @@ address {
   }
 }
 
+@media (max-width: 360px) {
+  .site-inner {
+    gap: 8px;
+  }
+  .cart-btn {
+    gap: 6px;
+    padding-inline: 10px;
+  }
+}
+
 /* ---- 2026-09-29 refresh: footer credit, compact catalog, product page, lightbox, carousel, auth ---- */
 .sr-only {
   position: absolute;
@@ -3884,7 +3900,7 @@ address {
   }
 }
 
-/* footer credit must stay on one line */
+/* Keep credit phrases intact while allowing narrow screens to wrap the row. */
 footer.site .foot-credit {
   display: inline-flex;
   flex-direction: row;
@@ -3893,6 +3909,13 @@ footer.site .foot-credit {
 }
 footer.site .foot-credit img {
   display: inline-block;
+}
+@media (max-width: 640px) {
+  footer.site .foot-credit {
+    max-width: 100%;
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
 }
 footer.site .foot-withdraw {
   display: inline;

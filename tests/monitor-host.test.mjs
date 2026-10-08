@@ -56,7 +56,9 @@ with tempfile.TemporaryDirectory(prefix='innochem-monitor-test-') as name:
  state=m.collect('test-app','test-db',name,'https://test.invalid/health')
  assert not state['backupValid'] and m.assess(state)==['backup']
 print('monitor filesystem checks verified')`;
-  const result = spawnSync("python3", ["-B", "-c", script], { encoding: "utf8" });
+  const result = spawnSync("python3", ["-B", "-c", script], {
+    encoding: "utf8",
+  });
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.stdout.trim(), "monitor filesystem checks verified");
 });

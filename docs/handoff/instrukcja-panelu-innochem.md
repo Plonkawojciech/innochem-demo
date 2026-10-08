@@ -47,3 +47,5 @@ Wpis wiadomości w kolejce nie jest potwierdzeniem doręczenia. Status `uncertai
 ## Zgłoszenia i opieka
 
 Zgłoszenia przekazuj mailowo albo telefonicznie do osoby prowadzącej projekt. Podaj numer zamówienia, widoczny komunikat i moment wystąpienia; nie przesyłaj haseł, kluczy API ani pełnych danych kart. Zgodnie z umową obsługa i pozycjonowanie trwają 12 miesięcy od uruchomienia na domenie docelowej; pakiet obejmuje do pięciu godzin zmian miesięcznie. Datę startu i kanał wsparcia wpisujemy w protokole odbioru po ich potwierdzeniu.
+
+Przed otwarciem sprzedaży uzupełnij [protokół weryfikacji uruchomienia](protokol-uruchomienia-innochem.md). Łączy on testy panelu z rzeczywistym odbiorem płatności, dostaw, poczty i pomiaru.

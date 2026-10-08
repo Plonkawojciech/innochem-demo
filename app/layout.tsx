@@ -19,6 +19,9 @@ const mono = IBM_Plex_Mono({
   subsets: ["latin-ext"],
   weight: ["400", "500", "700"],
   variable: "--f-mono",
+  // Arial is proportional; its generated fallback changes breadcrumb wrapping.
+  adjustFontFallback: false,
+  fallback: ["monospace"],
 });
 
 export const dynamic = "force-dynamic";

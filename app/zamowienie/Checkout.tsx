@@ -266,11 +266,32 @@ export function Checkout({
         </button>
       </main>
     );
+  const heading = (
+    <>
+      <p className="crumbs">
+        <Link href="/katalog">Produkty</Link> / Koszyk i zamówienie
+      </p>
+      <h1 className="display">Twoje zamówienie</h1>
+      {!enabled && (
+        <p className="notice" role="status">
+          Podgląd sklepu. Składanie zamówień będzie dostępne po zatwierdzeniu
+          warunków sprzedaży.
+        </p>
+      )}
+    </>
+  );
   if (!ready || !catalogReady)
-    return <p className="wrap loading-message">Wczytywanie koszyka…</p>;
+    return (
+      <main className="wrap checkout-page" aria-busy="true">
+        {heading}
+        <div className="checkout-loading" role="status">
+          Wczytywanie koszyka…
+        </div>
+      </main>
+    );
   if (!items.length)
     return (
-      <main className="wrap">
+      <main className="wrap checkout-page">
         <div className="empty-state">
           <h1 className="display">Twój koszyk jest pusty</h1>
           <p>Wybierz produkty z katalogu, aby złożyć zamówienie.</p>
@@ -282,16 +303,7 @@ export function Checkout({
     );
   return (
     <main className="wrap checkout-page">
-      <p className="crumbs">
-        <Link href="/katalog">Produkty</Link> / Koszyk i zamówienie
-      </p>
-      <h1 className="display">Twoje zamówienie</h1>
-      {!enabled && (
-        <p className="notice" role="status">
-          Podgląd sklepu. Składanie zamówień będzie dostępne po zatwierdzeniu
-          warunków sprzedaży.
-        </p>
-      )}
+      {heading}
       <form onSubmit={submit}>
         <div className="chk">
           <div>

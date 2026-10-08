@@ -23,6 +23,10 @@ Wiadomości powstałe w podglądzie mają trwałe oznaczenie `preview`. Worker p
 
 Kolejka SMTP utrzymuje blokadę Postgres przez cały batch i odstęp co najmniej jednej sekundy po każdej próbie, także odrzuconej. Równoległy worker pomija zajętą kolejkę zamiast wysyłać drugi batch naraz. To limit tej aplikacji, nie gwarancja limitu współdzielonego konta Resend: przed włączeniem dostarczania sprawdź dzienny/miesięczny limit i ruch pozostałych projektów. Zatrzymana po przyjęciu wiadomości próba pozostaje niepewna i nie jest automatycznie ponawiana.
 
+Odczyt API z 08–09.10.2026 potwierdził `innochem.pl`: `verified`, region nadawania `eu-west-1`, cztery wymagane rekordy DNS zgodne z publicznym DNS. Istniejący klucz SMTP sklepu i klucz monitoringu są różne, ale należą do tego samego konta: kontrolowany GET z kluczem SMTP i unikalnym User-Agent pojawił się w logach dostępnych przez klucz monitoringu. SMTP ma uprawnienie tylko do wysyłki; jego `401 restricted_api_key` przy GET `/domains` nie oznacza nieważnego klucza. Nie rozszerzaj jego uprawnień dla diagnostyki. Osobista sesja Resend w Chrome nie służy do tej konfiguracji.
+
+Potwierdzone limity współdzielonego konta w tej kontroli: 100 wiadomości dziennie, 3000 miesięcznie; wykorzystanie wynosiło odpowiednio 20 i 617. API zgłasza 10 żądań na 1000 ms. To odczyt chwilowy: przed aktywacją ponów GET `/usage` uprawnionym istniejącym kluczem poza aplikacją i ustal rezerwę dla sklepu oraz innych projektów. Skan 500 ostatnich logów zawierał jedną dawną wiadomość nadaną z INNOCHEM, ale nie potwierdza doręczenia aktualnych flow sklepu. Region nadawania w UE nie zastępuje uzgodnienia wszystkich miejsc przetwarzania i podpowierzenia danych.
+
 `INNOCHEM_TRUST_PROXY=true` włącz dopiero po sprawdzeniu, że publiczny reverse proxy **nadpisuje** `X-Real-IP` rzeczywistym adresem klienta, usuwa wartość przesłaną przez klienta i jest jedyną drogą do aplikacji. Przetestuj próbę podstawienia tego nagłówka. Bez tego aplikacja używa wspólnego limitu żądań. Baza pozostaje wyłącznie w prywatnej sieci `store`; tylko aplikacja otrzymuje sieć wyjściową i połączenie z proxy Coolify.
 
 ## Przygotowanie wydania

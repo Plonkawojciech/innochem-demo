@@ -40,6 +40,7 @@ export function ProductCard({
             sizes="(max-width: 700px) 46vw, (max-width: 1000px) 30vw, 300px"
             alt={p.imageAlt || p.name}
             loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : "auto"}
             decoding="async"
             width={480}
             height={480}
@@ -118,7 +119,7 @@ export function ProductGrid({
   return (
     <div className="grid" id="prodGrid">
       {products.map((p, i) => (
-        <ProductCard key={p.id} p={p} priority={i < 3} listId={listId} />
+        <ProductCard key={p.id} p={p} priority={i < 2} listId={listId} />
       ))}
     </div>
   );

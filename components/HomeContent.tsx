@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { preload } from "react-dom";
 import { Reveal } from "./Reveal";
 import type { SiteContent } from "@/lib/site-content";
 import { mediaSrc, mediaSrcSet } from "@/lib/media";
@@ -14,6 +15,8 @@ export function HomeContent({
   seriesProducts: StoreProduct[];
 }) {
   const { hero, benefits, categories, technology, featured } = home;
+  if (hero.enabled && hero.background.path)
+    preload(hero.background.path, { as: "image", fetchPriority: "high" });
   return (
     <>
       {hero.enabled && (
