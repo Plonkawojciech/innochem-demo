@@ -1,0 +1,1 @@
+*/5 * * * * root /root/innochem-monitor/monitor-host.sh >/dev/null 2>&1

@@ -21,6 +21,8 @@ Przełączniki `INNOCHEM_PREVIEW`, `INNOCHEM_MAIL_ENABLED`, `INNOCHEM_WORKER_ENA
 
 Wiadomości powstałe w podglądzie mają trwałe oznaczenie `preview`. Worker pomija je także po późniejszym włączeniu SMTP i wyłączeniu podglądu. Nie zmieniaj tego oznaczenia, aby ponownie wykorzystać korespondencję testową.
 
+Kolejka SMTP utrzymuje blokadę Postgres przez cały batch i odstęp co najmniej jednej sekundy po każdej próbie, także odrzuconej. Równoległy worker pomija zajętą kolejkę zamiast wysyłać drugi batch naraz. To limit tej aplikacji, nie gwarancja limitu współdzielonego konta Resend: przed włączeniem dostarczania sprawdź dzienny/miesięczny limit i ruch pozostałych projektów. Zatrzymana po przyjęciu wiadomości próba pozostaje niepewna i nie jest automatycznie ponawiana.
+
 `INNOCHEM_TRUST_PROXY=true` włącz dopiero po sprawdzeniu, że publiczny reverse proxy **nadpisuje** `X-Real-IP` rzeczywistym adresem klienta, usuwa wartość przesłaną przez klienta i jest jedyną drogą do aplikacji. Przetestuj próbę podstawienia tego nagłówka. Bez tego aplikacja używa wspólnego limitu żądań. Baza pozostaje wyłącznie w prywatnej sieci `store`; tylko aplikacja otrzymuje sieć wyjściową i połączenie z proxy Coolify.
 
 ## Przygotowanie wydania
@@ -81,6 +83,8 @@ Zaproponowany harmonogram eksploatacji: kopia przed każdym wydaniem i regularna
 ## Monitoring i powrót do poprzedniego wydania
 
 Sprawdzaj `/api/health`, stan kontenera workera, wolne miejsce, datę poprawnej kopii, błędy webhooków i kolejkę wiadomości w panelu. Wiadomość ze stanem `uncertain` mogła zostać przyjęta przez SMTP: wyjaśnij wynik u dostawcy przed ponowieniem. Nie traktuj wpisu do kolejki jako wysłania maila.
+
+`ops/monitor-host.py` wykonuje odczyty na VM: zdrowie kontenera/HTTPS, heartbeat włączonego workera (5 minut), poprawność najnowszego gzip SQL i jego wiek (34 godziny), dysk (90%), zaległe płatności i kolejki. Wypisuje tylko zagregowane liczniki oraz nazwy problemów, a przy awarii zwraca kod 1. Nie wysyła wiadomości, nie ponawia operacji providerów i nie usuwa kopii. Sprawdzony odbiorca alarmów oraz stałe szyfrowane kopie poza VM są osobnymi warunkami odbioru; zdrowy wynik tego skryptu ich nie potwierdza.
 
 Rollback kodu korzysta z wcześniej zachowanego obrazu. Jeśli po uruchomieniu wpłynęły nowe zamówienia, zachowaj nową bazę i jej kopię; nie przywracaj starego dumpa na działającą bazę. Zamknij checkout, uzgodnij płatności i dopiero wybierz sposób naprawy. Każda destrukcyjna migracja lub odtworzenie istniejącej produkcyjnej bazy wymaga oddzielnej zgody.
 

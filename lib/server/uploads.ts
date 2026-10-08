@@ -1,4 +1,4 @@
-import { mkdir, writeFile, realpath } from "node:fs/promises";
+import { mkdir, writeFile, realpath, link, unlink } from "node:fs/promises";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import sharp from "sharp";
@@ -60,10 +60,13 @@ export async function storeUpload(bytes: Buffer, actor: string, alt = "") {
     throw new Error("Unsafe media directory");
   const id = randomUUID(),
     relative = `uploads/${id}.${type.extension}`;
-  await writeFile(path.join(base, relative), bytes, {
-    flag: "wx",
-    mode: 0o640,
-  });
+  const temporary = path.join(directory, `${id}.tmp`);
+  try {
+    await writeFile(temporary, bytes, { flag: "wx", mode: 0o640 });
+    await link(temporary, path.join(base, relative));
+  } finally {
+    await unlink(temporary).catch(() => {});
+  }
   // A failed DB write may leave an unreferenced file; never remove existing media.
   return transaction(async (db) => {
     const {

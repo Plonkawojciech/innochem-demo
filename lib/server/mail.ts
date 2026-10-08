@@ -1,7 +1,8 @@
 import type { PoolClient } from "pg";
 import { randomUUID } from "node:crypto";
+import { setTimeout as pause } from "node:timers/promises";
 import nodemailer from "nodemailer";
-import { query, transaction } from "./db";
+import { database, query, transaction } from "./db";
 
 export async function enqueueMail(
   recipient: string,
@@ -51,6 +52,39 @@ export async function deliverMailBatch(transportForTest?: MailTransport) {
     process.env.STOREFRONT_PREVIEW !== "false"
   )
     return { enabled: false, sent: 0, failed: 0, uncertain: 0 };
+  // A session lock spans delivery (not only row leasing), so overlapping workers
+  // cannot exceed the shop's send pace by claiming different batches.
+  const guard = await database().connect();
+  let locked = false;
+  let guardLost = false;
+  const lost = () => {
+    guardLost = true;
+  };
+  guard.on("error", lost);
+  try {
+    locked = (
+      await guard.query("SELECT pg_try_advisory_lock(842615916) AS locked")
+    ).rows[0].locked;
+    if (!locked)
+      return { enabled: true, sent: 0, failed: 0, uncertain: 0, busy: true };
+    return await deliverLockedBatch(transportForTest, () => !guardLost);
+  } finally {
+    try {
+      if (guardLost) throw new Error("Mail guard disconnected");
+      if (locked) await guard.query("SELECT pg_advisory_unlock(842615916)");
+      guard.release();
+    } catch {
+      // Destroying this session also releases its advisory lock.
+      guard.release(true);
+    }
+    guard.removeListener("error", lost);
+  }
+}
+
+async function deliverLockedBatch(
+  transportForTest: MailTransport | undefined,
+  guardHealthy: () => boolean,
+) {
   if (
     !transportForTest &&
     (!process.env.SMTP_HOST ||
@@ -90,6 +124,7 @@ export async function deliverMailBatch(transportForTest?: MailTransport) {
     uncertain = 0;
   try {
     for (const row of batch) {
+      if (!guardHealthy()) throw new Error("Mail guard disconnected");
       try {
         await transport.sendMail({
           from: process.env.MAIL_FROM || "synthetic@example.test",
@@ -132,6 +167,10 @@ export async function deliverMailBatch(transportForTest?: MailTransport) {
         if (definiteFailure) failed++;
         else uncertain++;
         continue;
+      } finally {
+        // Test transports never contact SMTP. Real attempts are spaced across
+        // batch boundaries because the guard remains held through this pause.
+        if (!transportForTest) await pause(1000);
       }
       // If persistence fails after SMTP success, leave the lease to become uncertain, never mark it retryable.
       await query(

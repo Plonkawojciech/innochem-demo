@@ -74,6 +74,46 @@ test("concurrent workers claim a mail once and persist the successful outcome", 
     assert.ok(row.sent_at);
     assert.equal(row.attempts, 1);
   }));
+test("overlapping workers cannot send a second batch while SMTP is occupied", async () =>
+  withDelivery(async () => {
+    await fixture();
+    for (let i = 0; i < 11; i++)
+      await enqueueMail(
+        "synthetic@example.test",
+        "Synthetic",
+        "Batch isolation",
+        randomUUID(),
+      );
+    let release!: () => void, started!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const entered = new Promise<void>((resolve) => {
+      started = resolve;
+    });
+    let calls = 0;
+    const transport = {
+      sendMail: async () => {
+        calls++;
+        started();
+        await gate;
+      },
+      close() {},
+    };
+    const first = deliverMailBatch(transport);
+    await entered;
+    try {
+      const overlap = await deliverMailBatch(transport);
+      assert.equal("busy" in overlap && overlap.busy, true);
+      assert.equal(overlap.sent, 0);
+      assert.equal(calls, 1);
+    } finally {
+      release();
+    }
+    assert.equal((await first).sent, 10);
+    assert.equal((await deliverMailBatch(transport)).sent, 2);
+    assert.equal(calls, 12);
+  }));
 test("an ambiguous SMTP result and an expired sending lease are quarantined, never retried", async () =>
   withDelivery(async () => {
     const key = await fixture();

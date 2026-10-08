@@ -1,11 +1,11 @@
-import { spawn } from "node:child_process";
-import { Readable } from "node:stream";
 import { realpath } from "node:fs/promises";
 import { requireAdmin } from "@/lib/server/auth";
 import { errorResponse, rateLimit } from "@/lib/server/http";
 import { transaction } from "@/lib/server/db";
 import { audit } from "@/lib/server/admin";
 import { StoreError } from "@/lib/server/orders";
+import { fulfillmentExport, publicExportData } from "@/lib/server/export-data";
+import { archiveMedia } from "@/lib/server/media-archive";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 function csvCell(value: unknown) {
@@ -14,6 +14,7 @@ function csvCell(value: unknown) {
   return '"' + s.replaceAll('"', '""') + '"';
 }
 export async function GET(request: Request) {
+  if (request.method === "HEAD") return HEAD(request);
   try {
     const user = await requireAdmin(request.headers);
     await rateLimit(request, `export:${user.id}`, 5);
@@ -25,6 +26,8 @@ export async function GET(request: Request) {
       "X-Content-Type-Options": "nosniff",
     };
     if (format === "media") {
+      if (request.signal.aborted)
+        return new Response(null, { status: 499, headers });
       if (!process.env.MEDIA_ROOT)
         throw new StoreError(
           "MEDIA_UNAVAILABLE",
@@ -33,32 +36,15 @@ export async function GET(request: Request) {
         );
       const root = await realpath(process.env.MEDIA_ROOT);
       await transaction((db) => audit(db, user.id, "export.media", "store"));
-      const processArchive = spawn("tar", ["-czf", "-", "-C", root, "."], {
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      // Bound stderr without exposing server paths in responses or logs.
-      processArchive.stderr.resume();
-      processArchive.once("error", () =>
-        processArchive.stdout.destroy(new Error("Archive unavailable")),
-      );
-      processArchive.once("exit", (code) => {
-        if (code !== 0)
-          processArchive.stdout.destroy(new Error("Archive incomplete"));
-      });
-      request.signal.addEventListener("abort", () => processArchive.kill(), {
-        once: true,
-      });
-      return new Response(
-        Readable.toWeb(processArchive.stdout) as ReadableStream,
-        {
-          headers: {
-            ...headers,
-            "Content-Type": "application/gzip",
-            "Content-Disposition":
-              'attachment; filename="innochem-media.tar.gz"',
-          },
+      if (request.signal.aborted)
+        return new Response(null, { status: 499, headers });
+      return new Response(archiveMedia(root, request.signal), {
+        headers: {
+          ...headers,
+          "Content-Type": "application/gzip",
+          "Content-Disposition": 'attachment; filename="innochem-media.tar.gz"',
         },
-      );
+      });
     }
     const tables = [
       "categories",
@@ -71,6 +57,7 @@ export async function GET(request: Request) {
       "orders",
       "order_items",
       "order_events",
+      "shipments",
       "payment_sessions",
       "payment_webhook_events",
       "stock_movements",
@@ -84,6 +71,8 @@ export async function GET(request: Request) {
       "redirects",
       "settings",
       "legacy_records",
+      "audit_log",
+      "analytics_consents",
     ] as const;
     const data = await transaction(async (db) => {
       await db.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
@@ -93,17 +82,14 @@ export async function GET(request: Request) {
         : format === "products"
           ? ["products"]
           : ["orders"]) {
-        const { rows } = await db.query(`SELECT * FROM ${table}`);
-        result[table] = rows.map((row) => {
-          const {
-            access_hash,
-            idempotency_key,
-            request_hash,
-            request: paymentRequest,
-            ...safe
-          } = row;
-          return safe;
-        });
+        const { rows } = await db.query(
+          table === "orders" && format === "orders"
+            ? `SELECT o.*, COALESCE((SELECT string_agg(i.sku || ' — ' || i.product_name || ' × ' || i.quantity::text, ' | ' ORDER BY i.id) FROM order_items i WHERE i.order_id=o.id),'') AS items FROM orders o ORDER BY o.created_at,o.id`
+            : `SELECT * FROM ${table}`,
+        );
+        result[table] = rows.map((row) =>
+          publicExportData(format === "orders" ? fulfillmentExport(row) : row),
+        ) as Record<string, unknown>[];
       }
       await audit(db, user.id, `export.${format}`, "store");
       return result;
@@ -111,7 +97,7 @@ export async function GET(request: Request) {
     if (format === "json")
       return new Response(
         JSON.stringify(
-          { formatVersion: 1, exportedAt: new Date().toISOString(), ...data },
+          { formatVersion: 2, exportedAt: new Date().toISOString(), ...data },
           null,
           2,
         ),
@@ -144,6 +130,17 @@ export async function GET(request: Request) {
             "number",
             "legacy_id",
             "email",
+            "first_name",
+            "last_name",
+            "phone",
+            "company",
+            "nip",
+            "street",
+            "postal_code",
+            "city",
+            "country",
+            "items",
+            "cod_cents",
             "status",
             "currency",
             "total_cents",
@@ -175,6 +172,19 @@ export async function GET(request: Request) {
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": `attachment; filename="innochem-${format}.csv"`,
       },
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+/** Next otherwise invokes GET for HEAD without consuming its archive stream. */
+export async function HEAD(request: Request) {
+  try {
+    await requireAdmin(request.headers);
+    return new Response(null, {
+      status: 405,
+      headers: { Allow: "GET", "Cache-Control": "private, no-store" },
     });
   } catch (error) {
     return errorResponse(error);

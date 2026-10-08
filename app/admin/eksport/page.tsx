@@ -7,8 +7,12 @@ export default async function Export() {
       <section className="panel">
         <p>
           Pobierz dane sklepu do dalszej pracy lub przekazania. Eksport JSON
-          obejmuje katalog, klientów, adresy, zamówienia, historię, treści i
-          manifest zdjęć. Zdjęcia pobiera się osobno.
+          obejmuje katalog, klientów, adresy, zamówienia, przesyłki, historię,
+          zgody, treści i manifest zdjęć. Zdjęcia pobiera się osobno.
+        </p>
+        <p>
+          CSV zamówień zawiera dane do realizacji i pozycje zamówienia. Archiwum
+          plików pomija generowane miniatury.
         </p>
         <p>
           Eksport nie zawiera haseł, sesji logowania ani linków do odzyskania
