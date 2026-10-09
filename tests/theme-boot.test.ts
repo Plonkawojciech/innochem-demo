@@ -16,14 +16,32 @@ function boot(
   };
   let inserted = false;
   let persisted = saved;
-  const listeners = new Map<string, (event: unknown) => void>();
+  type ClickEvent = {
+    target: { closest?: (selector: string) => unknown };
+    stopPropagation: () => void;
+  };
+  type Listener = {
+    callback: (event: ClickEvent) => void;
+    capture: boolean;
+  };
+  const listeners = new Map<string, Listener[]>();
+  const writes: string[] = [];
   let observeInsertion = () => {};
   const document = {
     documentElement: root,
     querySelector: () => (inserted ? button : null),
     querySelectorAll: () => (inserted ? [button] : []),
-    addEventListener: (name: string, fn: (event: unknown) => void) =>
-      listeners.set(name, fn),
+    addEventListener: (
+      name: string,
+      callback: Listener["callback"],
+      options: boolean | { capture?: boolean } = false,
+    ) => {
+      const capture =
+        typeof options === "boolean" ? options : options.capture === true;
+      const registered = listeners.get(name) || [];
+      registered.push({ callback, capture });
+      listeners.set(name, registered);
+    },
   };
   runInNewContext(themeBootScript, {
     document,
@@ -34,6 +52,7 @@ function boot(
       },
       setItem: (_key: string, value: string) => {
         if (blockedWrite) throw new Error("Storage blocked");
+        writes.push(value);
         persisted = value;
       },
     },
@@ -53,10 +72,44 @@ function boot(
       inserted = true;
       observeInsertion();
     },
-    click: (toggle = true) =>
-      listeners.get("click")!({
-        target: { closest: () => (toggle ? button : null) },
-      }),
+    // Capture listeners on the document run before a click can bubble back.
+    // stopPropagation skips the bubble phase, not other listeners on this node.
+    click: (toggle = true, svg = false) => {
+      let stopped = false;
+      const event: ClickEvent = {
+        target: {
+          closest: (selector) => {
+            assert.equal(selector, "button.theme-toggle");
+            return toggle ? button : null;
+          },
+          ...(svg ? { tagName: "path", ownerSVGElement: {} } : {}),
+        },
+        stopPropagation: () => {
+          stopped = true;
+        },
+      };
+      const registered = listeners.get("click") || [];
+      for (const listener of registered.filter((x) => x.capture))
+        listener.callback(event);
+      if (!stopped)
+        for (const listener of registered.filter((x) => !x.capture))
+          listener.callback(event);
+    },
+    blockDuringHydration: () => {
+      let hydrating = true;
+      document.addEventListener(
+        "click",
+        (event) => {
+          if (hydrating) event.stopPropagation();
+        },
+        true,
+      );
+      return () => {
+        hydrating = false;
+      };
+    },
+    clickPhases: () => (listeners.get("click") || []).map((x) => x.capture),
+    writes,
     saved: () => persisted,
   };
 }
@@ -75,6 +128,43 @@ test("native theme handles a click before React with the saved DOM theme as its 
   page.click();
   assert.equal(page.root.dataset.theme, "dark");
   assert.equal(page.attributes["aria-label"], "Włącz tryb jasny");
+});
+
+test("theme boot registers its only click owner in the capture phase", () => {
+  const page = boot("light");
+  assert.deepEqual(page.clickPhases(), [true]);
+});
+
+test("the first theme click survives a hydration capture blocker and the next click toggles once", () => {
+  const page = boot("light");
+  page.insert();
+  const finishHydration = page.blockDuringHydration();
+  page.click();
+  assert.equal(page.root.dataset.theme, "dark");
+  assert.equal(page.saved(), "dark");
+  assert.equal(page.attributes["aria-label"], "Włącz tryb jasny");
+  assert.deepEqual(page.writes, ["dark"]);
+  finishHydration();
+  page.click();
+  assert.equal(page.root.dataset.theme, "light");
+  assert.equal(page.saved(), "light");
+  assert.equal(page.attributes["aria-label"], "Włącz tryb ciemny");
+  assert.deepEqual(page.writes, ["dark", "light"]);
+});
+
+test("clicks on nested SVG paths also survive hydration with unavailable storage", () => {
+  const page = boot(null, false, true, true);
+  page.insert();
+  const finishHydration = page.blockDuringHydration();
+  page.click(true, true);
+  assert.equal(page.root.dataset.theme, "dark");
+  assert.equal(page.attributes["aria-label"], "Włącz tryb jasny");
+  assert.equal(page.saved(), null);
+  finishHydration();
+  page.click(true, true);
+  assert.equal(page.root.dataset.theme, "light");
+  assert.equal(page.attributes["aria-label"], "Włącz tryb ciemny");
+  assert.deepEqual(page.writes, []);
 });
 
 test("system preference and unavailable persistent writes retain a working native toggle", () => {

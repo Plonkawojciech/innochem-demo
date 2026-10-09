@@ -12,6 +12,7 @@ import {
 import os from "node:os";
 import path from "node:path";
 import { backup, restore } from "../scripts/backup.mjs";
+import { backupTestSocketHost } from "./helpers/backup-test-config.mjs";
 if (!process.env.PGDATABASE?.startsWith("innochem_test_"))
   throw new Error("Dedicated test database required");
 test("encrypted backup authenticates contents before restoring and reproduces database plus original filenames", async () => {
@@ -20,6 +21,8 @@ test("encrypted backup authenticates contents before restoring and reproduces da
   );
   const before = { ...process.env };
   try {
+    const socketHost = backupTestSocketHost(before);
+    if (socketHost !== undefined) process.env.PGHOST = socketHost;
     const media = path.join(directory, "source");
     await mkdir(media);
     await mkdir(path.join(media, "nested"));
@@ -79,7 +82,12 @@ test("encrypted backup authenticates contents before restoring and reproduces da
     );
     await assert.rejects(backup(target), /EEXIST/);
   } finally {
-    for (const k of ["MEDIA_ROOT", "BACKUP_QUIESCED", "BACKUP_ENCRYPTION_KEY"])
+    for (const k of [
+      "MEDIA_ROOT",
+      "BACKUP_QUIESCED",
+      "BACKUP_ENCRYPTION_KEY",
+      "PGHOST",
+    ])
       if (before[k] === undefined) delete process.env[k];
       else process.env[k] = before[k];
   }

@@ -31,6 +31,7 @@ import {
   legacyCatalogDeltaCommand,
 } from "../scripts/apply-legacy-catalog-delta";
 import { requiredMigrations } from "../lib/server/migrations-manifest";
+import { legacyDeltaTestDatabaseConfig } from "./helpers/legacy-delta-test-config";
 
 const database = "innochem_test_delta_apply_fixture";
 const categoryId = "00000000-0000-4000-8000-000000000001";
@@ -367,24 +368,12 @@ test("expired or tampered plan never opens a transaction", async () => {
   assert.deepEqual(calls, []);
 });
 
-// Explicit opt-in: only a fresh synthetic database on the authorized local PostgreSQL instance.
+// Explicit opt-in: a new synthetic database on an allowlisted local or isolated VM instance.
 test(
   "synthetic PostgreSQL catalog delta transactions",
   { skip: process.env.INNOCHEM_DELTA_DB_TEST !== "1" },
   async (t) => {
-    if (
-      process.env.PGHOST !== "/tmp/innochem-postgres" ||
-      process.env.PGPORT !== "55439" ||
-      process.env.PGUSER !== "wojciechplonka"
-    )
-      throw new Error(
-        "Synthetic delta DB test requires the authorized local instance",
-      );
-    const config = {
-      host: process.env.PGHOST,
-      port: 55439,
-      user: process.env.PGUSER,
-    };
+    const config = legacyDeltaTestDatabaseConfig(process.env);
     const db = `innochem_test_delta_apply_${Date.now()}`;
     const admin = new Client({ ...config, database: "postgres" });
     await admin.connect();
@@ -844,7 +833,7 @@ test(
           try {
             Object.assign(process.env, {
               PGHOST: config.host,
-              PGPORT: "55439",
+              PGPORT: String(config.port),
               PGUSER: config.user,
               PGDATABASE: db,
               INNOCHEM_DELTA_EXPORT_READ_ONLY: "1",

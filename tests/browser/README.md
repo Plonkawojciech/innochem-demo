@@ -29,3 +29,36 @@ To kontrola UI w izolowanym headless Chromium. Nie zastępuje fizycznego urządz
 rzeczywistego safe-area, pomiarów wydajności ani osobnego dowodu wersji i ustawień
 wdrożenia. Pomocnicze eksporty w `mobile-menu.mjs` i `qa-visual-regressions.mjs`
 mogą być użyte z przeglądarką zarządzaną przez inny test.
+
+## Pierwsze przełączenie motywu podczas hydracji
+
+```sh
+PLAYWRIGHT_MODULE=/absolute/path/to/playwright \
+  CHROME_EXECUTABLE=/usr/bin/chromium \
+  node tests/browser/theme-hydration.mjs \
+  https://sklep-innochem.programo.pl /absolute/path/to/new-results
+```
+
+`PLAYWRIGHT_ROOT` może zamiast `PLAYWRIGHT_MODULE` wskazywać katalog zawierający
+moduł `playwright`. `CHROME_PATH` jest alternatywą dla `CHROME_EXECUTABLE`.
+Runner korzysta wyłącznie z własnego headless Chromium, nie łączy się z Chrome
+użytkownika i nie uruchamia serwera. Wymaga nowego katalogu wyników, autoryzowanego
+podglądu albo localhost oraz produkcyjnego buildu Webpack z osobnym chunkiem
+`app/layout-*.js`. Brak tego chunku lub przeoczone okno opóźnienia oznacza błąd
+testu, nie wynik PASS.
+
+Na stronie głównej i w katalogu runner wstrzymuje tylko GET chunku layoutu przez
+5 sekund. Czeka na rejestrację listenerów Reacta przy jeszcze nieaktywnym menu
+nagłówka, po czym wykonuje natywny tap. Wymaga dowodu z czasu zdarzenia, że tap
+nastąpił w rzeczywistym oknie opóźnienia. Motyw, localStorage i etykieta przycisku
+muszą zmienić się od razu i pozostać zgodne po hydracji. Następne tapnięcie,
+natywne Enter/Space i tapnięcie w SVG muszą każde przełączyć motyw dokładnie raz.
+
+Profil to 390×844, DPR 1,75, dotyk, 150 ms RTT, 1600/750 kb/s i CPU ×4. Jest to
+test zachowania w warunkach opóźnionej hydracji, nie pomiar LCP ani INP. Diagnostyka
+zapisuje metadane rejestracji listenerów i zdarzeń, publiczne adresy chunków oraz
+zrzuty. Nie zapisuje cookies, kluczy ani danych konta. Wszystkie żądania inne niż
+GET/HEAD/OPTIONS i wszystkie obce originy są blokowane; taka próba unieważnia
+wynik. PASS wymaga braku błędów strony i hydracji oraz potwierdzonego zamknięcia
+obu kontekstów i własnej przeglądarki. Raport nie ustawia arbitralnego SHA:
+potwierdzenie wersji wdrożenia trzeba dołączyć osobnym dowodem.
