@@ -2,7 +2,11 @@
 
 Dokument do uzupełnienia podczas rzeczywistego uruchomienia i odbioru. Działający podgląd, build ani lokalne testy nie stanowią akceptacji klientki. Nie wpisywać haseł, kluczy, numerów kart ani danych kupujących.
 
+Status wszystkich bramek: **OTWARTE**, dopóki nie ma daty, wyniku i dowodu. Ten plik jest szablonem, bez podpisów. Sandbox i live wpisujemy oddzielnie; po niepełnym odbiorze strony wskazują pozostały zakres oraz terminy. [Ćwiczenia i zapis szkolenia](innochem-szkolenie-i-odbior-2026-10-09.md) nie zastępują tego protokołu.
+
 Domena docelowa: innochem.pl. Data uruchomienia: ______. Wersja aplikacji (commit i wdrożenie Coolify): ______. Osoba odbierająca: ______. Data ostatniej synchronizacji danych: ______.
+
+Data szkolenia / prowadzący / środowisko: ______. Wyniki ćwiczeń A-H: ______. Przekazane materiały: ______. Niewykonany zakres, właściciel i termin: ______. Odpowiedź odbiorcza klientki (data i identyfikator) oraz potwierdzenie wykonawcy: ______.
 
 | Obszar | Co należy potwierdzić | Dowód / data / osoba |
 | --- | --- | --- |

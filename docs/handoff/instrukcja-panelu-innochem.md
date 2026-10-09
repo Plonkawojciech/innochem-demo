@@ -2,7 +2,9 @@
 
 Wersja robocza do przekazania po testach operatorów i uruchomieniu domeny. Otwórz [panel podglądu](https://sklep-innochem.programo.pl/admin); jeśli nie masz sesji, sklep przeniesie Cię do `/konto?returnTo=admin`, a po logowaniu wrócisz do panelu. Użyj istniejącego konta obsługi. Po przełączeniu wejście będzie pod https://innochem.pl/admin. Hasła nie trafiają do tej instrukcji. Konto klienta i konto obsługi mają oddzielne uprawnienia.
 
-Do instrukcji przygotowano [film demonstracyjny](../audit/2026-10-09/panel-instruction-final/innochem-panel-instruktaz.mp4): 87 sekund, z podpisami, bez dźwięku. Pokazuje zmianę ceny i sprawdzenie jej na stronie produktu, zapis i podgląd szkicu witryny, eksport produktów CSV oraz wylogowanie. Nagranie korzysta z fikcyjnych danych lokalnego panelu. [Źródła i kontrola nagrania](../audit/2026-10-09/panel-instruction-final/README.md) są w lokalnym pakiecie odbioru; film nie zastępuje szkolenia ani akceptacji klientki.
+Do instrukcji przygotowano osobny film demonstracyjny: około 87 sekund, z podpisami, bez dźwięku. Pokazuje zmianę ceny i sprawdzenie jej na stronie produktu, zapis i podgląd szkicu witryny, eksport produktów CSV oraz wylogowanie; nie pokazuje publikacji CMS. Nagranie korzysta z fikcyjnych danych lokalnego panelu. Prowadzący przekazuje film osobno. Jego obejrzenie nie zastępuje szkolenia ani akceptacji klientki.
+
+Samodzielne ćwiczenia, bramki operatorów i zapis wyniku zawiera [Szkolenie i odbiór sklepu](innochem-szkolenie-i-odbior-2026-10-09.md). Przed zapisem prowadzący wskazuje odizolowane środowisko i fikcyjne rekordy. Podgląd zawiera historyczne dane; nie traktuj go jako bazy do dowolnych ćwiczeń.
 
 ## Produkty i magazyn
 
@@ -40,11 +42,15 @@ Towar nadający się do ponownej sprzedaży przyjmij osobno przez Przyjmij zwró
 
 ## Ustawienia, treści i wiadomości
 
+„Wygląd i treści witryny” obejmuje szkic strony głównej, menu, stopkę i strony przemysłu, kontaktu oraz dystrybutorów. „Zapisz szkic” nie publikuje zmian; „Podgląd szkicu” widzi tylko administrator. Po sprawdzeniu wersji użyj „Publikuj” lub „Publikuj w podglądzie sklepu” i potwierdź operację. Historia pozwala wczytać wcześniejszą wersję jako szkic, który wymaga osobnego sprawdzenia i publikacji.
+
 Stawki dostawy, darmowy próg, pobranie i limit COD muszą odpowiadać zatwierdzonym warunkom sprzedaży. Zmiana tych zasad wymaga nowej wersji dokumentów. Nie zatwierdzaj danych pakowania, których nie sprawdzono. Dostępność metod online zależy również od decyzji Stripe na koncie firmy.
 
 W panelu treści edytuje się strony informacyjne. Zmiana dokumentu prawnego zamyka zakup do zatwierdzenia nowej wersji; to zabezpiecza zgodność warunków akceptowanych przez kupującego.
 
 Wpis wiadomości w kolejce nie jest potwierdzeniem doręczenia. Status `uncertain` oznacza, że dostawca mógł przyjąć wiadomość; przed ponowną wysyłką administrator sprawdza jego log. Podgląd nie wysyła do klientów dawnych wiadomości testowych po uruchomieniu sklepu.
+
+„Eksport” udostępnia JSON danych sklepu, CSV produktów i zamówień oraz osobne archiwum oryginalnych plików. JSON zawiera manifest zdjęć; nie zawiera haseł, sesji ani linków odzyskania konta. Eksporty klientów i zamówień mają dane osobowe i wymagają prywatnego przechowywania. Eksport panelu nie zastępuje technicznej kopii bazy.
 
 ## Zgłoszenia i opieka
 

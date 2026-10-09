@@ -1,0 +1,353 @@
+{
+  "checked_at_utc": "2026-10-09T18:08:15.579086+00:00",
+  "ok": true,
+  "scope": "documentation-only; no new app/live/operator/client checks",
+  "local_links_checked": 22,
+  "broken_local_links": 0,
+  "links": [
+    {
+      "file": "README.md",
+      "label": "Szkolenie i odbiór - Markdown",
+      "target": "innochem-szkolenie-i-odbior-2026-10-09.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "README.md",
+      "label": "Szkolenie i odbiór - PDF",
+      "target": "innochem-szkolenie-i-odbior-2026-10-09.pdf",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "README.md",
+      "label": "Obsługa panelu",
+      "target": "instrukcja-panelu-innochem.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "README.md",
+      "label": "Protokół uruchomienia",
+      "target": "protokol-uruchomienia-innochem.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "README.md",
+      "label": "Szablon raportu utrzymania i SEO",
+      "target": "szablon-raportu-seo-innochem.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "README.md",
+      "label": "Źródła i granice",
+      "target": "zrodla-i-granice-2026-10-09.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "README.md",
+      "label": "raporcie kontroli pakietu",
+      "target": "kontrola-pakietu-2026-10-09.json",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "innochem-szkolenie-i-odbior-2026-10-09.md",
+      "label": "Obsługa panelu",
+      "target": "instrukcja-panelu-innochem.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "innochem-szkolenie-i-odbior-2026-10-09.md",
+      "label": "Protokół weryfikacji uruchomienia",
+      "target": "protokol-uruchomienia-innochem.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "innochem-szkolenie-i-odbior-2026-10-09.md",
+      "label": "Miesięczny raport utrzymania i SEO",
+      "target": "szablon-raportu-seo-innochem.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "innochem-szkolenie-i-odbior-2026-10-09.md",
+      "label": "Obsługa panelu",
+      "target": "instrukcja-panelu-innochem.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "innochem-szkolenie-i-odbior-2026-10-09.md",
+      "label": "Protokół uruchomienia",
+      "target": "protokol-uruchomienia-innochem.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "innochem-szkolenie-i-odbior-2026-10-09.md",
+      "label": "szablon raportu",
+      "target": "szablon-raportu-seo-innochem.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "innochem-szkolenie-i-odbior-2026-10-09.md",
+      "label": "notatce dla prowadzącego",
+      "target": "zrodla-i-granice-2026-10-09.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "instrukcja-panelu-innochem.md",
+      "label": "panel podglądu",
+      "target": "https://sklep-innochem.programo.pl/admin",
+      "scope": "external",
+      "checked": "not requested"
+    },
+    {
+      "file": "instrukcja-panelu-innochem.md",
+      "label": "Szkolenie i odbiór sklepu",
+      "target": "innochem-szkolenie-i-odbior-2026-10-09.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "instrukcja-panelu-innochem.md",
+      "label": "protokół weryfikacji uruchomienia",
+      "target": "protokol-uruchomienia-innochem.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "protokol-uruchomienia-innochem.md",
+      "label": "Ćwiczenia i zapis szkolenia",
+      "target": "innochem-szkolenie-i-odbior-2026-10-09.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "protokol-uruchomienia-innochem.md",
+      "label": "Obsługa panelu",
+      "target": "instrukcja-panelu-innochem.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "protokol-uruchomienia-innochem.md",
+      "label": "Szablon miesięcznego raportu SEO",
+      "target": "szablon-raportu-seo-innochem.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "zrodla-i-granice-2026-10-09.md",
+      "label": "instrukcję techniczną panelu",
+      "target": "../panel-guide.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "zrodla-i-granice-2026-10-09.md",
+      "label": "utrzymanie",
+      "target": "../operations.md",
+      "scope": "local",
+      "exists": true
+    },
+    {
+      "file": "zrodla-i-granice-2026-10-09.md",
+      "label": "kopie poza VM",
+      "target": "../offsite-operations.md",
+      "scope": "local",
+      "exists": true
+    }
+  ],
+  "pdf": {
+    "path": "innochem-szkolenie-i-odbior-2026-10-09.pdf",
+    "bytes": 85182,
+    "sha256": "c3842177a9e85cf16a0152bc5fb03720e6df6ab92cd00dff7de75e5fdef3d459",
+    "pages": 7,
+    "source_markdown_sha256": "f5a7a1c79225759e5c0c5d178058ab01c2322f60dbfbb2b020eee5a918430288",
+    "renderer_sha256": "f661493c81e81e1c1871e80b0f92ed829f8054086b63223c666ad2d91ba4fee1",
+    "checker_sha256": "0ab4be25ef6244c09de995dc0a0050d444a7e3b6a5844e5b81f13cb8af0c6fc6",
+    "markdown_segments_checked": 143,
+    "missing_segments": [],
+    "visual_review": {
+      "status": "PASS",
+      "reviewer": "Codex agent; not client acceptance",
+      "reviewed_at_utc": "2026-10-09T18:09:38.194831+00:00",
+      "method": "Every final Poppler PNG inspected with view_image",
+      "checks": [
+        "No clipping or overlap",
+        "Legible Polish glyphs",
+        "Aligned tables and fields",
+        "Consistent headings, footers and page numbers"
+      ],
+      "pages": [
+        {
+          "page": 1,
+          "png_sha256": "7dfafb32ae1df8fe8a046fd35fff4ac15dfb2d5cee34ac645fa3282483245e8d",
+          "verdict": "PASS"
+        },
+        {
+          "page": 2,
+          "png_sha256": "c7d01177872a563588085d0c1711fc8864e56bdb840bdcfe8a9bd6761660c0e2",
+          "verdict": "PASS"
+        },
+        {
+          "page": 3,
+          "png_sha256": "6dc74d2eac621647a49abe218674986461308b6e4a018618a54d168c10414c90",
+          "verdict": "PASS"
+        },
+        {
+          "page": 4,
+          "png_sha256": "ca218061e81bab24e77432852201932eb9232ce42bc5e80d84579d2cfadee665",
+          "verdict": "PASS"
+        },
+        {
+          "page": 5,
+          "png_sha256": "664622bcb1f640d506697551d5adc78f27dfa6f3c7feadfdba87770d49301d73",
+          "verdict": "PASS"
+        },
+        {
+          "page": 6,
+          "png_sha256": "d352fd67335306f9601d16eed4665cbbc52aa63840ade938d16e9aab4fd50712",
+          "verdict": "PASS"
+        },
+        {
+          "page": 7,
+          "png_sha256": "a31554e80b06ad9551f9a218c64b38902636a5d3859424991aaf69e9e3592d85",
+          "verdict": "PASS"
+        }
+      ]
+    }
+  },
+  "sources": [
+    {
+      "path": "docs/plans/2026-10-08-rano-dla-wojtka.md",
+      "scope": "original read-only",
+      "bytes": 59973,
+      "sha256": "29745335277f4afebe6580fd5847284d0feb321f9612b12cc37b698ca9224018"
+    },
+    {
+      "path": "docs/plans/2026-10-08-umowa-i-odbior.md",
+      "scope": "original read-only",
+      "bytes": 8931,
+      "sha256": "9e042ee59e3a89afb61a322c09b998d3a054eb594d5cb060acc7116467ecd80d"
+    },
+    {
+      "path": "docs/plans/2026-10-09-checkpoint-0935.md",
+      "scope": "original read-only",
+      "bytes": 4292,
+      "sha256": "4604413ce32fe28a2b8a8d2ad3085f7b9ec3f1e1470d25eb2d7daaae8abbf706"
+    },
+    {
+      "path": "docs/audit/2026-10-09/raport-local-qa.md",
+      "scope": "original read-only",
+      "bytes": 77684,
+      "sha256": "7e7feb77a2ac351b6757adde1e1c9ce9cc854918d899843d447543f1f1112185"
+    },
+    {
+      "path": "docs/audit/2026-10-09/independent-qa-fixes/REPORT.md",
+      "scope": "original read-only",
+      "bytes": 9770,
+      "sha256": "50f9648da0544dee12539e1a0ba4527f2097086b8c2d6956f2917e535074b47d"
+    },
+    {
+      "path": "docs/audit/2026-10-09/current-qa-final/README.md",
+      "scope": "original read-only",
+      "bytes": 8750,
+      "sha256": "e1510f1d3e7c41e755555ec626ca53f2750e1db295205540b7816428fcf79ab0"
+    },
+    {
+      "path": "docs/audit/2026-10-09/panel-instruction-final/README.md",
+      "scope": "original read-only",
+      "bytes": 3653,
+      "sha256": "f94fef9e7a5b2107e1dc4937a98d5ef88705c95cda8aef7b366b506c58ee4531"
+    },
+    {
+      "path": "docs/audit/2026-10-09/ops-closure-final/README.md",
+      "scope": "original read-only",
+      "bytes": 2251,
+      "sha256": "e522040972c1d3efd7a50a6118c8f8084c7e4849d3bfebf606939bd1651c0036"
+    },
+    {
+      "path": "docs/audit/2026-10-09/ops-recheck-final/README.md",
+      "scope": "original read-only",
+      "bytes": 4192,
+      "sha256": "cef45ba0fa4d41a3e7527045c91785b02d277ebb9ce79b4f8ae2c4f4224d10f0"
+    },
+    {
+      "path": "docs/start-2026-10-09.md",
+      "scope": "original read-only",
+      "bytes": 23535,
+      "sha256": "fc83f21aa4609f3f68a9a2cf1a58f186885f42846422c5c50cd31f513f3a00f8"
+    },
+    {
+      "path": "docs/panel-guide.md",
+      "scope": "repo reference read-only",
+      "bytes": 7879,
+      "sha256": "74620831c507b8d61ccac0291047c3d9eb996f3e93e82495e38b1c888b4944af"
+    },
+    {
+      "path": "docs/operations.md",
+      "scope": "repo reference read-only",
+      "bytes": 28702,
+      "sha256": "6e74ba6a730a00c2b64c496defe56cc05a5b118c1d67116d8f481d876175df36"
+    },
+    {
+      "path": "docs/offsite-operations.md",
+      "scope": "repo reference read-only",
+      "bytes": 9942,
+      "sha256": "f7212d5a66cdab2d6f720062534d07710e2fa8b99cf86ea4d52baf84fa7ec831"
+    },
+    {
+      "path": "app/admin/layout.tsx",
+      "scope": "repo reference read-only",
+      "bytes": 1294,
+      "sha256": "0345f07cda1a488cfd1d6c04e854edfe1354269a7e037c2b31e18d47a53afdd4"
+    },
+    {
+      "path": "app/admin/ProductEditor.tsx",
+      "scope": "repo reference read-only",
+      "bytes": 15865,
+      "sha256": "ed7b420566364c72622e83b41e2f2b0ce37b7003bf951aaa7b149414bcf88946"
+    },
+    {
+      "path": "app/admin/SiteEditor.tsx",
+      "scope": "repo reference read-only",
+      "bytes": 17914,
+      "sha256": "4e00e97fe73dc9642359f74052af2e2d10fc5bdb59f04accaa67dc34030c6cb4"
+    },
+    {
+      "path": "app/admin/OrderActions.tsx",
+      "scope": "repo reference read-only",
+      "bytes": 10714,
+      "sha256": "89e0d8ac32a6b4379dab03a246e7125d105dd09af640221b2b63b1aff327f1f4"
+    },
+    {
+      "path": "app/admin/ShipmentActions.tsx",
+      "scope": "repo reference read-only",
+      "bytes": 12508,
+      "sha256": "7bc2c1ce19121fe1783a8c20c1fd2fb87fa28bad26e49f1548780011e957b20e"
+    },
+    {
+      "path": "app/admin/eksport/page.tsx",
+      "scope": "repo reference read-only",
+      "bytes": 1618,
+      "sha256": "e489f5ab772af449959e444958005dbb6d88479d917f6a62a506e59c9b2d6b44"
+    }
+  ],
+  "failures": [],
+  "first_render": {
+    "text_segments": "143/143",
+    "local_links": "22/22",
+    "layout": "Initial automatic spill to page 7 corrected by separating training record and acceptance decision",
+    "preserved": ".pdf-qa/attempt-1"
+  }
+}
