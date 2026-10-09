@@ -18,6 +18,11 @@ const docker = `#!/usr/bin/env python3
 import os,sys,time
 from pathlib import Path
 if sys.argv[1]=='exec':
+ if os.environ.get('REPLACE_STAGE'):
+  root=Path(os.environ['INNOCHEM_BACKUP_DIR'])
+  stage=next(root.glob('.innochem-*.partial.*'))
+  stage.unlink();stage.write_bytes(b'replacement from another writer; preserve it')
+  raise SystemExit(1)
  print('-- PostgreSQL database dump\\n'+('SELECT 123456789;\\n'*200),flush=True)
  if os.environ.get('SLOW_DUMP'): time.sleep(0.7)
  if os.environ.get('FAIL_DUMP'): raise SystemExit(1)
@@ -222,5 +227,57 @@ test("interrupted host backup removes only its incomplete copy and records failu
     partial: [],
     failed: true,
   });
+  await previousPreserved(f.copies);
+});
+
+test("failed host backup preserves a staging pathname replaced by another writer", async (t) => {
+  const f = await fixture(t, { REPLACE_STAGE: "1" });
+  const result = await run(f.env).done;
+  assert.equal(result.code, 1);
+  const state = await files(f.copies);
+  assert.equal(state.completed.length, 0);
+  assert.equal(state.partial.length, 1);
+  assert.equal(state.failed, true);
+  assert.equal(
+    await readFile(path.join(f.copies, state.partial[0]), "utf8"),
+    "replacement from another writer; preserve it",
+  );
+  await previousPreserved(f.copies);
+});
+
+test("exclusive staging allocation preserves an existing competing file", async (t) => {
+  const f = await fixture(t);
+  const bin = f.env.PATH.split(":")[0];
+  const init = path.join(bin, "controlled-shell-init.sh");
+  await writeFile(
+    init,
+    `unset RANDOM
+RANDOM=17
+printf '%s' 'competing staging file; preserve it' > "$INNOCHEM_BACKUP_DIR/.innochem-20300101-010101.partial.$$-17-17"
+`,
+  );
+  await writeFile(
+    path.join(bin, "date"),
+    `#!/usr/bin/env python3
+import os,sys
+if sys.argv[-1]=='+%Y%m%d-%H%M%S': print('20300101-010101')
+else: os.execv('/bin/date',['/bin/date',*sys.argv[1:]])
+`,
+    { mode: 0o700 },
+  );
+  const result = await run({ ...f.env, BASH_ENV: init }).done;
+  assert.equal(result.code, 1);
+  const state = await files(f.copies);
+  assert.equal(state.completed.length, 0);
+  assert.equal(state.partial.length, 1);
+  assert.equal(state.failed, true);
+  assert.equal(
+    await readFile(path.join(f.copies, state.partial[0]), "utf8"),
+    "competing staging file; preserve it",
+  );
+  assert.match(
+    await readFile(path.join(f.copies, "backup.log"), "utf8"),
+    /cannot allocate private staging file/,
+  );
   await previousPreserved(f.copies);
 });
