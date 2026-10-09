@@ -104,6 +104,7 @@ export function CatalogToolbar({
             <span className="chips-name">Lepkość</span>
             <Link
               href={href(base, { q, grade: null })}
+              prefetch={false}
               className={!grade ? "chip on" : "chip"}
             >
               Każda
@@ -115,6 +116,7 @@ export function CatalogToolbar({
                   q,
                   grade: g.grade === grade ? null : g.grade,
                 })}
+                prefetch={false}
                 className={g.grade === grade ? "chip on" : "chip"}
                 aria-current={g.grade === grade ? "true" : undefined}
               >
