@@ -59,3 +59,15 @@ node --test tests/offsite-host.test.mjs tests/offsite-alerts.test.mjs
 ```
 
 Odtworzenie sprawdzone 9.10 o 06:57 UTC użyło snapshotu `0ed5f3c8fc30ad875e98e9b7982a23e79d3685fbff642c5469101a94d9dad4b5`, utworzonego tego dnia o 04:45 Warszawa. Zgadzało się 3418 plików mediów (156 795 882 B). Odzyskane 909 704 B obejmowało dump 876 044 B i próbkę mediów 33 660 B; oba SHA-256 odpowiadały plikom źródłowym. Weryfikacja nie zmieniła żadnego klienta, zamówienia, płatności ani pliku mediów. Jeżeli dump po wzroście sklepu przekroczy limit odtworzenia, weryfikator zgłosi jawnie brak weryfikacji; nie oznacza to usunięcia ani uszkodzenia samego snapshotu. Wtedy AI powinno przygotować nową strategię ograniczonego odtworzenia.
+
+## Odbiór wdrożenia 9.10.2026
+
+Wersję po review `3fd65f42` zainstalowano atomowo o 07:36 UTC. Hashe czterech zainstalowanych źródeł odpowiadają tej wersji. Poprzedni wrapper zachowano w `/root/innochem-ops-source-backups/20261009T073148Z/monitor-host.sh`, z SHA-256 `49b55cb278522a2b26cf1271a255f4b183a762ac6e851ce931e1675001014307`. Hashe wspólnego skryptu restic, monitora Programo, jednostki i timera pozostały bez zmian; timer jest aktywny. Zainstalowany weryfikator ponownie odtworzył 909 704 B z tego samego snapshotu, z wynikiem `OK` o 07:33 UTC.
+
+Jedna para syntetyczna „awaria” / „rozwiązane” przeszła oba kanały bez oczekujących prób. O 07:37 UTC odczyt API Resend potwierdził dla obu maili `last_event=delivered` i zgodność odbiorcy z `wojciech.plonka@programo.pl`. Odczyt ntfy potwierdził oba zapisane komunikaty po identyfikatorze oraz temacie. Maile wysłał istniejący nadawca zapasowy Programo `powiadomienia@estalo.pl`. To potwierdzenie dostawcy maila i zapisu ntfy; nie potwierdza przeczytania maila ani wyświetlenia powiadomienia na telefonie.
+
+Journal cron, historia monitora i osobny stan alarmów potwierdziły rzeczywiste uruchomienia o 07:40 i 07:45 UTC (09:40 i 09:45 Warszawa). Pierwsza kontrola utworzyła problem dysku bez wysyłki, druga przyjęła alarm w obu kanałach bez stanu pending. Zajęcie dysku wynosiło 96,8%; tego rzeczywistego błędu nie ukryto ani nie wykonano pruning. Kontener, HTTPS, worker, kolejki i kopie przeszły kontrolę.
+
+Po instalacji flagi pozostały `PAYMENTS_ENABLED=false`, `MAIL_DELIVERY_ENABLED=false`, `STORE_WORKER_ENABLED=true`, `STRIPE_MODE=test`, `STOREFRONT_PREVIEW=true`. Liczności pozostały bez zmian: 31 produktów, 300 klientów, 394 zamówienia, 0 sesji płatności, 0 przesyłek. Nie wymuszano nowego pełnego backupu. Konfigurację `ExecStartPost` sprawdzono, ale jego naturalne uruchomienie po wspólnym zadaniu nastąpi dopiero przy następnym timerze.
+
+Sanityzowane metadane odbioru: `/tmp/innochem-offsite-alerts-20261009/offsite-proof-final.json`, `provider-receipts.json`, `installed-source-proof.json`, `runtime-after-install.json` i `cron-observation-final.json`. Zawierają metadane oraz identyfikatory dostawców, bez kluczy, adresu ntfy, treści SQL ani danych kupujących.
