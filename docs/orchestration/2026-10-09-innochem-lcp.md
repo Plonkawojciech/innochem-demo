@@ -35,7 +35,7 @@ Kontener QA ma limit 2 CPU / 2 GB / pids256, dropALL/no-new-privileges, użytkow
 
 `scripts/run-home-lcp-vm.py` przeprowadza kolejne kroki przez jeden heavy: archiwum, transfer z SHA, nowy kontener, sześć prób, pobranie wyników i kontrolę SHA każdego pliku. Sprawdza czysty stan swoich źródeł względem commita, hash manifestu zależności oraz package.json każdego istniejącego pakietu. Nie formatuje ani nie zmienia źródeł podczas wykonania. Usuwa wyłącznie nowo utworzony zamknięty kontener z etykietą właściciela oraz jego wskazany katalog tymczasowy po zweryfikowanym pobraniu. Zapisuje obraz runtime jako immutable imageID, limity i przed/po obciążenie/pamięć VM. Późniejsza finalna seria po root deploy ma użyć tego samego obrazu/silnika/profilu.
 
-## Zamrożenie instrumentacji przed formalnym review
+## Historyczny stan przy zamrożeniu instrumentacji przed formalnym review
 
 VM6: **NOT RUN**. Oczekujący helper anulowany przed przejęciem heavy; exit130, brak payloadu i zero próbek strony. Kod aplikacji pozostaje na e660067 i nie ma zmian. Root poprosił o osobny commit instrumentacji przed formalnym static review. Wyniki oraz dowód wykonania zostaną zapisane w kolejnym commicie.
 
@@ -46,3 +46,31 @@ Następny krok: formalny review exact SHA, potem uruchomienie zamrożonego helpe
 Draft review wykazał dwa P2 w helperze: archiwizacja argv przed walidacją runtime proof oraz cleanup wyłącznie po sukcesie. Poprawka przed wykonaniem dopuszcza tylko dwa regularne canonical JSON w katalogu orkiestracji, odrzuca .env, symlinki, nieznane pola i metadane niezgodne z SHA/preview. Do payloadu trafia ponownie serializowany, zwalidowany obiekt; nie archiwizujemy pierwotnego argv. Zdalny trap i lokalne finally zatrzymują kontener wyłącznie po zgodności exact ID oraz dwóch etykiet właściciela. Niezaufane lub niezweryfikowane wyniki pozostają zachowane. Limit startu900 s zabezpiecza także utratę klienta SSH. Zasoby usuwamy dopiero po hash-verified pobraniu. VM6 nadal NOT RUN.
 
 Walidacja funkcji wejścia, bez SSH/kontenera/browsera: 1 poprawny proof oraz 9 odrzuconych przypadków (nieznane pole, arbitralne source, healthy typu liczbowego, payments true, niezgodne SHA, trzy niedozwolone ścieżki i symlink); PASS. Syntax parsera/helpera oraz git diff --check: PASS. Cleanup zdalny pozostaje do potwierdzenia po formalnym review i rzeczywistym wykonaniu; nie raportujemy go jako wykonanego.
+
+
+## Zakończona baseline VM6: FAIL, 9 października 21:31 CEST
+
+Exact instrumentacja `92d213b50965b75a6af6fcc17e1e51e340061f04` dostała formalny static GO. Jedna zadeklarowana seria ruszyła po zwolnieniu heavy i zamknęła sześć prób 19:30:57–19:31:43 UTC. Preview nadal `e660067b896fdaf78e835dbd51450980d62a8869`; nie było zmian kodu aplikacji. Wszystkie sześć wyników jest ważnych, bez błędów HTTP, bez zapisu requestem i z potwierdzonym zamknięciem własnego browsera. CLS każdej próby: 0. Exit0 pipeline potwierdza wykonanie, a nie zaliczenie celu.
+
+| Próba | Lighthouse LCP simulate, ms | Natywny LCP śladu, ms | TBT, ms | LCP <2500 |
+| --- | ---: | ---: | ---: | --- |
+| 1 | 2709,861 | 1281,132 | 242 | FAIL |
+| 2 | 2789,144 | 219,857 | 324 | FAIL |
+| 3 | 2552,829 | 171,822 | 169 | FAIL |
+| 4 | 2725,752 | 205,949 | 305 | FAIL |
+| 5 | 2471,293 | 182,406 | 196,5 | PASS |
+| 6 | 2534,278 | 185,217 | 179 | FAIL |
+
+Najgorsza próba 2789,144 ms; `targetAllPassed=false`, pięć FAIL. Zachowano wszystkie próby. Host VM ma 8 CPU, load1 od 5,13 przez 6,30 do 4,90 i około 7 GB wolnej pamięci. Kontener QA ma niezmieniony limit 2 CPU/2 GB. Nie uznajemy wcześniejszego Maca i tej VM za porównywalną serię przed/po. Szczegółowe parametry, czasy, obciążenie każdej próby oraz wszystkie hashe zawiera [baseline evidence](../evidence/2026-10-09-home-lcp-baseline-vm.json).
+
+Zdalne zasoby własnego QA usunięto dopiero po zgodności SHA archiwum oraz 27 plików wynikowych. Receipt potwierdza zamknięcie sześciu browserów i cleanup kontenera/katalogu. Archiwum wyników SHA256 `cedd6f73f3842cfc5d1c03cbb5a8de327310cbc40405c4d484ba03d144e5a663`. Raw LHR/HTML/Trace/DevtoolsLog, payload i receipt pozostają na Mad Dog w `private/lcp-20261009/baseline-six-vm` oraz `baseline-six-vm-results.tar.gz`; nie trafiają do Git. Offline parser sześciu śladów oraz historyczne golden assertions (natywny LCP2492,829 ms, activation→submit1002,520 ms) zakończyły się PASS. Dodatkowy ograniczony odczyt CPU ze śladów 2 i 5 wykonano przez heavy, bez browsera ani sieci.
+
+### Koszt renderowania: najgorsza próba 2 i najlepsza 5
+
+Pierwszy Layout obejmuje cały dokument i 305 obiektów w obu próbach: 55,009/50,921 ms wall oraz 15,400/15,379 ms CPU. `SendBeginMainFrameToCommit` zajmuje 66,702/57,046 ms, niemal w całości pokryte zadaniami głównego wątku. `activation→submit` to 1,031/5,807 ms; brak powtórzenia historycznej sekundowej przerwy Maca. Nie ma podstaw do usuwania efektów lub zmiany compositora.
+
+Wykonanie core chunk3794 zaczyna się przed natywnym LCP: 91,782/51,602 ms wall oraz 49,609/44,735 ms CPU. To Next/React routing i hydration, a nie dowód konkretnej wolnej funkcji aplikacji. Ślad nie zawiera leaf CPU samples. Większa różnica wall niż CPU może wynikać z planowania lub limitu kontenera; brak cpu.stat nie pozwala przypisać przyczyny. Nie zmieniamy limitu QA ani vendor bundle.
+
+Audit Lighthouse skaluje bootup-time i grupy main-thread przez CPU4: koszt style/layout279,092/271,244 ms, script evaluation553,532/479,516 ms. CSS blokujący jest identyczny, 11874 B i 150 ms w obu. Są to czasy przeskalowanego auditu, nie natywne CPU. Lighthouse Lantern uwzględnia całe zadanie zaczynające się przed natywnym LCP, nawet jeśli kończy się po prezentacji. Optymalizacja ma zmniejszyć rzeczywistą pracę strony, bez modyfikacji miernika.
+
+Następny krok to jedna korekta offscreen style/layout sekcji technology i featured, z zachowaniem cienia, Reveal, anchorów, focusu, drukowania i DOM. Jej skuteczność pozostaje hipotezą do sprawdzenia; nie wyprowadzamy gwarancji <2500 ms z tych kosztów. Po review root wykona jeden finalny pełny gate i deploy; kolejna z góry ustalona VM6 zachowa wszystkie próby oraz ten sam silnik, instrumentację i limity. Brak własnego serwera3061 i własnej bazy. PG55449 pozostaje w opiece checkout.
