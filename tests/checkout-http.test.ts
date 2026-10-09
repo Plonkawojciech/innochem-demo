@@ -112,9 +112,10 @@ async function fixture(t: TestContext, stock = 5) {
     });
   const state = async () => {
     const productState = (
-      await query("SELECT stock,reserved FROM products WHERE id=$1", [
-        product.id,
-      ])
+      await query<{ stock: number; reserved: number }>(
+        "SELECT stock,reserved FROM products WHERE id=$1",
+        [product.id],
+      )
     ).rows[0];
     const orders = await query(
       "SELECT id FROM orders WHERE idempotency_key=$1",
