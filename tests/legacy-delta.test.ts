@@ -991,6 +991,7 @@ test("readonly exporter rolls back malformed identities, missing relationships a
 });
 test("export environment requires matching explicit database, host/user and read-only opt-in", () => {
   const env = {
+    NODE_ENV: "test" as const,
     INNOCHEM_DELTA_EXPORT_READ_ONLY: "1",
     PGDATABASE: "innochem_test_fixture",
     PGHOST: "/synthetic/socket",
@@ -1095,7 +1096,11 @@ test("source CLI writes private normalized files and guarded exporter never conn
         path.join(dir, "target.json"),
         "--confirm-read-only",
       ],
-      { encoding: "utf8", timeout: 30_000, env: { PATH: process.env.PATH } },
+      {
+        encoding: "utf8",
+        timeout: 30_000,
+        env: { PATH: process.env.PATH, NODE_ENV: "test" },
+      },
     );
     assert.equal(guarded.status, 1, processDiagnostic(guarded));
     assert.match(guarded.stderr, /Invalid legacy delta snapshot/);
