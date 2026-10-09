@@ -1,31 +1,44 @@
 "use client";
-import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { Suspense, useEffect, useRef } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { CONSENT_CHANGED, hasAnalyticsConsent } from "@/lib/consent";
 import {
   safePath,
+  safeReferrer,
   stopAnalytics,
   track,
   type AnalyticsEvent,
 } from "@/lib/analytics";
 export function Analytics() {
+  // Only this invisible analytics island needs query state, not the page UI.
+  return (
+    <Suspense fallback={null}>
+      <AnalyticsVisits />
+    </Suspense>
+  );
+}
+function AnalyticsVisits() {
   const pathname = usePathname();
+  const search = useSearchParams().toString();
+  const visitKey = pathname + (search ? `?${search}` : "");
   const last = useRef("");
   useEffect(() => {
     const visit = () => {
-      if (!hasAnalyticsConsent() || pathname.startsWith("/admin")) {
+      if (!hasAnalyticsConsent() || safePath(pathname).startsWith("/admin/")) {
         stopAnalytics();
         last.current = "";
         return;
       }
-      if (last.current === pathname) return;
+      if (last.current === visitKey) return;
       const previous = last.current;
       if (
         track("page_view", {
-          page_referrer: previous ? location.origin + safePath(previous) : "",
+          page_referrer: previous
+            ? location.origin + safePath(previous)
+            : safeReferrer(document.referrer, location.origin),
         })
       )
-        last.current = pathname;
+        last.current = visitKey;
     };
     visit();
     window.addEventListener(CONSENT_CHANGED, visit);
@@ -42,7 +55,7 @@ export function Analytics() {
       window.removeEventListener(CONSENT_CHANGED, visit);
       document.removeEventListener("click", contact);
     };
-  }, [pathname]);
+  }, [pathname, visitKey]);
   return null;
 }
 export function useViewEvent(

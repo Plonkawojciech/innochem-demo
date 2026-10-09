@@ -23,10 +23,78 @@ type TagWindow = Window & {
 let frame: HTMLIFrameElement | null = null;
 let tag: TagWindow | null = null;
 export function safePath(path: string) {
-  const pathname = path.split(/[?#]/)[0];
-  if (/^\/zamowienie\//.test(pathname)) return "/zamowienie/[id]";
-  if (/^\/konto(?:\/|$)/.test(pathname)) return "/konto/[strona]";
+  let pathname = path.split(/[?#]/)[0];
+  try {
+    pathname = decodeURIComponent(pathname);
+  } catch {
+    return "/[strona]";
+  }
+  if (/^\/+zamowienie\//i.test(pathname)) return "/zamowienie/[id]";
+  if (/^\/+konto(?:\/|$)/i.test(pathname)) return "/konto/[strona]";
+  if (/^\/+admin(?:\/|$)/i.test(pathname)) return "/admin/[strona]";
+  if (!/^\/[a-z0-9/_.-]*$/i.test(pathname) || pathname.length > 512)
+    return "/[strona]";
   return pathname;
+}
+const campaignKeys = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+] as const;
+export function safeCampaignQuery(path: string, search: string) {
+  const pathname = safePath(path);
+  if (
+    /^\/(?:konto|zamowienie|admin)(?:\/|$)/i.test(pathname) ||
+    pathname === "/[strona]" ||
+    search.length > 2048
+  )
+    return "";
+  const input = new URLSearchParams(search);
+  const output = new URLSearchParams();
+  for (const key of campaignKeys) {
+    const values = input.getAll(key);
+    if (values.length !== 1) continue;
+    const value = values[0];
+    // Campaign labels, not contact data, click identifiers or arbitrary URLs.
+    // Reject UUID/hex tokens and phone-like digit runs even when slug-shaped.
+    if (
+      !/^[a-z][a-z0-9_-]{0,63}$/i.test(value) ||
+      /\d{7}|[a-f0-9]{16}|[a-f0-9]{8}-[a-f0-9]{4}-/i.test(value) ||
+      /(?:^|[_-])(?:token|password|passwd|session|secret|auth)(?:$|[_-])/i.test(
+        value,
+      )
+    )
+      continue;
+    output.set(key, value);
+  }
+  const query = output.toString();
+  return query ? `?${query}` : "";
+}
+export function safePageLocation(origin: string, path: string, search = "") {
+  return origin + safePath(path) + safeCampaignQuery(path, search);
+}
+export function safeReferrer(
+  referrer: string,
+  origin: string,
+  allowInternal = false,
+) {
+  if (
+    !referrer ||
+    referrer.length > 2048 ||
+    /[\u0000-\u0020\u007f]/.test(referrer)
+  )
+    return "";
+  try {
+    const url = new URL(referrer);
+    if (!/^https?:$/.test(url.protocol) || url.username || url.password)
+      return "";
+    if (url.origin !== origin) return url.origin;
+    return allowInternal ? origin + safePath(url.pathname) : "";
+  } catch {
+    return "";
+  }
 }
 export function item(
   p: Pick<StoreProduct, "sku" | "id" | "name" | "priceCents"> &
@@ -56,8 +124,9 @@ export function stopAnalytics() {
 }
 function startAnalytics() {
   if (tag) return tag;
-  // A disposable same-origin realm prevents automatic history/form/link observers
-  // from seeing checkout data, and lets withdrawal destroy the Google runtime.
+  // Observers run in an empty document rather than checkout DOM/history.
+  // This same-origin realm is not a security sandbox against hostile scripts.
+  // Withdrawal destroys the entire runtime; every URL below is explicit.
   frame = document.createElement("iframe");
   frame.hidden = true;
   frame.title = "Statystyka";
@@ -91,8 +160,12 @@ function startAnalytics() {
     cookie_path: "/",
     cookie_expires: 15552000,
     cookie_update: false,
-    page_location: location.origin + safePath(location.pathname),
-    page_referrer: "",
+    page_location: safePageLocation(
+      location.origin,
+      location.pathname,
+      location.search,
+    ),
+    page_referrer: safeReferrer(document.referrer, location.origin),
     page_title: "INNOCHEM",
   });
   const script = doc.createElement("script");
@@ -109,22 +182,33 @@ export function track(
   if (
     typeof window === "undefined" ||
     !hasAnalyticsConsent() ||
-    /^\/admin(?:\/|$)/.test(location.pathname)
+    safePath(location.pathname).startsWith("/admin/")
   )
     return false;
   try {
     const path = safePath(location.pathname);
     startAnalytics().gtag("event", name, {
       ...params,
-      page_location: location.origin + path,
+      page_location: safePageLocation(
+        location.origin,
+        location.pathname,
+        location.search,
+      ),
       page_title: path.startsWith("/konto")
         ? "Konto — INNOCHEM"
-        : path === "/zamowienie/[id]"
+        : /^\/zamowienie(?:\/|$)/i.test(path)
           ? "Zamówienie — INNOCHEM"
-          : document.title,
-      // Never allow document.referrer to expose an order token or reset URL.
-      page_referrer:
-        typeof params.page_referrer === "string" ? params.page_referrer : "",
+          : path === "/[strona]"
+            ? "INNOCHEM"
+            : document.title,
+      // Callers cannot override URL privacy with a raw referrer or page_location.
+      page_referrer: safeReferrer(
+        typeof params.page_referrer === "string"
+          ? params.page_referrer
+          : document.referrer,
+        location.origin,
+        typeof params.page_referrer === "string",
+      ),
     });
     return true;
   } catch {
