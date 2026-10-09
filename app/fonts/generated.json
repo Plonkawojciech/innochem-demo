@@ -1,15 +1,31 @@
 [
   {
     "file": "inter.woff2",
-    "bytes": 71824,
-    "sha256": "eee40ce2e753edcbd15b2ee6d1db28c7f9389551566d1a2443c1ef08635cd22f",
-    "characters": 247
+    "bytes": 55952,
+    "sha256": "8f0e0a23ff76717f9f2b60e14944ebb70b4c45457cca0aeb8745cfd75049a2ce",
+    "characters": 247,
+    "axes": {
+      "wght": {
+        "min": 400,
+        "default": 400,
+        "max": 900
+      }
+    },
+    "baselineSha256": "eee40ce2e753edcbd15b2ee6d1db28c7f9389551566d1a2443c1ef08635cd22f"
   },
   {
     "file": "inter-rest.woff2",
-    "bytes": 124536,
-    "sha256": "ce491fbd96b0bc2605d37abf45b1df3ed5083440b074c8946a71faa86da85051",
-    "characters": 1375
+    "bytes": 92324,
+    "sha256": "4fa031ef41f10de9ee86fa0aa0a5e2099ea9f8d82659653ba6f4ea2f70bc0601",
+    "characters": 1375,
+    "axes": {
+      "wght": {
+        "min": 400,
+        "default": 400,
+        "max": 900
+      }
+    },
+    "baselineSha256": "ce491fbd96b0bc2605d37abf45b1df3ed5083440b074c8946a71faa86da85051"
   },
   {
     "file": "manrope.woff2",

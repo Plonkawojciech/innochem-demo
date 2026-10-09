@@ -14,6 +14,8 @@ const securityHeaders = [
 ];
 const nextConfig = {
   output: "standalone",
+  // The preview proxy negotiates Brotli and gzip for immutable assets and HTML.
+  compress: false,
   distDir: process.env.NEXT_DIST_DIR || ".next",
   skipTrailingSlashRedirect: true,
   // Local runs use APP_URL=http://127.0.0.1:<port>; dev asset loading must allow that host.

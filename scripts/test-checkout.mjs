@@ -1,16 +1,6 @@
-import "../tests/helpers/checkout-network-isolation.mjs";
+import { checkoutNetworkIsolation } from "../tests/helpers/checkout-network-isolation.mjs";
 import { spawnSync } from "node:child_process";
 import { Pool } from "pg";
-
-if (
-  process.env.STOREFRONT_PREVIEW !== "true" ||
-  process.env.MAIL_DELIVERY_ENABLED !== "false" ||
-  process.env.PAYMENTS_ENABLED !== "false" ||
-  process.env.STORE_WORKER_ENABLED !== "false"
-)
-  throw new Error(
-    "Checkout regression requires preview with transports disabled",
-  );
 
 // Verify the server's database identity before any fixture can write.
 const db = new Pool({
@@ -22,7 +12,11 @@ try {
   if (result.rows[0].name !== process.env.PGDATABASE)
     throw new Error("Checkout regression database identity does not match");
 } finally {
-  await db.end();
+  try {
+    await db.end();
+  } finally {
+    process.env.PGHOST = checkoutNetworkIsolation.databaseHost;
+  }
 }
 
 const files = [
@@ -55,7 +49,13 @@ const result = spawnSync(
     "--test-concurrency=1",
     ...files.map((file) => `tests/${file}.test.ts`),
   ],
-  { stdio: "inherit", env: process.env },
+  {
+    stdio: "inherit",
+    env: {
+      ...process.env,
+      PGHOST: checkoutNetworkIsolation.databaseHost,
+    },
+  },
 );
 if (result.error) throw result.error;
 process.exitCode = result.status ?? 1;

@@ -28,7 +28,7 @@ const archivo = localFont({
 });
 const inter = localFont({
   src: "./fonts/inter.woff2",
-  weight: "100 900",
+  weight: "400 900",
   variable: "--f-body",
   adjustFontFallback: false,
   fallback: ["InnochemBodyExtended", "InnochemBodyFallback"],

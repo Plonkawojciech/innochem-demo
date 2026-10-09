@@ -1,4 +1,5 @@
-import test, { after, type TestContext } from "node:test";
+import { checkoutNetworkIsolation } from "./helpers/checkout-network-isolation.mjs";
+import test, { before, after, type TestContext } from "node:test";
 import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
@@ -10,9 +11,19 @@ import { database, query } from "../lib/server/db";
 import { legalCommerce, legalHash } from "../lib/server/legal";
 import { settingsSchema } from "../lib/server/settings";
 
-if (!process.env.PGDATABASE?.startsWith("innochem_test_"))
-  throw new Error("Dedicated test database required");
-after(async () => database().end());
+before(async () => {
+  const result = await query<{ name: string }>(
+    "SELECT current_database() AS name",
+  );
+  assert.equal(result.rows[0].name, checkoutNetworkIsolation.database);
+});
+after(async () => {
+  try {
+    await database().end();
+  } finally {
+    process.env.PGHOST = checkoutNetworkIsolation.databaseHost;
+  }
+});
 
 let ipNumber = 120;
 async function fixture(t: TestContext, stock = 5) {
@@ -305,13 +316,7 @@ test("cart HTTP quotes current availability and omits withdrawn products before 
   assert.equal("reserved" in products[0], false);
 });
 
-test("the checkout runner blocks provider fetches and TCP before connection", async (t) => {
-  if (
-    !process.execArgv.includes("./tests/helpers/checkout-network-isolation.mjs")
-  )
-    return t.skip(
-      "Run scripts/test-checkout.mjs to verify transport isolation",
-    );
+test("the checkout runner blocks provider fetches and TCP before connection", async () => {
   assert.throws(() => net.connect(443, "checkout.stripe.com"), /blocked/);
   assert.throws(() => net.connect(55449, "127.0.0.1"), /blocked/);
   await assert.rejects(fetch("https://www.apaczka.pl/"), /blocked/);
@@ -329,7 +334,14 @@ test("the checkout runner blocks provider fetches and TCP before connection", as
         "--eval",
         "console.log('UNREACHABLE_AFTER_GUARD')",
       ],
-      { env: { ...process.env, ...override }, encoding: "utf8" },
+      {
+        env: {
+          ...process.env,
+          PGHOST: checkoutNetworkIsolation.databaseHost,
+          ...override,
+        },
+        encoding: "utf8",
+      },
     );
     assert.notEqual(child.status, 0);
     assert.match(child.stderr, /Checkout regression requires/);
