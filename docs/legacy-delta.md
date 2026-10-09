@@ -111,6 +111,8 @@ Testy modułu uruchomisz bez DB: `node --import tsx --test tests/legacy-delta.te
 
 ## Ograniczony etap plan/apply istniejącego katalogu
 
+Obraz aplikacji zawiera oba narzędzia w `/app/operations`: `report-legacy-delta.mjs` oraz `apply-legacy-catalog-delta.mjs`. W kontenerze zastępują wywołania `node --import tsx scripts/...ts` z przykładów poniżej wywołaniami `node /app/operations/...mjs`; argumenty i wymagane zmienne pozostają takie same. Sam build nie uruchamia eksportu ani importu. Prywatne wejścia udostępnia prowadzący operacji z odpowiednimi prawami, a workerów zatrzymuje niezależnie; nadpisanie zmiennej w jednym procesie CLI nie zatrzymuje innych procesów. Nie dodano publicznego endpointu do zastosowania delty.
+
 [scripts/apply-legacy-catalog-delta.ts](../scripts/apply-legacy-catalog-delta.ts) domyślnie wykonuje dry-run. Czyta cztery prywatne pliki oraz aktualny target w transakcji `REPEATABLE READ READ ONLY`, sprawdza zgodność targetu z podanym eksportem i zapisuje nowy plan `0600`. W przeciwieństwie do samego reportera wymaga połączenia z jawnie wskazaną bazą. Wszystkie wejścia muszą być zwykłymi plikami `0600`, bez symlinków i po najwyżej 16 MiB. Przechowuj je w prywatnym katalogu `0700` poza Git; folder przygotowuje prowadzący, skrypt nie zmienia jego praw.
 
 Obsługiwane aktualizacje dotyczą wyłącznie już istniejącego `legacyId` i potwierdzonego UUID oraz wersji:

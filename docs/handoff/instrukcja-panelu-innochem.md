@@ -2,6 +2,8 @@
 
 Wersja robocza do przekazania po testach operatorów i uruchomieniu domeny. Otwórz [panel podglądu](https://sklep-innochem.programo.pl/admin); jeśli nie masz sesji, sklep przeniesie Cię do `/konto?returnTo=admin`, a po logowaniu wrócisz do panelu. Użyj istniejącego konta obsługi. Po przełączeniu wejście będzie pod https://innochem.pl/admin. Hasła nie trafiają do tej instrukcji. Konto klienta i konto obsługi mają oddzielne uprawnienia.
 
+Do instrukcji przygotowano [film demonstracyjny](../audit/2026-10-09/panel-instruction-final/innochem-panel-instruktaz.mp4): 87 sekund, z podpisami, bez dźwięku. Pokazuje zmianę ceny i sprawdzenie jej na stronie produktu, zapis i podgląd szkicu witryny, eksport produktów CSV oraz wylogowanie. Nagranie korzysta z fikcyjnych danych lokalnego panelu. [Źródła i kontrola nagrania](../audit/2026-10-09/panel-instruction-final/README.md) są w lokalnym pakiecie odbioru; film nie zastępuje szkolenia ani akceptacji klientki.
+
 ## Produkty i magazyn
 
 W panelu Produkty wybierz produkt, popraw treść, zdjęcia, cenę i stan, a potem zapisz. Stan dostępny klientowi uwzględnia rezerwacje nieopłaconych zamówień. Nie obniżaj stanu poniżej zarezerwowanej ilości. Gdy ktoś równocześnie zmieni produkt, panel poprosi o odświeżenie; sprawdź aktualne wartości przed kolejnym zapisem. Produkt archiwalny zachowuje historyczne pozycje zamówień. Produkty przemysłowe przyjmują zapytania zamiast zakupów.

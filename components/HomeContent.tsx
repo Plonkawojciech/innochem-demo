@@ -83,10 +83,18 @@ export function HomeContent({
               <h1 className="display">{hero.title}</h1>
               <p className="lead">{hero.text}</p>
               <div className="cta-row">
-                <Link className="btn btn-primary" href={hero.link.href}>
+                <Link
+                  className="btn btn-primary"
+                  href={hero.link.href}
+                  prefetch={false}
+                >
                   {hero.link.name}
                 </Link>
-                <Link className="btn btn-ghost" href={hero.secondary.href}>
+                <Link
+                  className="btn btn-ghost"
+                  href={hero.secondary.href}
+                  prefetch={false}
+                >
                   {hero.secondary.name}
                 </Link>
               </div>
@@ -131,7 +139,7 @@ export function HomeContent({
             </Reveal>
             <Reveal className="cats">
               {categories.items.map((c, i) => (
-                <Link className="cat" href={c.href} key={i}>
+                <Link className="cat" href={c.href} key={i} prefetch={false}>
                   <span className="idx">{String(i + 1).padStart(2, "0")}</span>
                   <b>
                     {c.name}
@@ -150,7 +158,11 @@ export function HomeContent({
             Nie wiesz, który olej wybrać? Napisz, jaki masz silnik, a dobierzemy
             olej i sprawdzimy dostępność.
           </p>
-          <Link className="btn btn-outline" href="/kontakt?temat=dobor">
+          <Link
+            className="btn btn-outline"
+            href="/kontakt?temat=dobor"
+            prefetch={false}
+          >
             Zapytaj o dobór
           </Link>
         </aside>
@@ -231,6 +243,7 @@ export function HomeContent({
                             key={p.id}
                             href={`/produkt/${p.slug}`}
                             className="series-chip"
+                            prefetch={false}
                           >
                             <b>{facts.grade || facts.title}</b>
                             {facts.volume && <small>{facts.volume}</small>}
@@ -243,6 +256,7 @@ export function HomeContent({
                 <div className="cta-row">
                   <Link
                     className="btn btn-primary"
+                    prefetch={false}
                     href={
                       seriesProducts.length > 1
                         ? `/katalog?q=${encodeURIComponent(series)}`
@@ -253,7 +267,11 @@ export function HomeContent({
                       ? `Zobacz całą serię ${series}`
                       : featured.link.name}
                   </Link>
-                  <Link className="btn btn-ghost" href={featured.link.href}>
+                  <Link
+                    className="btn btn-ghost"
+                    href={featured.link.href}
+                    prefetch={false}
+                  >
                     {featured.link.name}
                   </Link>
                 </div>

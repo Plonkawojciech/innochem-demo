@@ -9,7 +9,7 @@ ENV NEXT_PUBLIC_GA4_MEASUREMENT_ID=$NEXT_PUBLIC_GA4_MEASUREMENT_ID
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY . .
 RUN npm run build
-RUN ./node_modules/.bin/esbuild scripts/migrate.ts scripts/preflight.ts scripts/bootstrap-admin.ts scripts/invite-admin.ts --bundle --platform=node --external:pg-native --format=esm '--banner:js=import { createRequire } from "node:module"; const require = createRequire(import.meta.url);' --out-extension:.js=.mjs --outdir=operations
+RUN ./node_modules/.bin/esbuild scripts/migrate.ts scripts/preflight.ts scripts/bootstrap-admin.ts scripts/invite-admin.ts scripts/report-legacy-delta.ts scripts/apply-legacy-catalog-delta.ts --bundle --platform=node --external:pg-native --format=esm '--banner:js=import { createRequire } from "node:module"; const require = createRequire(import.meta.url);' --out-extension:.js=.mjs --outdir=operations
 
 FROM node:22-bookworm-slim AS runtime
 WORKDIR /app

@@ -88,7 +88,7 @@ export function Header({
           <span />
           <span />
         </button>
-        <Link className="logo" href="/">
+        <Link className="logo" href="/" prefetch={false}>
           {brand.logo.path ? (
             <img
               src={brand.logo.path}
@@ -149,7 +149,7 @@ export function Header({
 function HeaderCart() {
   const { count } = useCart();
   return (
-    <Link className="cart-btn" href="/zamowienie">
+    <Link className="cart-btn" href="/zamowienie" prefetch={false}>
       Koszyk <span className="count">{count}</span>
     </Link>
   );
