@@ -1,6 +1,6 @@
 # Obsługa panelu INNOCHEM
 
-Panel znajduje się pod adresem `/admin`. Wymaga zalogowania na zweryfikowane konto administratora. Konto klienta nie ma do niego dostępu. Do czasu uruchomienia na innochem.pl sklep działa w trybie podglądu: zamówień nie da się złożyć, a wiadomości nie są wysyłane.
+Otwórz [panel podglądu](https://sklep-innochem.programo.pl/admin). Jeśli nie jesteś zalogowana, sklep przeniesie Cię do `/konto?returnTo=admin`; po logowaniu wrócisz do panelu. Użyj istniejącego, zweryfikowanego konta administratora. Konto klienta nie ma tych uprawnień. Po uruchomieniu domeny docelowej wejście będzie pod https://innochem.pl/admin. W obecnym podglądzie zakupy i dostarczanie wiadomości pozostają wyłączone.
 
 ## Produkty i magazyn
 
@@ -24,7 +24,9 @@ Otwórz zamówienie, sprawdź płatność, dane i pozycje. Dla przelewu tradycyj
 
 Wybierz rozpoczęcie realizacji, a po nadaniu przesyłki oznacz zamówienie jako wysłane i wpisz numer przesyłki. Zapisany status trafia do historii. Zamówienia zaimportowane ze starego sklepu są archiwum i nie uruchamiają nowych płatności ani zmian magazynowych.
 
-„Zapisz wykonany zwrot pieniędzy” dokumentuje zwrot wykonany wcześniej w banku lub panelu operatora. Ten przycisk nie przelewa pieniędzy. Sprawdź towar przed wybraniem przywrócenia stanu magazynu. Płatność wymagająca wyjaśnienia lub niepewna odpowiedź operatora powinna zostać uzgodniona z jego panelem przed dalszą obsługą.
+„Zapisz wykonany zwrot pieniędzy” dokumentuje zwrot wykonany wcześniej w banku lub panelu operatora. Ten przycisk nie przelewa pieniędzy ani nie przywraca magazynu. Wpisz faktyczną kwotę, potwierdzenie i uzasadnienie; wskaż pozycje, ilości oraz ewentualny zwrot dostawy. Korekta samej kwoty ma ilość 0.
+
+Towar otrzymany i nadający się do sprzedaży przyjmij osobno przez „Przyjmij zwrócone sztuki do magazynu”. Wpisz faktyczne ilości i potwierdzenie przyjęcia. Gdy wynik zapisu jest niejasny, odśwież historię przed ponowieniem. Płatność wymagającą wyjaśnienia uzgodnij z panelem operatora przed dalszą obsługą.
 
 ## Zapytania i odstąpienia
 
@@ -44,10 +46,16 @@ Przed szkoleniem przygotuj produkt testowy i wykonaj kolejno: zmianę ceny, wyb�
 
 W stopce sklepu jest link „Ustawienia prywatności”. Klient decyduje w nim, czy zgadza się na statystykę odwiedzin (Google Analytics). Bez zgody sklep nie uruchamia żadnego skryptu Google; zakupy działają tak samo. Decyzję klient może zmienić w każdej chwili w tym samym miejscu.
 
-W panelu „Analityka” widać kolejkę zdarzeń o zakupach i zwrotach, które sklep wysyła do Google Analytics z serwera: status (oczekuje, wysłane, pominięte, błąd), numer zamówienia i ewentualny powód pominięcia (np. brak zgody klienta albo pobranie, które nie jest jeszcze zapłatą). To podgląd tylko do odczytu; sprzedaż zawsze liczy się z zamówień w panelu, nie z Google.
+W panelu „Kolejka analityki” widać zdarzenia o zakupach i zwrotach przeznaczone do Google Analytics: status (oczekuje, wysłane, pominięte, błąd), numer zamówienia i ewentualny powód pominięcia (np. brak zgody klienta albo pobranie, które nie jest jeszcze zapłatą). To podgląd tylko do odczytu; sprzedaż zawsze liczy się z zamówień w panelu, nie z Google. Sama obecność zdarzenia w kolejce nie potwierdza jego odbioru w Google.
 
 Raport miesięczny przygotowuje wykonawca na podstawie Google Search Console (ruch z wyszukiwarki, pozycje fraz) i zamówień z panelu.
 
 ## Apaczka: nadanie i etykieta
 
-Otwórz zamówienie i sekcję **Przesyłka**. Wybierz usługę Apaczki oraz preset paczki, a następnie sprawdź jej rzeczywiste wymiary i wagę. Domyślny „Karton 4 butelki” to przykład do zmiany. Podaj datę, jeśli zamawiasz odbiór przez kuriera; bez daty wybierasz samodzielne nadanie (o ile usługa na to pozwala). Potwierdź dane i kliknij **Nadaj przez Apaczkę**. Po przyjęciu zlecenia zobaczysz numer listu oraz przyciski **Pobierz etykietę** (PDF) i **Anuluj przesyłkę**. Dla pobrania system przekaże całą kwotę brutto zamówienia, włącznie z dostawą, oraz rachunek z Ustawień sklepu. Anulowanie przesyłki nie anuluje zamówienia. Status „wysłane” ustawiasz osobno w Obsłudze zamówienia; numer listu jest już uzupełniony. Jeśli zobaczysz komunikat o niepotwierdzonym wyniku, sprawdź panel Apaczki i przekaż sprawę administratorowi technicznemu, zamiast ponownie nadawać. Bez konfiguracji Apaczki nadal możesz ręcznie wpisać numer przesyłki w dotychczasowej operacji „Oznacz jako wysłane”.
+Otwórz zamówienie i sekcję „Przesyłka”. Wybierz usługę Apaczki oraz szablon paczki, a następnie sprawdź rzeczywiste wymiary i wagę każdej zapakowanej paczki. Domyślny „Karton 4 butelki” to przykład do zmiany. Podaj datę, jeśli zamawiasz odbiór przez kuriera; bez daty wybierasz samodzielne nadanie, o ile usługa na to pozwala. Odbiór osobisty nie wymaga kuriera.
+
+Kliknij „Sprawdź koszt nadania”. Wycena jest ważna pięć minut. Zmiana usługi, paczek lub daty wymaga nowej wyceny; sklep sprawdza także zgodność danych zamówienia. Potwierdź wycenę, usługę, odbiorcę i parametry wszystkich paczek, a następnie kliknij „Nadaj przez Apaczkę”. Nadanie rzeczywiste może obciążyć konto według umowy z operatorem. Testy wykonuj w uzgodnionym środowisku sandbox.
+
+Po przyjęciu zlecenia możesz pobrać etykietę PDF. Numer listu czasem pojawia się dopiero przy pobraniu etykiety; jego brak nie oznacza potrzeby ponownego nadania. Dla pobrania system przekaże całą kwotę brutto zamówienia, włącznie z dostawą, oraz rachunek z Ustawień sklepu. Anulowanie przesyłki nie anuluje zamówienia ani płatności. Status „wysłane” ustaw po faktycznym przekazaniu paczki, osobno w Obsłudze zamówienia.
+
+Gdy nadanie lub anulowanie oczekuje na wyjaśnienie, sprawdź panel Apaczki i przekaż sprawę administratorowi technicznemu. Nie ponawiaj operacji w ciemno; blokada pozostaje do uzgodnienia wyniku. Zamówienie po refundacji lub przyjęciu zwrotu również wymaga ustalenia dalszego zakresu wysyłki. Bez konfiguracji Apaczki nadal możesz wpisać faktyczny numer przesyłki w operacji „Oznacz jako wysłane”.

@@ -1,6 +1,6 @@
 # Obsługa sklepu INNOCHEM
 
-Wersja robocza do przekazania po testach operatorów i uruchomieniu domeny. Aktualny podgląd: https://sklep-innochem.programo.pl. Po przełączeniu używamy https://innochem.pl. Logowanie: `/konto/logowanie`; panel: `/admin`. Hasła nie trafiają do tej instrukcji. Konto klienta i konto obsługi mają oddzielne uprawnienia.
+Wersja robocza do przekazania po testach operatorów i uruchomieniu domeny. Otwórz [panel podglądu](https://sklep-innochem.programo.pl/admin); jeśli nie masz sesji, sklep przeniesie Cię do `/konto?returnTo=admin`, a po logowaniu wrócisz do panelu. Użyj istniejącego konta obsługi. Po przełączeniu wejście będzie pod https://innochem.pl/admin. Hasła nie trafiają do tej instrukcji. Konto klienta i konto obsługi mają oddzielne uprawnienia.
 
 ## Produkty i magazyn
 
@@ -22,9 +22,9 @@ Odbiór osobisty odbywa się w Kielcach po ustaleniu terminu; nie nadaje się dl
 
 W sekcji Przesyłka wybierz dostępną usługę. Wpisz zewnętrzne wymiary i wagę każdej zapakowanej paczki; w jednym zleceniu można dodać kilka paczek. Szablon przyspiesza wpisywanie, lecz trzeba sprawdzić go z rzeczywistym opakowaniem. Jeżeli usługa wymaga odbioru przez kuriera, wybierz datę.
 
-Najpierw pobierz wycenę. Sprawdź usługę, liczbę paczek i koszt, potwierdź dane, a następnie nadaj. Wycena jest ważna pięć minut; zmiana danych wymaga nowej. Koszt operatora nie zmienia ceny wcześniej złożonego zamówienia. Płatność przy pobraniu dotyczy całego zlecenia, a nie każdej paczki osobno.
+Najpierw kliknij „Sprawdź koszt nadania”. Sprawdź usługę, liczbę paczek i koszt, następnie zaznacz potwierdzenie wyceny, usługi, odbiorcy oraz parametrów wszystkich paczek i kliknij „Nadaj przez Apaczkę”. Wycena jest ważna pięć minut; zmiana usługi, paczek, daty lub danych zamówienia wymaga nowej. Koszt operatora nie zmienia ceny wcześniej złożonego zamówienia. Płatność przy pobraniu dotyczy całego zlecenia, a nie każdej paczki osobno.
 
-Tryb testowy Apaczki nie zamawia realnego kuriera. Przed nadaniem rzeczywistym administrator techniczny musi potwierdzić konfigurację produkcyjną. Gdy nadanie ma wynik niejednoznaczny, sprawdź panel Apaczki i skontaktuj się z administratorem; nie klikaj ponownie. Anulowanie przesyłki nie anuluje zamówienia ani płatności. Pobranie PDF etykiety jest osobną czynnością. Po zapisaniu faktycznego numeru i przekazaniu paczki oznacz zamówienie jako wysłane.
+Tryb testowy Apaczki nie zamawia realnego kuriera. Przed nadaniem rzeczywistym administrator techniczny musi potwierdzić konfigurację produkcyjną. Gdy nadanie lub anulowanie ma wynik niejednoznaczny, sprawdź panel Apaczki i skontaktuj się z administratorem; nie klikaj ponownie. Blokada nie znika automatycznie po czasie. Anulowanie przesyłki nie anuluje zamówienia ani płatności. Pobranie PDF etykiety jest osobną czynnością i może uzupełnić oczekujący numer listu. Po zapisaniu faktycznego numeru i przekazaniu paczki oznacz zamówienie jako wysłane.
 
 Zamówienie ze zwrotem pieniędzy lub przyjętym zwrotem towaru wymaga wyjaśnienia zakresu dalszej wysyłki. Panel nie nadaje automatycznie pierwotnego pełnego koszyka i pobrania.
 
