@@ -16,6 +16,23 @@ if (!process.env.PGDATABASE?.startsWith("innochem_test_"))
   throw new Error("Dedicated test database required");
 after(async () => database().end());
 const copy = () => structuredClone(defaultSiteContent);
+test("historical built-in CMS images resolve without modifying stored draft or published data", async () => {
+  const content = copy();
+  content.home.hero.background.path = "/hero-olej.png";
+  content.home.hero.image.path = "/img/rp-hps-5w30-hd.png";
+  content.home.technology.image.path = "/tlo-silnik.png";
+  await saveSiteContent(
+    { action: "publish", version: (await siteState()).version, value: content },
+    "test-admin",
+  );
+  const served = await readSite();
+  assert.equal(served.home.hero.background.path, "/hero-olej.webp");
+  assert.equal(served.home.hero.image.path, "/img/rp-hps-5w30-hd.webp");
+  assert.equal(served.home.technology.image.path, "/tlo-silnik.webp");
+  const persisted = await siteState();
+  assert.equal(persisted.published.home.hero.background.path, "/hero-olej.png");
+  assert.equal(persisted.draft.home.hero.background.path, "/hero-olej.png");
+});
 test("site drafts stay private until publication and revision restore does not replace the published site", async () => {
   const state = await siteState(),
     content = copy();

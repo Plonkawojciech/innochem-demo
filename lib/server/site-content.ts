@@ -2,6 +2,7 @@ import { z } from "zod";
 import { query, transaction } from "./db";
 import { cleanHtml } from "./content";
 import { StoreError } from "./errors";
+import { builtInMediaPath } from "../media";
 import {
   siteContentSchema,
   defaultSiteContent,
@@ -25,6 +26,18 @@ export async function siteState() {
 export async function readSite(draft = false): Promise<SiteContent> {
   const state = await siteState();
   const content = draft ? state.draft : state.published;
+  for (const image of [
+    content.brand.logo,
+    content.seo.image,
+    content.home.hero.image,
+    content.home.hero.background,
+    content.home.technology.image,
+    content.home.featured.image,
+    content.contactPage.image,
+    content.industryPage.image,
+    content.distributorsPage.image,
+  ])
+    image.path = builtInMediaPath(image.path);
   const features = [content.home.hero, content.home.featured];
   const ids = features.flatMap((f) => (f.productId ? [f.productId] : []));
   if (ids.length) {
@@ -117,6 +130,9 @@ export async function saveSiteContent(raw: unknown, actor: string) {
       "/hero-olej.png",
       "/tlo-silnik.png",
       "/img/rp-hps-5w30-hd.png",
+      "/hero-olej.webp",
+      "/tlo-silnik.webp",
+      "/img/rp-hps-5w30-hd.webp",
     ]);
     const paths = [
       ...new Set(

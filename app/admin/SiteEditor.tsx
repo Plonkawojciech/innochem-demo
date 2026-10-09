@@ -9,6 +9,7 @@ import {
 } from "@/lib/site-content";
 import { MediaPicker } from "./MediaPicker";
 import { RichTextEditor } from "./RichTextEditor";
+import { builtInMediaPath } from "@/lib/media";
 
 type Product = { id: string; name: string };
 type Value = string | boolean | null | Value[] | { [key: string]: Value };
@@ -99,7 +100,10 @@ function ImageField({
     <fieldset className="site-image-field">
       <legend>{label}</legend>
       {value.path && (
-        <img src={value.path} alt={value.alt || "Wybrane zdjęcie"} />
+        <img
+          src={builtInMediaPath(value.path)}
+          alt={value.alt || "Wybrane zdjęcie"}
+        />
       )}
       <label className="f">
         Opis zdjęcia

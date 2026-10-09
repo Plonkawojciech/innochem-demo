@@ -252,9 +252,12 @@ export const defaultSiteContent: SiteContent = {
       label: "Wyłączny dystrybutor Royal Purple w Polsce · od 2009",
       title: "Syntetyczne oleje silnikowe Royal Purple",
       text: "Royal Purple powstało w 1986 roku wokół opatentowanych technologii smarowania Synfilm i Synerlec. INNOCHEM sprowadza oryginalne produkty marki do Polski i pomaga dobrać olej do konkretnego silnika.",
-      image: { path: "/img/rp-hps-5w30-hd.png", alt: "Royal Purple HPS 5W-30" },
+      image: {
+        path: "/img/rp-hps-5w30-hd.webp",
+        alt: "Royal Purple HPS 5W-30",
+      },
       productId: null,
-      background: { path: "/hero-olej.png", alt: "" },
+      background: { path: "/hero-olej.webp", alt: "" },
       link: {
         name: "Poznaj serię HPS",
         href: "/produkt/hps-5w30",
@@ -309,7 +312,7 @@ export const defaultSiteContent: SiteContent = {
       label: "Technologia",
       title: "Synerlec — opatentowany pakiet dodatków",
       text: "Zaawansowane syntetyczne dodatki Synerlec tworzą mocny film olejowy na powierzchniach metalowych — zwiększają jego grubość i wytrzymałość, zapobiegając kontaktowi metal-metal i ograniczając zużycie części trących. To technologia, od której zaczęła się cała linia produktów Royal Purple.",
-      image: { path: "/tlo-silnik.png", alt: "Silnik" },
+      image: { path: "/tlo-silnik.webp", alt: "Silnik" },
       items: [
         {
           title: "FILM",
@@ -330,7 +333,10 @@ export const defaultSiteContent: SiteContent = {
       label: "Seria HPS",
       title: "HPS – High Performance Street",
       text: "Seria syntetycznych olejów silnikowych do aut po gwarancji, tuningowanych i mocno eksploatowanych. Pakiet Synerlec oraz podwyższona zawartość cynku i fosforu chronią silnik przy wysokich obciążeniach. Dostępna w pięciu klasach lepkości.",
-      image: { path: "/img/rp-hps-5w30-hd.png", alt: "Royal Purple HPS 5W-30" },
+      image: {
+        path: "/img/rp-hps-5w30-hd.webp",
+        alt: "Royal Purple HPS 5W-30",
+      },
       productId: null,
       link: {
         name: "Najpopularniejszy: HPS 5W-30",
