@@ -143,8 +143,9 @@ def reconcile_push(topic, event, opener=None):
 
 def send_push_safe(topic, event, opener=None):
     opener = opener or urllib.request.urlopen
-    # A crash or lost reply after the first POST is reconciled, never re-posted.
-    if event["attempts"] > 1 and not event.get("lastReceipt", {}).get("definiteRejected"):
+    # The caller journals the operation before starting this attempt. A stale
+    # rejection cannot overrule an in-flight POST recovered after a crash.
+    if event.get("pushOperation") != "publish":
         return reconcile_push(topic, event, opener)
     body = ("Zdarzenie Innochem: " + event["key"] + "\n\n" + event["body"])[:3500]
     request = urllib.request.Request("https://ntfy.sh/" + topic, data=body.encode(), headers={
@@ -215,6 +216,12 @@ def advance(state, issues, alerts, deliver, now, persist=None):
         if channel == "email" and now - pending["createdAt"] >= IDEMPOTENCY_TTL_SECONDS:
             receipt = {"accepted": False, "uncertain": True, "error": "IDEMPOTENCY_WINDOW_EXPIRED"}
         else:
+            if channel == "push":
+                # Decide from the recovered state before overwriting inFlight.
+                # An interrupted retry may have succeeded despite an older 429.
+                recovered_in_flight = bool(pending.get("inFlight"))
+                rejected = pending.get("lastReceipt", {}).get("definiteRejected")
+                pending["pushOperation"] = "reconcile" if recovered_in_flight or (pending["attempts"] > 0 and not rejected) else "publish"
             alert_state["attemptAt"] = now
             pending["attempts"] += 1
             pending["inFlight"] = True

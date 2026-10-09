@@ -108,7 +108,7 @@ from io import BytesIO
 class Response(BytesIO):
  def __enter__(self):return self
  def __exit__(self,*args):self.close()
-event=dict(createdAt=now,key='one-logical-incident',subject='Synthetic test',body='Original body',attempts=1)
+event=dict(createdAt=now,key='one-logical-incident',subject='Synthetic test',body='Original body',attempts=1,pushOperation='publish')
 posts=[];gets=[];stored=None
 def opener(request,**kwargs):
  global stored
@@ -118,7 +118,7 @@ def opener(request,**kwargs):
  gets.append(True);return Response((json.dumps(stored)+'\\n').encode())
 receipt=m.send_push_safe('not-printed-topic',event,opener)
 assert receipt['uncertain'] and len(posts)==1
-event.update(lastReceipt=receipt,attempts=2)
+event.update(lastReceipt=receipt,attempts=2,pushOperation='reconcile')
 receipt=m.send_push_safe('not-printed-topic',event,opener)
 assert receipt['accepted'] and receipt['reconciled'] and len(posts)==1 and len(gets)==1
 event.update(attempts=3,lastReceipt=dict(accepted=False,uncertain=True))
@@ -126,6 +126,53 @@ def absent(request,**kwargs):
  assert request.get_method()=='GET';return Response(b'')
 receipt=m.send_push_safe('not-printed-topic',event,absent)
 assert receipt['uncertain'] and len(posts)==1
+`,
+  );
+});
+
+test("recovered ntfy in-flight journal overrides an earlier rejection and acknowledges only one publication", () => {
+  python(
+    setup +
+      stateMachine +
+      `
+from io import BytesIO
+import urllib.error
+class Response(BytesIO):
+ def __enter__(self):return self
+ def __exit__(self,*args):self.close()
+posts=[];gets=[];published=[];mail=[]
+with tempfile.TemporaryDirectory() as name:
+ journal=Path(name)/'state.json'
+ def persist(value):m.atomic(journal,value)
+ def opener(request,**kwargs):
+  if request.get_method()=='POST':
+   posts.append(request.data)
+   if len(posts)==1:raise urllib.error.HTTPError(request.full_url,429,'rejected',None,BytesIO(b'{}'))
+   row=dict(id='push-'+str(len(published)+1),event='message',title=request.get_header('Title'),message=request.data.decode())
+   published.append(row)
+   if len(posts)==2:raise KeyboardInterrupt('simulated crash after accepted retry before acknowledgement')
+   return Response(json.dumps(row).encode())
+  gets.append(True)
+  assert json.loads(journal.read_text())['channels']['push']['pending']['pushOperation']=='reconcile'
+  return Response(('\\n'.join(map(json.dumps,published))+'\\n').encode())
+ def deliver(channel,event,save):
+  if channel=='push':return m.send_push_safe('not-printed-topic',event,opener)
+  mail.append(event['subject']);return dict(accepted=True,id='email-'+str(len(mail)))
+ m.advance(state,[issue],alerts,deliver,now,persist)
+ m.advance(state,[issue],alerts,deliver,now+301,persist)
+ assert state['channels']['push']['pending']['lastReceipt']['status']==429 and len(posts)==1
+ try:m.advance(state,[issue],alerts,deliver,now+602,persist);raise AssertionError('crash was swallowed')
+ except KeyboardInterrupt:pass
+ state=json.loads(journal.read_text())
+ assert state['channels']['push']['pending']['inFlight'] and state['channels']['push']['pending']['lastReceipt']['definiteRejected']
+ assert len(posts)==2 and len(published)==1
+ result=m.advance(state,[issue],alerts,deliver,now+903,persist)
+ assert len(posts)==2 and len(gets)==1 and len(published)==1 and mail==['failure']
+ assert result['receipts']['push']['accepted'] and result['receipts']['push']['reconciled']
+ assert 'pending' not in state['channels']['push']
+ for offset in (1204,1505,1806):m.advance(state,[],alerts,deliver,now+offset,persist)
+ assert mail==['failure','recovery'] and len(posts)==3 and len(published)==2
+ assert state['channels']['push']['alerts']['problems']=={} and state['channels']['email']['alerts']['problems']=={}
 `,
   );
 });
