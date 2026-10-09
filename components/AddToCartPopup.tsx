@@ -1,29 +1,24 @@
 "use client";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState, type ComponentType } from "react";
+import { useCartActions } from "@/lib/cart";
 import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type RefObject,
-} from "react";
-import { cartLimitMessage, type CartResult } from "@/lib/cart-state";
-import { useCart, useCartActions } from "@/lib/cart";
-import { mediaSrc, mediaSrcSet } from "@/lib/media";
-import { productFacts } from "@/lib/product-facts";
-import { money, type ProductCardData } from "@/lib/store-types";
-import s from "./AddToCartPopup.module.css";
-type Added = {
-  product: ProductCardData;
-  result: CartResult;
-  trigger: HTMLElement | null;
-};
-let show: ((added: Added) => void) | null = null;
-/**
- * Adds to the cart and opens the global confirmation only when the cart really
- * changed. Callers get the result to explain a rejected or capped add inline.
- */
+  cartConfirmation,
+  type CartConfirmation,
+} from "@/lib/cart-confirmation";
+import type { ProductCardData } from "@/lib/store-types";
+
+type Dialog = ComponentType<{
+  added: CartConfirmation;
+  onDismiss: () => void;
+}>;
+let dialogLoad: Promise<{ AddToCartDialog: Dialog }> | null = null;
+function loadDialog() {
+  // No import, CSS fetch or prefetch until an add has actually changed the cart.
+  return (dialogLoad ??= import("./AddToCartDialog"));
+}
+
+/** Cart changes synchronously; loading its confirmation never retries the add. */
 export function useAddToCart() {
   const { add } = useCartActions();
   return (
@@ -32,190 +27,88 @@ export function useAddToCart() {
     trigger?: HTMLElement,
   ) => {
     const result = add(product.id, quantity, product);
-    if (result.delta > 0) show?.({ product, result, trigger: trigger ?? null });
+    if (result.delta > 0)
+      cartConfirmation.publish({
+        product,
+        result,
+        trigger: trigger ?? null,
+        pathname: window.location.pathname,
+      });
     return result;
   };
 }
-const FOCUSABLE = "a[href], button:not(:disabled)";
+
 export function AddToCartPopup() {
-  const { count } = useCart();
-  const [added, setAdded] = useState<Added | null>(null);
-  const dialog = useRef<HTMLDialogElement>(null);
-  const keep = useRef<HTMLButtonElement>(null);
-  const restore = useRef(true);
-  const pressedBackdrop = useRef(false);
   const pathname = usePathname();
+  const [added, setAdded] = useState<CartConfirmation | null>(null);
+  const [Dialog, setDialog] = useState<Dialog | null>(null);
+  const [failed, setFailed] = useState(false);
+
   useEffect(() => {
-    show = (next) => {
-      restore.current = true;
-      setAdded(next);
-    };
-    return () => {
-      show = null;
-    };
-  }, []);
-  useLayoutEffect(() => {
-    const el = dialog.current;
-    if (!added || !el) return;
-    const root = document.documentElement;
-    const previous = root.style.overflow;
-    // Apply the page lock before showModal's synchronous layout and focus steps.
-    root.style.overflow = "hidden";
-    // Let native dialog focusing select the intended control in a single step.
-    keep.current?.setAttribute("autofocus", "");
-    try {
-      if (!el.open) el.showModal();
-      if (document.activeElement !== keep.current)
-        keep.current?.focus({ preventScroll: true });
-    } catch (error) {
-      root.style.overflow = previous;
-      throw error;
-    }
-    return () => {
-      root.style.overflow = previous;
-    };
-  }, [added]);
-  useEffect(() => {
-    restore.current = false;
-    dialog.current?.close();
+    setAdded((current) => (current?.pathname === pathname ? current : null));
+    return cartConfirmation.subscribe(pathname, (next) => {
+      if (window.location.pathname === pathname) setAdded(next);
+    });
   }, [pathname]);
-  const close = (returnFocus: boolean) => {
-    restore.current = returnFocus;
-    dialog.current?.close();
-  };
+
+  useEffect(() => {
+    if (!added || added.pathname !== pathname || Dialog) return;
+    let active = true;
+    loadDialog().then(
+      ({ AddToCartDialog }) => {
+        if (active && window.location.pathname === pathname)
+          setDialog(() => AddToCartDialog);
+      },
+      () => {
+        if (active && window.location.pathname === pathname) setFailed(true);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [added, pathname, Dialog]);
+
+  // A route render cancels the old dialog before effects or an import can finish.
+  if (!added || added.pathname !== pathname) return null;
+  const dismiss = () =>
+    setAdded((current) => (current === added ? null : current));
+  if (Dialog) return <Dialog added={added} onDismiss={dismiss} />;
+  if (!failed) return null;
+
   return (
-    <dialog
-      ref={dialog}
-      className={s.dialog}
-      aria-labelledby="atc-title"
-      aria-describedby="atc-summary"
-      onClose={() => {
-        const trigger = added?.trigger;
-        setAdded(null);
-        if (!restore.current) return;
-        // A trigger that became disabled or was replaced hands focus to the header cart.
-        const target =
-          trigger?.isConnected && !trigger.matches(":disabled")
-            ? trigger
-            : document.querySelector<HTMLElement>("header.site .cart-btn");
-        target?.focus();
-      }}
-      onPointerDown={(e) => {
-        pressedBackdrop.current = e.target === e.currentTarget;
-      }}
-      onClick={(e) => {
-        if (pressedBackdrop.current && e.target === e.currentTarget)
-          close(true);
-      }}
-      onKeyDown={(e) => {
-        if (e.key !== "Tab") return;
-        const all = Array.from(
-          e.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE),
-        );
-        const first = all[0];
-        const last = all[all.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
+    <aside
+      role="status"
+      style={{
+        position: "fixed",
+        bottom: 16,
+        right: 16,
+        maxWidth: "min(28rem, calc(100% - 32px))",
+        padding: 16,
+        border: "1px solid var(--line)",
+        borderRadius: 8,
+        background: "var(--panel)",
+        color: "var(--ink)",
+        zIndex: 100,
       }}
     >
-      {added && (
-        <Content added={added} count={count} keep={keep} onClose={close} />
-      )}
-    </dialog>
-  );
-}
-function Content({
-  added: { product: p, result },
-  count,
-  keep,
-  onClose,
-}: {
-  added: Added;
-  count: number;
-  keep: RefObject<HTMLButtonElement | null>;
-  onClose: (returnFocus: boolean) => void;
-}) {
-  const facts = productFacts(p.name);
-  const note = cartLimitMessage(result);
-  return (
-    <div className={s.sheet}>
-      <div className={s.head}>
-        <p className={s.status} id="atc-title">
-          <svg viewBox="0 0 20 20" aria-hidden="true" className={s.tick}>
-            <path d="M5 10.5l3.2 3.2L15 7" />
-          </svg>
-          {result.limit ? "Dodano część ilości" : "Dodano do koszyka"}
-        </p>
-        <button
-          type="button"
-          className={s.close}
-          aria-label="Zamknij"
-          onClick={() => onClose(true)}
-        >
-          <svg viewBox="0 0 20 20" aria-hidden="true">
-            <path d="M5 5l10 10M15 5L5 15" />
-          </svg>
-        </button>
-      </div>
-      <div className={s.product}>
-        <div className={s.photo}>
-          {p.imagePath ? (
-            <img
-              src={mediaSrc(p.imagePath, 160)}
-              srcSet={mediaSrcSet(p.imagePath, [160, 320])}
-              sizes="88px"
-              alt=""
-              width={88}
-              height={88}
-            />
-          ) : null}
-        </div>
-        <div className={s.info}>
-          {facts.series && <span className={s.series}>{facts.series}</span>}
-          <p className={s.name}>{p.name}</p>
-          <dl className={s.facts} id="atc-summary">
-            <div>
-              <dt>Dodano</dt>
-              <dd>{result.delta} szt.</dd>
-            </div>
-            <div>
-              <dt>Cena</dt>
-              <dd>{money(p.priceCents)} / szt.</dd>
-            </div>
-            <div>
-              <dt>Ten produkt w koszyku</dt>
-              <dd>{result.quantity} szt.</dd>
-            </div>
-          </dl>
-        </div>
-      </div>
-      {note && <p className={s.note}>{note}</p>}
-      <div className={s.actions}>
-        <Link
-          href="/zamowienie"
-          className={`btn ${s.primary}`}
-          onClick={() => onClose(false)}
-        >
-          Zobacz koszyk
-          <span className={s.count} aria-hidden="true">
-            {count}
-          </span>
-          <span className="sr-only">, w koszyku łącznie {count} szt.</span>
-        </Link>
-        <button
-          ref={keep}
-          type="button"
-          className={`btn ${s.secondary}`}
-          onClick={() => onClose(true)}
-        >
-          Kontynuuj zakupy
-        </button>
-      </div>
-    </div>
+      <p>
+        Dodano do koszyka: {added.product.name}, {added.result.delta} szt.
+      </p>
+      <a href="/zamowienie">Zobacz koszyk</a>{" "}
+      <button
+        type="button"
+        onClick={() => {
+          dismiss();
+          const trigger = added.trigger;
+          const target =
+            trigger?.isConnected && !trigger.matches(":disabled")
+              ? trigger
+              : document.querySelector<HTMLElement>("header.site .cart-btn");
+          target?.focus();
+        }}
+      >
+        Zamknij
+      </button>
+    </aside>
   );
 }
