@@ -3398,6 +3398,9 @@ footer.site .foot-withdraw {
 }
 /* The footer is outside .product-page, so a sibling selector never matched it. */
 @media (max-width: 700px) {
+  html:has(.sticky-buy) {
+    scroll-padding-top: calc(var(--sticky-focus-header-height, 73px) + 8px);
+  }
   html:has(.sticky-buy:not([data-hidden])) {
     scroll-padding-bottom: calc(
       var(--sticky-buy-height, calc(84px + env(safe-area-inset-bottom))) + 8px

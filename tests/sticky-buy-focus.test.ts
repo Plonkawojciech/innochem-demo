@@ -5,6 +5,58 @@ import { stickyFocusScrollDelta } from "../lib/sticky-buy-focus";
 const viewport = { top: 0, bottom: 900, left: 0, right: 390 };
 const bar = { top: 824, bottom: 900, left: 0, right: 390 };
 const footer = { top: 870.48, bottom: 899.92, left: 20, right: 205 };
+const header = { top: 0, bottom: 73, left: 0, right: 390 };
+
+test("reverse Tab exposes the complete email link below the sticky header", () => {
+  const email = { top: 69.84375, bottom: 99.28125, left: 16, right: 202 };
+  const delta = stickyFocusScrollDelta(email, bar, viewport, 8, header);
+  assert.ok(delta < 0);
+  assert.equal(email.top - delta, header.bottom + 8);
+  assert.ok(email.bottom - delta < bar.top - 8);
+});
+
+test("reverse Tab keeps the full footer links between both bars in landscape", () => {
+  const landscape = { top: 0, bottom: 320, left: 0, right: 568 };
+  const landscapeHeader = { ...header, right: 568 };
+  const landscapeBar = { top: 244, bottom: 320, left: 0, right: 568 };
+  for (const top of [46.3, 16.86, 0.42, 43.31, 13.88, 0.44, 43.33]) {
+    const link = { top, bottom: top + 29.44, left: 16, right: 202 };
+    const delta = stickyFocusScrollDelta(
+      link,
+      landscapeBar,
+      landscape,
+      8,
+      landscapeHeader,
+    );
+    assert.ok(delta < 0);
+    assert.ok(link.top - delta >= landscapeHeader.bottom + 8);
+    assert.ok(link.bottom - delta <= landscapeBar.top - 8);
+  }
+});
+
+test("header resizing and a clear reverse focus use current geometry", () => {
+  const resized = { ...header, bottom: 96 };
+  const link = { top: 90, bottom: 120, left: 16, right: 202 };
+  const delta = stickyFocusScrollDelta(link, bar, viewport, 8, resized);
+  assert.equal(link.top - delta, resized.bottom + 8);
+  assert.equal(
+    stickyFocusScrollDelta(
+      { ...link, top: 110, bottom: 140 },
+      bar,
+      viewport,
+      8,
+      resized,
+    ),
+    0,
+  );
+});
+
+test("a control too tall for the viewport cannot trigger alternating corrections", () => {
+  const tiny = { top: 0, bottom: 160, left: 0, right: 390 };
+  const tinyBar = { ...bar, top: 84, bottom: 160 };
+  const link = { top: 40, bottom: 69, left: 16, right: 202 };
+  assert.equal(stickyFocusScrollDelta(link, tinyBar, tiny, 8, header), 0);
+});
 
 test("the complete obscured footer link clears the actual buy bar and outline", () => {
   const delta = stickyFocusScrollDelta(footer, bar, viewport);
