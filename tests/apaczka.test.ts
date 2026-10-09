@@ -88,12 +88,14 @@ function configure(t: TestContext, enabled = true) {
     "APACZKA_APP_SECRET",
     "APACZKA_MODE",
     "APACZKA_LIVE_SHIPPING_ENABLED",
+    "STOREFRONT_PREVIEW",
   ];
   const previous = keys.map((key) => process.env[key]);
   process.env.APACZKA_APP_ID = enabled ? "test-app" : "";
   process.env.APACZKA_APP_SECRET = enabled ? "test-secret" : "";
   process.env.APACZKA_MODE = "sandbox";
   process.env.APACZKA_LIVE_SHIPPING_ENABLED = "false";
+  process.env.STOREFRONT_PREVIEW = "true";
   t.after(() => {
     for (const [i, key] of keys.entries()) {
       if (previous[i] === undefined) delete process.env[key];
@@ -121,6 +123,38 @@ test("live shipping fails before any provider call; read-only services remain av
     code: "APACZKA_LIVE_DISABLED",
   });
   assert.equal(calls, 1);
+});
+test("preview blocks live sending and cancellation even with the live switch enabled, while reads remain available", async (t) => {
+  configure(t);
+  process.env.APACZKA_MODE = "live";
+  process.env.APACZKA_LIVE_SHIPPING_ENABLED = "true";
+  const routes: string[] = [];
+  const client = createApaczkaClient(async (url) => {
+    const parsed = new URL(String(url));
+    assert.equal(parsed.origin, "https://www.apaczka.pl");
+    routes.push(parsed.pathname);
+    if (parsed.pathname === "/api/v2/service_structure/")
+      return ok({ services: [service] });
+    assert.equal(parsed.pathname, "/api/v2/order_valuation/");
+    return ok({ price_table: { "1": { price: 2000, price_gross: 2460 } } });
+  });
+  const order = mapShipmentOrder(source, settings, service, parcel);
+  await assert.rejects(client.sendOrder(order), {
+    code: "APACZKA_LIVE_DISABLED",
+  });
+  await assert.rejects(client.cancelOrder("123"), {
+    code: "APACZKA_LIVE_DISABLED",
+  });
+  assert.deepEqual(routes, []);
+  assert.deepEqual(await client.services(), [service]);
+  assert.deepEqual(parseApaczkaValuation(await client.valuation(order), "1"), {
+    netCents: 2000,
+    grossCents: 2460,
+  });
+  assert.deepEqual(routes, [
+    "/api/v2/service_structure/",
+    "/api/v2/order_valuation/",
+  ]);
 });
 test("service caches are separated by environment and sandbox never targets production", async (t) => {
   configure(t);

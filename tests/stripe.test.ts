@@ -187,6 +187,48 @@ function event(
 }
 const rejected = (code: string) => (e: unknown) =>
   !!e && typeof e === "object" && "code" in e && e.code === code;
+async function paymentEffects(orderId: string, productId: string) {
+  const [
+    order,
+    inventory,
+    session,
+    webhooks,
+    movements,
+    mail,
+    analytics,
+    events,
+  ] = await Promise.all([
+    query("SELECT * FROM orders WHERE id=$1", [orderId]),
+    query("SELECT stock,reserved FROM products WHERE id=$1", [productId]),
+    query("SELECT * FROM payment_sessions WHERE order_id=$1", [orderId]),
+    query(
+      "SELECT * FROM payment_webhook_events WHERE order_id=$1 ORDER BY event_id",
+      [orderId],
+    ),
+    query("SELECT * FROM stock_movements WHERE order_id=$1 ORDER BY id", [
+      orderId,
+    ]),
+    query("SELECT * FROM mail_outbox WHERE event_key LIKE $1 ORDER BY id", [
+      `order:${orderId}:%`,
+    ]),
+    query("SELECT * FROM analytics_outbox WHERE order_id=$1 ORDER BY id", [
+      orderId,
+    ]),
+    query("SELECT * FROM order_events WHERE order_id=$1 ORDER BY id", [
+      orderId,
+    ]),
+  ]);
+  return {
+    order: order.rows,
+    inventory: inventory.rows,
+    session: session.rows,
+    webhooks: webhooks.rows,
+    movements: movements.rows,
+    mail: mail.rows,
+    analytics: analytics.rows,
+    events: events.rows,
+  };
+}
 test("concurrent payment starts reuse an immutable amount and one provider idempotency key", async () => {
   const f = await fixture();
   const results = await Promise.all([
@@ -365,6 +407,97 @@ test("simultaneous duplicate webhook deliveries commit stock and payment mail ex
     ).rows[0].n,
     1,
   );
+});
+test("foreign-account and wrong-mode webhook envelopes are rejected before retrieval or local side effects", async () => {
+  const f = await fixture();
+  await startStripePayment(f.order.id, f.gateway);
+  f.paid();
+  const before = await paymentEffects(f.order.id, f.product.id);
+  let retrievals = 0;
+  const gateway: StripeGateway = {
+    ...f.gateway,
+    retrieve: async () => {
+      retrievals++;
+      return structuredClone(f.session);
+    },
+  };
+  for (const change of [
+    { account: "acct_foreign_synthetic" },
+    { livemode: true },
+  ]) {
+    const delivery = { ...event(f.session), ...change } as Stripe.Event;
+    await assert.rejects(
+      handleStripeEvent(delivery, gateway),
+      rejected("PAYMENT_BINDING"),
+    );
+    assert.equal(retrievals, 0);
+    assert.deepEqual(await paymentEffects(f.order.id, f.product.id), before);
+    assert.equal(
+      (
+        await query(
+          "SELECT count(*)::int AS n FROM payment_webhook_events WHERE provider='stripe' AND event_id=$1",
+          [delivery.id],
+        )
+      ).rows[0].n,
+      0,
+    );
+  }
+});
+test("a transient webhook retrieval failure leaves the same event retryable and commits fulfillment only once", async () => {
+  const f = await fixture();
+  await startStripePayment(f.order.id, f.gateway);
+  f.paid();
+  const delivery = event(f.session);
+  const before = await paymentEffects(f.order.id, f.product.id);
+  const failure = new Error("Synthetic transient Stripe retrieval failure");
+  let retrievals = 0;
+  const gateway: StripeGateway = {
+    ...f.gateway,
+    retrieve: async (id) => {
+      assert.equal(id, f.session.id);
+      if (++retrievals === 1) throw failure;
+      return structuredClone(f.session);
+    },
+  };
+  await assert.rejects(handleStripeEvent(delivery, gateway), failure);
+  assert.equal(retrievals, 1);
+  assert.deepEqual(await paymentEffects(f.order.id, f.product.id), before);
+  assert.equal(
+    (
+      await query(
+        "SELECT count(*)::int AS n FROM payment_webhook_events WHERE provider='stripe' AND event_id=$1",
+        [delivery.id],
+      )
+    ).rows[0].n,
+    0,
+  );
+  assert.deepEqual(await handleStripeEvent(delivery, gateway), {
+    replayed: false,
+    status: "paid",
+  });
+  assert.equal(retrievals, 2);
+  assert.equal(await f.status(), "paid");
+  assert.deepEqual(await f.stock(), { stock: 4, reserved: 0 });
+  const committed = await paymentEffects(f.order.id, f.product.id);
+  assert.equal(committed.webhooks.length, 1);
+  assert.equal(committed.webhooks[0].event_id, delivery.id);
+  assert.equal(committed.movements.length, 1);
+  assert.equal(committed.movements[0].quantity, -1);
+  assert.equal(
+    committed.mail.filter((row) => row.event_key === `order:${f.order.id}:paid`)
+      .length,
+    1,
+  );
+  assert.equal(
+    committed.analytics.filter((row) => row.event_type === "purchase").length,
+    1,
+  );
+  assert.deepEqual(await handleStripeEvent(delivery, gateway), {
+    replayed: true,
+    status: "paid",
+  });
+  assert.equal(retrievals, 3);
+  assert.deepEqual(await paymentEffects(f.order.id, f.product.id), committed);
 });
 test("provider confirmations are bound to the order, session, amount, currency and mode", async () => {
   const f = await fixture();
