@@ -168,7 +168,7 @@ export function HomeContent({
         </aside>
       </div>
       {technology.enabled && (
-        <section className="split" id="technologia">
+        <section className="split home-deferred-technology" id="technologia">
           <div className="split-grid">
             <div className="split-photo">
               {technology.image.path && (
@@ -209,7 +209,7 @@ export function HomeContent({
       {featured.enabled && (
         <section className="block" id="produkt">
           <div className="wrap">
-            <Reveal className="feature">
+            <Reveal className="feature home-deferred-feature">
               <div className="feature-photo">
                 {featured.image.path && (
                   <img
