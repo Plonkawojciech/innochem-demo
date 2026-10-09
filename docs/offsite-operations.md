@@ -22,9 +22,15 @@ Nie jest to test pełnego odtworzenia działającej aplikacji, bazy i wszystkich
 
 `ops/monitor-host.sh` zachowuje wynik sondy kontenera, HTTPS, heartbeat, lokalnego backupu, dysku oraz zaległych kolejek. Następnie uruchamia `ops/offsite-alerts.py`, który dodatkowo sprawdza świeżość zweryfikowanej kopii Innochem poza VM oraz błąd wspólnego zadania restic.
 
-Powiadomienia korzystają z istniejących `infra_monitor.channels()` i `programo_alerts` na VM. Klucz Resend przebywa wyłącznie w pamięci procesu, pobrany z działającego runtime. Guard wymaga zgodności istniejącego odbiorcy z zatwierdzonym adresem oraz dostępnego ntfy i klucza. Nie zmieniamy SMTP sklepu.
+Powiadomienia korzystają z istniejących `infra_monitor.channels()` oraz maszyny stanów, opisów i nadawców `programo_alerts` na VM. Klucz Resend przebywa wyłącznie w pamięci procesu, pobrany z działającego runtime. Guard wymaga zgodności istniejącego odbiorcy z zatwierdzonym adresem oraz dostępnego ntfy i klucza. Osobny kod HTTP Innochem dodaje ochronę przed duplikatem; nie modyfikuje wspólnego modułu ani SMTP sklepu.
 
 Stan deduplikacji Innochem jest oddzielny od wspólnego monitora Programo: `/root/innochem-monitor/alerts-state.json`. Email i push prowadzą niezależny stan tej samej maszyny alarmów. Zgłoszenie następuje po dwóch kolejnych błędnych sprawdzeniach, przypomnienie po 12 godzinach, a „rozwiązane” po trzech poprawnych. Przy cron co 5 minut oznacza to około 10 i 15 minut. Nie ponawiamy kanału, który już przyjął daną wiadomość; nieskuteczny kanał ponawia próbę wyłącznie dla siebie. Po ustąpieniu problemu każdy kanał, który przyjął alarm, otrzymuje własne „rozwiązane”. Kolejny incydent uruchamia ponownie normalne zgłoszenie.
+
+Przed pierwszym POST zapisujemy identyfikator konkretnego incydentu i etapu, wybrany nadawca, dokładny temat oraz treść. Resend otrzymuje `Idempotency-Key`; ponowienie zachowuje payload. [Resend przechowuje te klucze przez 24 godziny](https://resend.com/docs/dashboard/emails/idempotency-keys). Na minutę przed końcem tego okna kod zatrzymuje POST i zachowuje `IDEMPOTENCY_WINDOW_EXPIRED`, zamiast tworzyć nowy mail. Nadawca zapasowy może wejść dopiero po jednoznacznym odrzuceniu domeny przy pierwszej próbie; jego wybór również zapisujemy przed POST.
+
+Przy zgubionej odpowiedzi ntfy kod odczytuje ograniczony cache wiadomości z filtrem tematu i identyfikatorem zdarzenia w treści, [zgodnie z API ntfy](https://docs.ntfy.sh/subscribe/api/). Nie powtarza niepewnego POST. Dopiero znalezienie zapisanego komunikatu potwierdza przyjęcie. Brak potwierdzenia pozostawia stan `uncertain`; należy porównać logi dostawcy i zapisany identyfikator, zanim operator odblokuje kolejną wysyłkę.
+
+Niepewna wysyłka wstrzymuje maszynę powiadomień wyłącznie swojego kanału do czasu potwierdzenia. Drugi kanał i rzeczywista sonda sklepu nadal działają. Po uzyskaniu potwierdzenia recovery wymaga kolejnych trzech dobrych kontroli. Stan próby zapisujemy przed POST i po każdym kanale, również gdy proces przerwie się między emailem a push.
 
 Kod zachowuje kod błędu sondy. Jeżeli sama sonda jest zdrowa, lecz dostarczenie alarmu zawiodło, wrapper również zwraca błąd. Samo przyjęcie maila przez Resend nie jest dowodem pojawienia się wiadomości w skrzynce; do raportu odbioru należy dopisać zdarzenie `delivered` z logów dostawcy, jeżeli jest dostępne.
 
@@ -52,4 +58,4 @@ Testy w repozytorium:
 node --test tests/offsite-host.test.mjs tests/offsite-alerts.test.mjs
 ```
 
-Odtworzenie sprawdzone 9.10 o 06:57 UTC użyło snapshotu `0ed5f3c8fc30ad875e98e9b7982a23e79d3685fbff642c5469101a94d9dad4b5`, utworzonego tego dnia o 04:45 Warszawa. Zgadzało się 3418 plików mediów (156 795 882 B). Odzyskane 909 704 B obejmowało dump 876 044 B i próbkę mediów 33 660 B; oba SHA-256 odpowiadały plikom źródłowym. Weryfikacja nie zmieniła żadnego klienta, zamówienia, płatności ani pliku mediów.
+Odtworzenie sprawdzone 9.10 o 06:57 UTC użyło snapshotu `0ed5f3c8fc30ad875e98e9b7982a23e79d3685fbff642c5469101a94d9dad4b5`, utworzonego tego dnia o 04:45 Warszawa. Zgadzało się 3418 plików mediów (156 795 882 B). Odzyskane 909 704 B obejmowało dump 876 044 B i próbkę mediów 33 660 B; oba SHA-256 odpowiadały plikom źródłowym. Weryfikacja nie zmieniła żadnego klienta, zamówienia, płatności ani pliku mediów. Jeżeli dump po wzroście sklepu przekroczy limit odtworzenia, weryfikator zgłosi jawnie brak weryfikacji; nie oznacza to usunięcia ani uszkodzenia samego snapshotu. Wtedy AI powinno przygotować nową strategię ograniczonego odtworzenia.
