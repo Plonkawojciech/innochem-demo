@@ -429,6 +429,13 @@ nav.main a:hover {
   background-size: cover;
   background-position: center;
 }
+.hero-bg > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .hero-bg::after {
   content: "";
   position: absolute;
@@ -764,10 +771,18 @@ section.block {
   min-height: 460px;
 }
 .split-photo {
+  position: relative;
   background-size: cover;
   background-position: center;
   border-right: 1px solid var(--line);
   min-height: 320px;
+}
+.split-photo > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .split-copy {
   padding: 72px 64px;

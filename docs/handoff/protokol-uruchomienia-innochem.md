@@ -8,6 +8,7 @@ Domena docelowa: innochem.pl. Data uruchomienia: ______. Wersja aplikacji (commi
 | --- | --- | --- |
 | Katalog i magazyn | Zgodne stany, ceny brutto, zdjęcia, dokumenty, wagi i rzeczywiste parametry paczek. Produkty przemysłowe obsługiwane jako zapytania. | |
 | Telefon i komputer | Dodanie właściwej ilości, komunikat z przejściem do koszyka, menu, galeria, formularze, przewijanie i fokus; jasny i ciemny motyw. Osobno Safari/iPhone i Android. | |
+| Wydajność | Strona główna i katalog na właściwej domenie: założony cel LCP < 2,5 s i INP < 200 ms. Zapisać profil mobilny, wszystkie powtórzenia przed/po, CLS oraz wersję wdrożenia. Oddzielić wyniki laboratoryjne od danych rzeczywistych użytkowników; pokazać także próby przekraczające cel. | |
 | Dostawa i pobranie | Zatwierdzone przez właścicielkę progi, dopłaty, limit COD i przypadki dwóch paczek. Wyliczenie przy rzeczywistych wagach i kartonach. | |
 | Płatności | Właściwe konto INNOCHEM, sandbox, webhook, sukces/anulowanie/timeout, brak podwójnego zamówienia, refundacja i kontrolowany test produkcyjny. Status P24 potwierdzony przez operatora; nie zakładać dostępności metody na podstawie kodu. | |
 | Apaczka | Dostęp właściciela, właściwe usługi, wycena, test sandbox oraz uzgodnione kontrolne nadanie, etykieta i tracking. | |

@@ -1,0 +1,62 @@
+[
+  {
+    "file": "inter.woff2",
+    "bytes": 71824,
+    "sha256": "eee40ce2e753edcbd15b2ee6d1db28c7f9389551566d1a2443c1ef08635cd22f",
+    "characters": 247
+  },
+  {
+    "file": "inter-rest.woff2",
+    "bytes": 124536,
+    "sha256": "ce491fbd96b0bc2605d37abf45b1df3ed5083440b074c8946a71faa86da85051",
+    "characters": 1375
+  },
+  {
+    "file": "manrope.woff2",
+    "bytes": 24904,
+    "sha256": "a2a971dae360b3dc3b4887c00e2c648a402e94881c46bf47dba770e7d3640de2",
+    "characters": 234
+  },
+  {
+    "file": "manrope-rest.woff2",
+    "bytes": 31700,
+    "sha256": "374f06200b3f7043f3a90019605f89d1548eee4d1e9ac3c79080d68ff28ca1be",
+    "characters": 396
+  },
+  {
+    "file": "mono-400.woff2",
+    "bytes": 16548,
+    "sha256": "0e0431bd7b531bb55a681ae020e1daf2185d1a4f9f9b3d5c566a05e7612d5fc4",
+    "characters": 246
+  },
+  {
+    "file": "mono-400-rest.woff2",
+    "bytes": 20120,
+    "sha256": "34c8f86eb85c8ea8c3cceacbb3e454f69fc7e4698893dab73b2aab3f5d395ee3",
+    "characters": 430
+  },
+  {
+    "file": "mono-500.woff2",
+    "bytes": 16992,
+    "sha256": "1134ac3bcbc3e50b23444167bb5da3f54ffd0c136a38206839f59d61ac09b533",
+    "characters": 246
+  },
+  {
+    "file": "mono-500-rest.woff2",
+    "bytes": 20628,
+    "sha256": "93bf4d9df22ecfb776e5022c465ab0fa7fe656688d23fee82981786d47d42ef5",
+    "characters": 430
+  },
+  {
+    "file": "mono-700.woff2",
+    "bytes": 16960,
+    "sha256": "7ca63eefbbdf53656664073dbcee7c58f0ebd96970af8d28676ae7ba0007abcb",
+    "characters": 246
+  },
+  {
+    "file": "mono-700-rest.woff2",
+    "bytes": 20876,
+    "sha256": "9162eecbf10ecd9bc42c67886092ddc40f3e6c5d109917bc2434d3ce97a042c9",
+    "characters": 430
+  }
+]

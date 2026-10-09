@@ -2,26 +2,60 @@ import { AddToCartPopup } from "@/components/AddToCartPopup";
 import { Analytics } from "@/components/Analytics";
 import { ConsentBanner } from "@/components/ConsentBanner";
 import type { Metadata } from "next";
-import { Manrope, Inter, IBM_Plex_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import { CartProvider } from "@/lib/cart";
 import { CmsPreviewBar, Header, CatBar, Footer } from "@/components/SiteChrome";
 import "./globals.css";
+import "./fonts/extended.css";
 import { requestSite } from "@/lib/server/site-request";
 import { themeBootScript } from "@/components/ThemeToggle";
 
-const archivo = Manrope({
-  subsets: ["latin-ext"],
-  weight: ["600", "700", "800"],
+const archivo = localFont({
+  src: "./fonts/manrope.woff2",
+  weight: "600 800",
   variable: "--f-display",
+  adjustFontFallback: false,
+  fallback: ["InnochemDisplayExtended", "InnochemDisplayFallback"],
+  declarations: [
+    {
+      prop: "unicode-range",
+      value:
+        "U+0000-00FF,U+0104-0107,U+0118-0119,U+0131,U+0141-0144,U+0152-0153,U+015A-015B,U+0179-017C,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0300-036F,U+2000-206F,U+2074,U+20AC,U+2122,U+2190-2193,U+2212,U+2215,U+25BE,U+2713,U+FEFF,U+FFFD",
+    },
+  ],
 });
-const inter = Inter({ subsets: ["latin-ext"], variable: "--f-body" });
-const mono = IBM_Plex_Mono({
-  subsets: ["latin-ext"],
-  weight: ["400", "500", "700"],
+const inter = localFont({
+  src: "./fonts/inter.woff2",
+  weight: "100 900",
+  variable: "--f-body",
+  adjustFontFallback: false,
+  fallback: ["InnochemBodyExtended", "InnochemBodyFallback"],
+  declarations: [
+    {
+      prop: "unicode-range",
+      value:
+        "U+0000-00FF,U+0104-0107,U+0118-0119,U+0131,U+0141-0144,U+0152-0153,U+015A-015B,U+0179-017C,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0300-036F,U+2000-206F,U+2074,U+20AC,U+2122,U+2190-2193,U+2212,U+2215,U+25BE,U+2713,U+FEFF,U+FFFD",
+    },
+  ],
+});
+const mono = localFont({
+  src: [
+    { path: "./fonts/mono-400.woff2", weight: "400" },
+    { path: "./fonts/mono-500.woff2", weight: "500" },
+    { path: "./fonts/mono-700.woff2", weight: "700" },
+  ],
   variable: "--f-mono",
+  preload: false,
   // Arial is proportional; its generated fallback changes breadcrumb wrapping.
   adjustFontFallback: false,
-  fallback: ["monospace"],
+  fallback: ["InnochemMonoExtended", "monospace"],
+  declarations: [
+    {
+      prop: "unicode-range",
+      value:
+        "U+0000-00FF,U+0104-0107,U+0118-0119,U+0131,U+0141-0144,U+0152-0153,U+015A-015B,U+0179-017C,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0300-036F,U+2000-206F,U+2074,U+20AC,U+2122,U+2190-2193,U+2212,U+2215,U+25BE,U+2713,U+FEFF,U+FFFD",
+    },
+  ],
 });
 
 export const dynamic = "force-dynamic";

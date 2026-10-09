@@ -1,0 +1,72 @@
+[
+  {
+    "font": "Inter[opsz,wght].ttf",
+    "source": "https://raw.githubusercontent.com/google/fonts/2eb0b48d5f760f62e286216f0859a8c540dbc1bd/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf",
+    "bytes": 876576,
+    "sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031",
+    "output": "inter",
+    "family": "InnochemBody",
+    "codepointCount": 1622,
+    "codepointsSha256": "13092169bf7cc673a47d752a3fba23281d1372b55c9f615a58f1537e478bf1e4",
+    "version": "Version 4.001;git-66647c0bb",
+    "fullSourceCodepointCount": 2849,
+    "fullSourceCodepointsSha256": "41d1fc6d4397492161eaccb81dbb755902f433f9cf24f77d596b97dab08b717f",
+    "coverageFamily": "Inter"
+  },
+  {
+    "font": "Manrope[wght].ttf",
+    "source": "https://raw.githubusercontent.com/google/fonts/8f9a401dbb3793e0d1264b15d96aa253f05280f5/ofl/manrope/Manrope%5Bwght%5D.ttf",
+    "bytes": 165420,
+    "sha256": "d0639be45d0af36e798172419d7bd173c4bd4f29e2b76cbb69db1d11bf8b0a40",
+    "output": "manrope",
+    "family": "InnochemDisplay",
+    "codepointCount": 630,
+    "codepointsSha256": "1874aeba2f4ce0dfeda5bc666759fb198c516c8df9c008982b746f84380efe46",
+    "version": "Version 4.504",
+    "fullSourceCodepointCount": 678,
+    "fullSourceCodepointsSha256": "bb3433929d296f6801bc7dee3178c83c0d50fb61a90cda2d65a6a030d69d0aaa",
+    "coverageFamily": "Manrope"
+  },
+  {
+    "font": "IBMPlexMono-Regular.ttf",
+    "source": "https://raw.githubusercontent.com/google/fonts/2eb0b48d5f760f62e286216f0859a8c540dbc1bd/ofl/ibmplexmono/IBMPlexMono-Regular.ttf",
+    "bytes": 135580,
+    "sha256": "6a3412f058c7d8dfd9170c41e85ade48e5156ecb89356110ca57a0a27734af46",
+    "output": "mono-400",
+    "family": "InnochemMonoRegular",
+    "codepointCount": 676,
+    "codepointsSha256": "bbd7ef23a26c42449439f7efb7ddf04271d04ac880ea11f16a65c58daeb3a60e",
+    "version": "Version 2.3",
+    "fullSourceCodepointCount": 930,
+    "fullSourceCodepointsSha256": "967f81c4ae5964931727bb5499e893c945fc1b9da8546286bb4f73b6e27e2d2c",
+    "coverageFamily": "IBM Plex Mono 400"
+  },
+  {
+    "font": "IBMPlexMono-Medium.ttf",
+    "source": "https://raw.githubusercontent.com/google/fonts/2eb0b48d5f760f62e286216f0859a8c540dbc1bd/ofl/ibmplexmono/IBMPlexMono-Medium.ttf",
+    "bytes": 136704,
+    "sha256": "a9b4c49bb299e05b5f6c481e7fb5e78943d2793249a0c8874ab574a2d1ea6755",
+    "output": "mono-500",
+    "family": "InnochemMonoMedium",
+    "codepointCount": 676,
+    "codepointsSha256": "bbd7ef23a26c42449439f7efb7ddf04271d04ac880ea11f16a65c58daeb3a60e",
+    "version": "Version 2.3",
+    "fullSourceCodepointCount": 930,
+    "fullSourceCodepointsSha256": "967f81c4ae5964931727bb5499e893c945fc1b9da8546286bb4f73b6e27e2d2c",
+    "coverageFamily": "IBM Plex Mono 500"
+  },
+  {
+    "font": "IBMPlexMono-Bold.ttf",
+    "source": "https://raw.githubusercontent.com/google/fonts/2eb0b48d5f760f62e286216f0859a8c540dbc1bd/ofl/ibmplexmono/IBMPlexMono-Bold.ttf",
+    "bytes": 137784,
+    "sha256": "ac27abd6450a64dd94467580a02fe6235156d5b92f2926ebbc8e7489df64e0be",
+    "output": "mono-700",
+    "family": "InnochemMonoBold",
+    "codepointCount": 676,
+    "codepointsSha256": "bbd7ef23a26c42449439f7efb7ddf04271d04ac880ea11f16a65c58daeb3a60e",
+    "version": "Version 2.3",
+    "fullSourceCodepointCount": 930,
+    "fullSourceCodepointsSha256": "967f81c4ae5964931727bb5499e893c945fc1b9da8546286bb4f73b6e27e2d2c",
+    "coverageFamily": "IBM Plex Mono 700"
+  }
+]

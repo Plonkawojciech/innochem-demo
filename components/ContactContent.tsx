@@ -1,4 +1,5 @@
-import { phoneHref, type SiteContent } from "@/lib/site-content";
+import { phoneHref } from "@/lib/contact";
+import type { SiteContent } from "@/lib/site-content";
 import { Breadcrumbs } from "./Breadcrumbs";
 export function ContactContent({
   page,

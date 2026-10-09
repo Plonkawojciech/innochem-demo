@@ -12,10 +12,12 @@ export function ProductCard({
   p,
   priority = false,
   listId,
+  imageSizes = "(max-width: 700px) calc((100vw - 104px) / 2), (max-width: 1100px) calc((100vw - 220px) / 3), 233px",
 }: {
   p: StoreProduct;
   priority?: boolean;
   listId?: string;
+  imageSizes?: string;
 }) {
   const addToCart = useAddToCart();
   const [notice, setNotice] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export function ProductCard({
           <img
             src={mediaSrc(p.imagePath, 480)}
             srcSet={mediaSrcSet(p.imagePath, [320, 480, 640])}
-            sizes="(max-width: 700px) 46vw, (max-width: 1000px) 30vw, 300px"
+            sizes={imageSizes}
             alt={p.imageAlt || p.name}
             loading={priority ? "eager" : "lazy"}
             fetchPriority={priority ? "high" : "auto"}

@@ -374,6 +374,3 @@ export const defaultSiteContent: SiteContent = {
     image: { path: "", alt: "" },
   },
 };
-export function phoneHref(phone: string) {
-  return `tel:${phone.replace(/[^+0-9]/g, "")}`;
-}

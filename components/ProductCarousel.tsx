@@ -33,7 +33,11 @@ export function ProductCarousel({ products }: { products: StoreProduct[] }) {
     <div className="carousel">
       <div className="carousel-track" ref={track} onScroll={update}>
         {products.map((p) => (
-          <ProductCard key={p.id} p={p} />
+          <ProductCard
+            key={p.id}
+            p={p}
+            imageSizes="(max-width: 700px) calc((100vw - 40px) * 0.72 - 26px), (max-width: 1100px) calc((100vw - 220px) / 3), 233px"
+          />
         ))}
       </div>
       {products.length > 1 && (

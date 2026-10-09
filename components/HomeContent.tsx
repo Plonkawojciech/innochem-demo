@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { preload } from "react-dom";
 import { Reveal } from "./Reveal";
 import type { SiteContent } from "@/lib/site-content";
 import { mediaSrc, mediaSrcSet } from "@/lib/media";
@@ -15,22 +14,20 @@ export function HomeContent({
   seriesProducts: StoreProduct[];
 }) {
   const { hero, benefits, categories, technology, featured } = home;
-  if (hero.enabled && hero.background.path)
-    preload(hero.background.path, { as: "image", fetchPriority: "high" });
   return (
     <>
       {hero.enabled && (
         <section className="hero">
-          <div
-            className="hero-bg"
-            style={
-              hero.background.path
-                ? {
-                    backgroundImage: `url(${JSON.stringify(hero.background.path)})`,
-                  }
-                : undefined
-            }
-          />
+          <div className="hero-bg">
+            {hero.background.path && (
+              <img
+                src={hero.background.path}
+                alt=""
+                fetchPriority="high"
+                decoding="async"
+              />
+            )}
+          </div>
           <div className="wrap hero-grid">
             <div>
               <p className="kicker">{hero.label}</p>
@@ -54,7 +51,7 @@ export function HomeContent({
                   alt={hero.image.alt}
                   width={1000}
                   height={1400}
-                  fetchPriority="high"
+                  fetchPriority="low"
                   decoding="async"
                 />
               )}
@@ -112,18 +109,16 @@ export function HomeContent({
       {technology.enabled && (
         <section className="split" id="technologia">
           <div className="split-grid">
-            <div
-              className="split-photo"
-              role={technology.image.alt ? "img" : undefined}
-              aria-label={technology.image.alt || undefined}
-              style={
-                technology.image.path
-                  ? {
-                      backgroundImage: `url(${JSON.stringify(technology.image.path)})`,
-                    }
-                  : undefined
-              }
-            />
+            <div className="split-photo">
+              {technology.image.path && (
+                <img
+                  src={technology.image.path}
+                  alt={technology.image.alt}
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+            </div>
             <div className="split-copy">
               <span className="label">{technology.label}</span>
               <h2 className="display">{technology.title}</h2>

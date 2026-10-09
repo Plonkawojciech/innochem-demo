@@ -9,7 +9,7 @@ import {
   type RefObject,
 } from "react";
 import { cartLimitMessage, type CartResult } from "@/lib/cart-state";
-import { useCart } from "@/lib/cart";
+import { useCart, useCartActions } from "@/lib/cart";
 import { mediaSrc, mediaSrcSet } from "@/lib/media";
 import { productFacts } from "@/lib/product-facts";
 import { money, type StoreProduct } from "@/lib/store-types";
@@ -25,7 +25,7 @@ let show: ((added: Added) => void) | null = null;
  * changed. Callers get the result to explain a rejected or capped add inline.
  */
 export function useAddToCart() {
-  const { add } = useCart();
+  const { add } = useCartActions();
   return (product: StoreProduct, quantity: number, trigger?: HTMLElement) => {
     const result = add(product.id, quantity, product);
     if (result.delta > 0) show?.({ product, result, trigger: trigger ?? null });

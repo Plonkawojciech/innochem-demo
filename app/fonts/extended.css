@@ -1,0 +1,108 @@
+/* Generated complementary glyph coverage. */
+@font-face {
+  font-family: "InnochemBodyExtended";
+  src: url("./inter-rest.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0100-0103, U+0108-0117, U+011A-0130, U+0132-0140, U+0145-0148,
+    U+014A-0151, U+0154-0159, U+015C-0178, U+017D-01C3, U+01C5-0254,
+    U+0256-027B, U+027E-0284, U+0286-0290, U+0292-02A4, U+02A6-02BA,
+    U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0374-0376,
+    U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03D7, U+03DC-03DD,
+    U+03F0-03F6, U+03F9-03FA, U+03FC-0479, U+0480-049D, U+04A0-04FF, U+052F,
+    U+1D00, U+1D0D, U+1D1B, U+1D43, U+1D47-1D49, U+1D4D, U+1D4F-1D50, U+1D52,
+    U+1D56-1D58, U+1D5B, U+1D62-1D65, U+1D9C, U+1DA0, U+1DBB, U+1DBF,
+    U+1E00-1E9B, U+1E9D-1F15, U+1F18-1F1D, U+1F20-1F45, U+1F48-1F4D,
+    U+1F50-1F57, U+1F59, U+1F5B, U+1F5D, U+1F5F-1F7D, U+1F80-1FB4, U+1FB6-1FC4,
+    U+1FC6-1FD3, U+1FD6-1FDB, U+1FDD-1FEF, U+1FF2-1FF4, U+1FF6-1FFE,
+    U+20A0-20AB, U+20AD-20AF, U+20B1-20B5, U+20B8-20BA, U+20BC-20BF, U+2113,
+    U+2116, U+2C7C, U+2C7F, U+2DFF, U+A69F, U+A7FF;
+}
+
+@font-face {
+  font-family: "InnochemDisplayExtended";
+  src: url("./manrope-rest.woff2") format("woff2");
+  font-weight: 600 800;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0100-0103, U+0108-0113, U+0116-0117, U+011A-012B, U+012E-0130,
+    U+0134-0137, U+0139-013E, U+0145-0148, U+014A-014D, U+0150-0151,
+    U+0154-0159, U+015C-0178, U+017D-017E, U+0192, U+01A0-01A1, U+01AF-01B0,
+    U+0218-021B, U+0259, U+02C7, U+02DD, U+0374-0375, U+037E, U+0384-038A,
+    U+038C, U+038E-03A1, U+03A3-03CE, U+0400-045F, U+0490-0491, U+04AE-04AF,
+    U+04BA-04BB, U+04E8-04E9, U+1E80-1E85, U+1E9E, U+1EA0-1EF9, U+20A3,
+    U+20A9-20AB, U+20AE, U+20B1, U+20B4, U+20B9-20BA, U+20BD, U+20BF, U+2116;
+}
+
+@font-face {
+  font-family: "InnochemMonoExtended";
+  src: url("./mono-400-rest.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0100-0103, U+0108-0117, U+011A-0130, U+0132-0140, U+0145-0151,
+    U+0154-0159, U+015C-0178, U+017D-017F, U+018F, U+0192, U+01A0-01A1,
+    U+01AF-01B0, U+01CD-01DC, U+01FA-01FF, U+0218-021B, U+0237, U+0259, U+02C7,
+    U+02DD, U+0400-045F, U+0472-0473, U+0490-049D, U+04A0-04A5, U+04AA-04AB,
+    U+04AE-04B3, U+04B6-04BB, U+04C0-04C2, U+04CF-04D9, U+04DC-04DF,
+    U+04E2-04E9, U+04EE-04F5, U+04F8-04F9, U+1E80-1E85, U+1E9E, U+1EA0-1EF9,
+    U+20A1, U+20A4, U+20A6, U+20A8-20AB, U+20AD-20AE, U+20B1-20B2, U+20B4-20B5,
+    U+20B8-20BA, U+20BD, U+20BF, U+2113, U+2116;
+}
+
+@font-face {
+  font-family: "InnochemMonoExtended";
+  src: url("./mono-500-rest.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0100-0103, U+0108-0117, U+011A-0130, U+0132-0140, U+0145-0151,
+    U+0154-0159, U+015C-0178, U+017D-017F, U+018F, U+0192, U+01A0-01A1,
+    U+01AF-01B0, U+01CD-01DC, U+01FA-01FF, U+0218-021B, U+0237, U+0259, U+02C7,
+    U+02DD, U+0400-045F, U+0472-0473, U+0490-049D, U+04A0-04A5, U+04AA-04AB,
+    U+04AE-04B3, U+04B6-04BB, U+04C0-04C2, U+04CF-04D9, U+04DC-04DF,
+    U+04E2-04E9, U+04EE-04F5, U+04F8-04F9, U+1E80-1E85, U+1E9E, U+1EA0-1EF9,
+    U+20A1, U+20A4, U+20A6, U+20A8-20AB, U+20AD-20AE, U+20B1-20B2, U+20B4-20B5,
+    U+20B8-20BA, U+20BD, U+20BF, U+2113, U+2116;
+}
+
+@font-face {
+  font-family: "InnochemMonoExtended";
+  src: url("./mono-700-rest.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0100-0103, U+0108-0117, U+011A-0130, U+0132-0140, U+0145-0151,
+    U+0154-0159, U+015C-0178, U+017D-017F, U+018F, U+0192, U+01A0-01A1,
+    U+01AF-01B0, U+01CD-01DC, U+01FA-01FF, U+0218-021B, U+0237, U+0259, U+02C7,
+    U+02DD, U+0400-045F, U+0472-0473, U+0490-049D, U+04A0-04A5, U+04AA-04AB,
+    U+04AE-04B3, U+04B6-04BB, U+04C0-04C2, U+04CF-04D9, U+04DC-04DF,
+    U+04E2-04E9, U+04EE-04F5, U+04F8-04F9, U+1E80-1E85, U+1E9E, U+1EA0-1EF9,
+    U+20A1, U+20A4, U+20A6, U+20A8-20AB, U+20AD-20AE, U+20B1-20B2, U+20B4-20B5,
+    U+20B8-20BA, U+20BD, U+20BF, U+2113, U+2116;
+}
+
+/* Same adjusted Arial metrics as the prior next/font/google build. */
+@font-face {
+  font-family: "InnochemBodyFallback";
+  src: local("Arial");
+  ascent-override: 90.44%;
+  descent-override: 22.52%;
+  line-gap-override: 0%;
+  size-adjust: 107.12%;
+}
+/* Same adjusted Arial metrics as the prior next/font/google build. */
+@font-face {
+  font-family: "InnochemDisplayFallback";
+  src: local("Arial");
+  ascent-override: 103.31%;
+  descent-override: 29.07%;
+  line-gap-override: 0%;
+  size-adjust: 103.19%;
+}

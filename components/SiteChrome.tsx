@@ -4,7 +4,8 @@ import { PRIVACY_OPEN } from "@/lib/consent";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/lib/cart";
-import { phoneHref, type SiteContent } from "@/lib/site-content";
+import { phoneHref } from "@/lib/contact";
+import type { SiteContent } from "@/lib/site-content";
 import { ThemeToggle } from "./ThemeToggle";
 export function PreviewBar() {
   return (
