@@ -2,11 +2,14 @@
 import Link from "next/link";
 import { PRIVACY_OPEN } from "@/lib/consent";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useCart } from "@/lib/cart";
 import { phoneHref } from "@/lib/contact";
 import type { SiteContent } from "@/lib/site-content";
 import { ThemeToggle } from "./ThemeToggle";
+const hydrationSubscribe = () => () => {};
+const hydrated = () => true;
+const serverHydrated = () => false;
 export function PreviewBar() {
   return (
     <div className="demo-bar">
@@ -48,7 +51,11 @@ export function Header({
   brand,
   navigation,
 }: Pick<SiteContent, "brand" | "navigation">) {
-  const { count } = useCart();
+  const interactive = useSyncExternalStore(
+    hydrationSubscribe,
+    hydrated,
+    serverHydrated,
+  );
   const [open, setOpen] = useState(false);
   const header = useRef<HTMLElement>(null);
   const burger = useRef<HTMLButtonElement>(null);
@@ -82,6 +89,8 @@ export function Header({
           aria-label={open ? "Zamknij menu" : "Otwórz menu"}
           aria-expanded={open}
           aria-controls="mobile-menu"
+          disabled={!interactive}
+          aria-busy={!interactive}
           onClick={() => setOpen(!open)}
         >
           <span />
@@ -112,9 +121,7 @@ export function Header({
           ))}
         </nav>
         <ThemeToggle />
-        <Link className="cart-btn" href="/zamowienie">
-          Koszyk <span className="count">{count}</span>
-        </Link>
+        <HeaderCart />
       </div>
       {open && (
         <nav className="m-menu" id="mobile-menu" aria-label="Menu mobilne">
@@ -145,6 +152,15 @@ export function Header({
         </nav>
       )}
     </header>
+  );
+}
+/** Cart updates only this badge, preserving the rest of the navigation tree. */
+function HeaderCart() {
+  const { count } = useCart();
+  return (
+    <Link className="cart-btn" href="/zamowienie">
+      Koszyk <span className="count">{count}</span>
+    </Link>
   );
 }
 export function CatBar({ navigation }: Pick<SiteContent, "navigation">) {

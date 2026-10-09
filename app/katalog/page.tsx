@@ -1,3 +1,4 @@
+import { productCardData } from "@/lib/store-types";
 import { ViewEvent } from "@/components/Analytics";
 import { productFacts } from "@/lib/product-facts";
 import { notFound } from "next/navigation";
@@ -77,7 +78,7 @@ export default async function Catalog({
         total={total}
       />
       {items.length ? (
-        <ProductGrid products={items} listId="katalog" />
+        <ProductGrid products={items.map(productCardData)} listId="katalog" />
       ) : (
         <div className="empty-state">
           <h2>Nie znaleźliśmy takiego produktu</h2>

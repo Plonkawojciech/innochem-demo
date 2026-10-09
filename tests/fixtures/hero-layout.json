@@ -1,0 +1,34 @@
+{
+  "hero": {
+    "label": "Wyłączny dystrybutor Royal Purple w Polsce · od 2009",
+    "title": "Syntetyczne oleje silnikowe Royal Purple",
+    "text": "Royal Purple powstało w 1986 roku wokół opatentowanych technologii smarowania Synfilm i Synerlec. INNOCHEM sprowadza oryginalne produkty marki do Polski i pomaga dobrać olej do konkretnego silnika.",
+    "image": {
+      "path": "/media/official/cutouts-2026-09-24/16-bf8b4cfbd17664af2e88.png"
+    },
+    "link": {
+      "name": "Poznaj serię HPS"
+    },
+    "secondary": {
+      "name": "Katalog produktów"
+    }
+  },
+  "benefits": [
+    {
+      "title": "Import z USA",
+      "text": "oryginalne produkty z oficjalnej dystrybucji"
+    },
+    {
+      "title": "Wysyłka z Kielc",
+      "text": "produkty dostępne w naszym magazynie"
+    },
+    {
+      "title": "Dobór oleju",
+      "text": "pomoc w wyborze produktu do Twojego silnika"
+    },
+    {
+      "title": "Sieć dystrybucji",
+      "text": "współpraca B2B, faktura VAT"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import type { SiteContent } from "@/lib/site-content";
 import { mediaSrc, mediaSrcSet } from "@/lib/media";
 import { productFacts } from "@/lib/product-facts";
 import type { StoreProduct } from "@/lib/store-types";
+import { canCropHero } from "@/lib/server/hero-media";
 export function HomeContent({
   home,
   series,
@@ -15,7 +16,9 @@ export function HomeContent({
 }) {
   const { hero, benefits, categories, technology, featured } = home;
   const mobileHero = "/hero-olej-mobile-855b096a504ba167.avif";
-  const defaultHero = hero.background.path === "/hero-olej.webp";
+  const smallHero = "/hero-olej-small-d4f01e0e78905be3.avif";
+  const defaultHero =
+    hero.background.path === "/hero-olej.webp" && canCropHero(hero, benefits);
   return (
     <>
       {hero.enabled && (
@@ -26,23 +29,36 @@ export function HomeContent({
                 <link
                   rel="preload"
                   as="image"
+                  href={smallHero}
+                  type="image/avif"
+                  media="(width <= 500px)"
+                  fetchPriority="high"
+                />
+                <link
+                  rel="preload"
+                  as="image"
                   href={mobileHero}
                   type="image/avif"
-                  media="(max-width: 800px)"
+                  media="(500px < width <= 800px)"
                   fetchPriority="high"
                 />
                 <link
                   rel="preload"
                   as="image"
                   href={hero.background.path}
-                  media="(min-width: 801px)"
+                  media="(width > 800px)"
                   fetchPriority="high"
                 />
                 <picture>
                   <source
+                    srcSet={smallHero}
+                    type="image/avif"
+                    media="(width <= 500px)"
+                  />
+                  <source
                     srcSet={mobileHero}
                     type="image/avif"
-                    media="(max-width: 800px)"
+                    media="(500px < width <= 800px)"
                   />
                   <img
                     src={hero.background.path}

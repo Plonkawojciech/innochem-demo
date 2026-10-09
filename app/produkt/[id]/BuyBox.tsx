@@ -4,7 +4,7 @@ import { useViewEvent } from "@/components/Analytics";
 import { item } from "@/lib/analytics";
 import Link from "next/link";
 import { useEffect, useRef, useState, type MouseEvent } from "react";
-import { money, type StoreProduct } from "@/lib/store-types";
+import { money, type ProductCardData } from "@/lib/store-types";
 import { useCart } from "@/lib/cart";
 import { MAX_QUANTITY, cartLimitMessage } from "@/lib/cart-state";
 function inCartNote(inCart: number, available: number) {
@@ -20,10 +20,10 @@ export function BuyBox({
   product,
   shippingFromCents,
 }: {
-  product: StoreProduct;
+  product: ProductCardData;
   shippingFromCents: number | null;
 }) {
-  const { cart } = useCart();
+  const { cart, ready } = useCart();
   const addToCart = useAddToCart();
   useViewEvent("view_item", {
     currency: "PLN",
@@ -96,7 +96,7 @@ export function BuyBox({
             <button
               type="button"
               aria-label="Zmniejsz ilość"
-              disabled={!inStock || full || amount <= 1}
+              disabled={!ready || !inStock || full || amount <= 1}
               onClick={() => setQuantity(Math.max(1, amount - 1))}
             >
               −
@@ -107,7 +107,7 @@ export function BuyBox({
               min={1}
               max={limit}
               value={amount}
-              disabled={!inStock || full}
+              disabled={!ready || !inStock || full}
               aria-label="Ilość"
               onChange={(e) =>
                 setQuantity(
@@ -121,7 +121,7 @@ export function BuyBox({
             <button
               type="button"
               aria-label="Zwiększ ilość"
-              disabled={!inStock || full || amount >= limit}
+              disabled={!ready || !inStock || full || amount >= limit}
               onClick={() => setQuantity(Math.min(limit, amount + 1))}
             >
               +
@@ -131,7 +131,7 @@ export function BuyBox({
             <button
               type="button"
               className="btn btn-primary"
-              disabled={full}
+              disabled={!ready || full}
               onClick={addToCartFrom}
             >
               Dodaj do koszyka
@@ -183,6 +183,7 @@ export function BuyBox({
               type="button"
               className="btn btn-primary"
               onClick={addToCartFrom}
+              disabled={!ready}
             >
               Do koszyka
             </button>

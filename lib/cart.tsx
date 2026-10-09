@@ -19,23 +19,23 @@ import {
   type Cart,
   type CartResult,
 } from "./cart-state";
-import type { StoreProduct } from "./store-types";
+import type { ProductCardData } from "./store-types";
 export type { CartResult } from "./cart-state";
 type CartContext = {
   cart: Cart;
   count: number;
   ready: boolean;
   /** Returns what actually changed; `delta` 0 means nothing was added. */
-  add: (id: string, quantity?: number, product?: StoreProduct) => CartResult;
+  add: (id: string, quantity?: number, product?: ProductCardData) => CartResult;
   setQuantity: (
     id: string,
     quantity: number,
-    product?: StoreProduct,
+    product?: ProductCardData,
   ) => CartResult;
   clear: () => void;
 };
 const Context = createContext<CartContext | null>(null);
-type CartActions = Pick<CartContext, "add" | "setQuantity" | "clear">;
+type CartActions = Pick<CartContext, "add" | "setQuantity" | "clear" | "ready">;
 const ActionsContext = createContext<CartActions | null>(null);
 function read(raw: string | null): Cart {
   try {
@@ -80,7 +80,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [cart, ready]);
   const apply = useCallback(
-    (r: CartResult, product?: StoreProduct) => {
+    (r: CartResult, product?: ProductCardData) => {
       if (r.cart !== current.current) commit(r.cart);
       if (product && r.delta)
         track(r.delta > 0 ? "add_to_cart" : "remove_from_cart", {
@@ -104,8 +104,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
   const clear = useCallback(() => commit({}), [commit]);
   const actions = useMemo(
-    () => ({ add, setQuantity, clear }),
-    [add, setQuantity, clear],
+    () => ({ add, setQuantity, clear, ready }),
+    [add, setQuantity, clear, ready],
   );
   return (
     <ActionsContext.Provider value={actions}>
@@ -113,7 +113,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         value={{
           cart,
           count: cartCount(cart),
-          ready,
           ...actions,
         }}
       >

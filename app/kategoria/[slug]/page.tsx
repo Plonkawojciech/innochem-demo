@@ -1,3 +1,4 @@
+import { productCardData } from "@/lib/store-types";
 import { ViewEvent } from "@/components/Analytics";
 import { categoryDescription } from "@/lib/server/seo-text";
 import { productFacts } from "@/lib/product-facts";
@@ -129,7 +130,7 @@ export default async function Category({
             ))}
         </div>
       )}
-      <ProductGrid products={items} listId={slug} />
+      <ProductGrid products={items.map(productCardData)} listId={slug} />
       {!items.length && (
         <div className="empty-state">
           <h2>Nie znaleźliśmy takiego produktu</h2>

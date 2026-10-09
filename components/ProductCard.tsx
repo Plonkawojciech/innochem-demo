@@ -3,9 +3,10 @@ import Link from "next/link";
 import { item, track } from "@/lib/analytics";
 import { useViewEvent } from "./Analytics";
 import { useState } from "react";
-import { money, type StoreProduct } from "@/lib/store-types";
+import { money, type ProductCardData } from "@/lib/store-types";
 import { cartLimitMessage } from "@/lib/cart-state";
 import { useAddToCart } from "./AddToCartPopup";
+import { useCartActions } from "@/lib/cart";
 import { mediaSrc, mediaSrcSet } from "@/lib/media";
 import { productFacts } from "@/lib/product-facts";
 export function ProductCard({
@@ -14,12 +15,13 @@ export function ProductCard({
   listId,
   imageSizes = "(max-width: 700px) calc((100vw - 104px) / 2), (max-width: 1100px) calc((100vw - 220px) / 3), 233px",
 }: {
-  p: StoreProduct;
+  p: ProductCardData;
   priority?: boolean;
   listId?: string;
   imageSizes?: string;
 }) {
   const addToCart = useAddToCart();
+  const { ready } = useCartActions();
   const [notice, setNotice] = useState<string | null>(null);
   const facts = productFacts(p.name);
   const inStock = p.saleMode === "retail" && p.available > 0;
@@ -79,7 +81,8 @@ export function ProductCard({
           <button
             type="button"
             className="add"
-            disabled={!inStock}
+            disabled={!inStock || !ready}
+            aria-busy={!ready}
             onClick={(e) => {
               const result = addToCart(p, 1, e.currentTarget);
               setNotice(result.delta > 0 ? null : cartLimitMessage(result));
@@ -110,7 +113,7 @@ export function ProductGrid({
   products,
   listId,
 }: {
-  products: StoreProduct[];
+  products: ProductCardData[];
   listId?: string;
 }) {
   useViewEvent(

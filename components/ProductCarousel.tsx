@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import type { StoreProduct } from "@/lib/store-types";
+import type { ProductCardData } from "@/lib/store-types";
 import { ProductCard } from "./ProductCard";
 /** Horizontal, scroll-snapped row of product cards with previous/next arrows. */
-export function ProductCarousel({ products }: { products: StoreProduct[] }) {
+export function ProductCarousel({ products }: { products: ProductCardData[] }) {
   const track = useRef<HTMLDivElement>(null);
   const [edge, setEdge] = useState({ start: true, end: false });
   const update = () => {

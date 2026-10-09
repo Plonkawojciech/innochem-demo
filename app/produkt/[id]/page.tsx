@@ -1,3 +1,4 @@
+import { productCardData } from "@/lib/store-types";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -154,7 +155,10 @@ export default async function ProductPage({
             </p>
           )}
           {p.summary && <p className="desc">{p.summary}</p>}
-          <BuyBox product={p} shippingFromCents={shippingFromCents} />
+          <BuyBox
+            product={productCardData(p)}
+            shippingFromCents={shippingFromCents}
+          />
           <ul className="trust">
             <li>
               <b>Oryginał od dystrybutora</b>
@@ -260,7 +264,7 @@ export default async function ProductPage({
           <div className="sec-head">
             <h2 className="display">Inne lepkości serii {facts.series}</h2>
           </div>
-          <ProductCarousel products={sameSeries} />
+          <ProductCarousel products={sameSeries.map(productCardData)} />
         </section>
       )}
       {suggestions.length > 0 && (
@@ -275,7 +279,7 @@ export default async function ProductPage({
               </Link>
             )}
           </div>
-          <ProductCarousel products={suggestions} />
+          <ProductCarousel products={suggestions.map(productCardData)} />
         </section>
       )}
     </main>

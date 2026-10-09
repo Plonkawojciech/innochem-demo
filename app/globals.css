@@ -233,6 +233,10 @@ nav.main a:hover {
     transform 0.2s,
     opacity 0.2s;
 }
+.burger:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
 .burger.is-open span:nth-child(1) {
   transform: translateY(7px) rotate(45deg);
 }
@@ -3113,6 +3117,13 @@ address {
   width: 15px;
   height: 15px;
 }
+.theme-toggle .theme-dark,
+:root[data-theme="dark"] .theme-toggle .theme-light {
+  display: none;
+}
+:root[data-theme="dark"] .theme-toggle .theme-dark {
+  display: block;
+}
 :root[data-theme="dark"] .card:hover {
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
 }
@@ -3138,7 +3149,8 @@ address {
   background: var(--panel);
 }
 @media (max-width: 700px) {
-  .theme-toggle span {
+  .theme-toggle span,
+  :root[data-theme="dark"] .theme-toggle span.theme-dark {
     display: none;
   }
   .theme-toggle {

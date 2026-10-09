@@ -12,10 +12,10 @@ import { cartLimitMessage, type CartResult } from "@/lib/cart-state";
 import { useCart, useCartActions } from "@/lib/cart";
 import { mediaSrc, mediaSrcSet } from "@/lib/media";
 import { productFacts } from "@/lib/product-facts";
-import { money, type StoreProduct } from "@/lib/store-types";
+import { money, type ProductCardData } from "@/lib/store-types";
 import s from "./AddToCartPopup.module.css";
 type Added = {
-  product: StoreProduct;
+  product: ProductCardData;
   result: CartResult;
   trigger: HTMLElement | null;
 };
@@ -26,7 +26,11 @@ let show: ((added: Added) => void) | null = null;
  */
 export function useAddToCart() {
   const { add } = useCartActions();
-  return (product: StoreProduct, quantity: number, trigger?: HTMLElement) => {
+  return (
+    product: ProductCardData,
+    quantity: number,
+    trigger?: HTMLElement,
+  ) => {
     const result = add(product.id, quantity, product);
     if (result.delta > 0) show?.({ product, result, trigger: trigger ?? null });
     return result;
@@ -53,11 +57,20 @@ export function AddToCartPopup() {
   useLayoutEffect(() => {
     const el = dialog.current;
     if (!added || !el) return;
-    if (!el.open) el.showModal();
-    keep.current?.focus();
     const root = document.documentElement;
     const previous = root.style.overflow;
+    // Apply the page lock before showModal's synchronous layout and focus steps.
     root.style.overflow = "hidden";
+    // Let native dialog focusing select the intended control in a single step.
+    keep.current?.setAttribute("autofocus", "");
+    try {
+      if (!el.open) el.showModal();
+      if (document.activeElement !== keep.current)
+        keep.current?.focus({ preventScroll: true });
+    } catch (error) {
+      root.style.overflow = previous;
+      throw error;
+    }
     return () => {
       root.style.overflow = previous;
     };

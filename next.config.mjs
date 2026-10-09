@@ -22,6 +22,15 @@ const nextConfig = {
     return [
       { source: "/(.*)", headers: securityHeaders },
       {
+        source: "/hero-olej-small-d4f01e0e78905be3.avif",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
         source: "/hero-olej-mobile-855b096a504ba167.avif",
         headers: [
           {
