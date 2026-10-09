@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useCart } from "@/lib/cart";
+import { subscribeMenuFocusDismiss } from "@/lib/menu-focus";
 import type { SiteContent } from "@/lib/site-content";
 import { ThemeToggle } from "./ThemeToggle";
 // Static chrome (PreviewBar, CatBar, Footer) lives in StaticSiteChrome.tsx as server components.
@@ -36,9 +37,15 @@ export function Header({
     };
     document.addEventListener("keydown", key);
     document.addEventListener("pointerdown", outside);
+    const stopFocus = subscribeMenuFocusDismiss(
+      document,
+      (target) => !!header.current?.contains(target as Node | null),
+      () => setOpen(false),
+    );
     return () => {
       document.removeEventListener("keydown", key);
       document.removeEventListener("pointerdown", outside);
+      stopFocus();
     };
   }, [open]);
   return (
