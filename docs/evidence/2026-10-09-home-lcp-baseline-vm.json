@@ -1,0 +1,1438 @@
+{
+  "scope": "All six predeclared cold homepage HTTPS samples; Linux VM series distinct from historical Mac measurements",
+  "status": "FAIL",
+  "sourceSHA": "e660067b896fdaf78e835dbd51450980d62a8869",
+  "startedAt": "2026-10-09T19:30:57.170Z",
+  "finishedAt": "2026-10-09T19:31:43.339Z",
+  "pipeline": {
+    "instrumentationCommit": "92d213b50965b75a6af6fcc17e1e51e340061f04",
+    "sourceSHA": "e660067b896fdaf78e835dbd51450980d62a8869",
+    "series": "baseline-six",
+    "plannedSamples": 6,
+    "expectedBrowserVersion": "154.0.8037.92",
+    "imageID": "sha256:ea50dc50f7f9a231ebb842a78b868b16f89011a2efe3d770ff51d6bd78fc6f01",
+    "inputSHA256": {
+      "scripts/measure-home-lcp.mjs": "a0bf3ab10b75a206a4b6293fbd8144ad98722cadefa59d9b8c27a6a287a7a479",
+      "scripts/analyze-home-lcp.py": "4c37c7c716dbbca00b032fa45cb3d80812456d073d4490e321f20c4239365408",
+      "scripts/run-home-lcp-vm.py": "16734cc6e5bba3efb062eef9d2e30afdaf61e6c9d36423184e627459fb492dc5",
+      "scripts/home-lcp-runtime-dependencies.json": "9d280fe6763a620e31a5f7c12e6616c2c2179d94c69908c515fe709fb3df43fd"
+    }
+  },
+  "profile": {
+    "formFactor": "mobile",
+    "screenEmulation": {
+      "mobile": true,
+      "width": 412,
+      "height": 823,
+      "deviceScaleFactor": 1.75,
+      "disabled": false
+    },
+    "throttlingMethod": "simulate",
+    "throttling": {
+      "rttMs": 150,
+      "throughputKbps": 1638.4,
+      "requestLatencyMs": 562.5,
+      "downloadThroughputKbps": 1474.56,
+      "uploadThroughputKbps": 675,
+      "cpuSlowdownMultiplier": 4
+    }
+  },
+  "versions": {
+    "lighthouse": "13.5.0",
+    "chrome-launcher": "1.2.2",
+    "node": "v24.21.0"
+  },
+  "qaContainer": {
+    "cpuLimit": 2,
+    "memoryLimitBytes": 2147483648,
+    "pidsLimit": 256,
+    "user": "1000:1000",
+    "freshProfilePerSample": true,
+    "userChromeUsed": false
+  },
+  "targetMs": 2500,
+  "plannedSamples": 6,
+  "targetAllPassed": false,
+  "worstLcpMs": 2789.1440000000002,
+  "samples": [
+    {
+      "run": 1,
+      "lcp": 2709.861,
+      "fcp": 1063.8609999999999,
+      "tbt": 242,
+      "cls": 0,
+      "valid": true,
+      "browserClosed": true,
+      "browserVersion": "Chrome/154.0.8037.92",
+      "runtimeError": null,
+      "failures": [],
+      "nonReadRequests": [],
+      "targetPassed": false,
+      "capacityBefore": {
+        "at": "2026-10-09T19:30:57.683Z",
+        "load": [
+          5.13,
+          5.16,
+          5.33
+        ],
+        "cpuCount": 8,
+        "freeMemoryBytes": 7327506432
+      },
+      "capacityAfter": {
+        "at": "2026-10-09T19:31:07.497Z",
+        "load": [
+          6.3,
+          5.4,
+          5.41
+        ],
+        "cpuCount": 8,
+        "freeMemoryBytes": 7079907328
+      },
+      "nativeTraceLcpMs": 1281.132
+    },
+    {
+      "run": 2,
+      "lcp": 2789.1440000000002,
+      "fcp": 1065.144,
+      "tbt": 324,
+      "cls": 0,
+      "valid": true,
+      "browserClosed": true,
+      "browserVersion": "Chrome/154.0.8037.92",
+      "runtimeError": null,
+      "failures": [],
+      "nonReadRequests": [],
+      "targetPassed": false,
+      "capacityBefore": {
+        "at": "2026-10-09T19:31:07.498Z",
+        "load": [
+          6.3,
+          5.4,
+          5.41
+        ],
+        "cpuCount": 8,
+        "freeMemoryBytes": 7079907328
+      },
+      "capacityAfter": {
+        "at": "2026-10-09T19:31:14.908Z",
+        "load": [
+          6.19,
+          5.39,
+          5.41
+        ],
+        "cpuCount": 8,
+        "freeMemoryBytes": 7138779136
+      },
+      "nativeTraceLcpMs": 219.857
+    },
+    {
+      "run": 3,
+      "lcp": 2552.8289999999997,
+      "fcp": 1058.829,
+      "tbt": 169,
+      "cls": 0,
+      "valid": true,
+      "browserClosed": true,
+      "browserVersion": "Chrome/154.0.8037.92",
+      "runtimeError": null,
+      "failures": [],
+      "nonReadRequests": [],
+      "targetPassed": false,
+      "capacityBefore": {
+        "at": "2026-10-09T19:31:14.910Z",
+        "load": [
+          6.19,
+          5.39,
+          5.41
+        ],
+        "cpuCount": 8,
+        "freeMemoryBytes": 7138779136
+      },
+      "capacityAfter": {
+        "at": "2026-10-09T19:31:21.902Z",
+        "load": [
+          5.56,
+          5.28,
+          5.37
+        ],
+        "cpuCount": 8,
+        "freeMemoryBytes": 7108239360
+      },
+      "nativeTraceLcpMs": 171.822
+    },
+    {
+      "run": 4,
+      "lcp": 2725.752,
+      "fcp": 1060.752,
+      "tbt": 305,
+      "cls": 0,
+      "valid": true,
+      "browserClosed": true,
+      "browserVersion": "Chrome/154.0.8037.92",
+      "runtimeError": null,
+      "failures": [],
+      "nonReadRequests": [],
+      "targetPassed": false,
+      "capacityBefore": {
+        "at": "2026-10-09T19:31:21.904Z",
+        "load": [
+          5.56,
+          5.28,
+          5.37
+        ],
+        "cpuCount": 8,
+        "freeMemoryBytes": 7107072000
+      },
+      "capacityAfter": {
+        "at": "2026-10-09T19:31:29.043Z",
+        "load": [
+          5.19,
+          5.21,
+          5.35
+        ],
+        "cpuCount": 8,
+        "freeMemoryBytes": 7223201792
+      },
+      "nativeTraceLcpMs": 205.949
+    },
+    {
+      "run": 5,
+      "lcp": 2471.293,
+      "fcp": 1058.2930000000001,
+      "tbt": 196.5,
+      "cls": 0,
+      "valid": true,
+      "browserClosed": true,
+      "browserVersion": "Chrome/154.0.8037.92",
+      "runtimeError": null,
+      "failures": [],
+      "nonReadRequests": [],
+      "targetPassed": true,
+      "capacityBefore": {
+        "at": "2026-10-09T19:31:29.044Z",
+        "load": [
+          5.19,
+          5.21,
+          5.35
+        ],
+        "cpuCount": 8,
+        "freeMemoryBytes": 7223201792
+      },
+      "capacityAfter": {
+        "at": "2026-10-09T19:31:36.072Z",
+        "load": [
+          5.07,
+          5.19,
+          5.34
+        ],
+        "cpuCount": 8,
+        "freeMemoryBytes": 7071023104
+      },
+      "nativeTraceLcpMs": 182.406
+    },
+    {
+      "run": 6,
+      "lcp": 2534.2780000000002,
+      "fcp": 1058.278,
+      "tbt": 179,
+      "cls": 0,
+      "valid": true,
+      "browserClosed": true,
+      "browserVersion": "Chrome/154.0.8037.92",
+      "runtimeError": null,
+      "failures": [],
+      "nonReadRequests": [],
+      "targetPassed": false,
+      "capacityBefore": {
+        "at": "2026-10-09T19:31:36.073Z",
+        "load": [
+          5.07,
+          5.19,
+          5.34
+        ],
+        "cpuCount": 8,
+        "freeMemoryBytes": 7071289344
+      },
+      "capacityAfter": {
+        "at": "2026-10-09T19:31:43.337Z",
+        "load": [
+          4.9,
+          5.15,
+          5.33
+        ],
+        "cpuCount": 8,
+        "freeMemoryBytes": 7006605312
+      },
+      "nativeTraceLcpMs": 185.217
+    }
+  ],
+  "runtimeProofSHA256": "96fd7a27fcaa88377c31b01d5887a267da97c55be860998526d44beb14d46b19",
+  "retrievalAndCleanup": {
+    "remoteDirectory": "/tmp/innochem-lcp-20261009-baseline-six",
+    "container": "innochem-lcp-20261009-baseline-six",
+    "payloadSHA256": "9312c635db69af910f8af757a449f6787725eda31eeb04850f7ed6209411ae5b",
+    "resultArchiveSHA256": "cedd6f73f3842cfc5d1c03cbb5a8de327310cbc40405c4d484ba03d144e5a663",
+    "artifactHashesVerified": 27,
+    "runs": 6,
+    "allBrowsersClosed": true,
+    "remoteResourcesRemoved": true
+  },
+  "artifactHashes": [
+    {
+      "name": "home-1-DevtoolsLog.json.gz",
+      "bytes": 8906,
+      "sha256": "fc6c645cea6f42ebbe4e520d2f017af59f970722f69678acf89f04aa5693df1a"
+    },
+    {
+      "name": "home-1-Trace.json.gz",
+      "bytes": 799798,
+      "sha256": "1278ee72895cc4ed026234d7f3e827a1dd4a6336a4f6f624e01a8dca5e46cf3d"
+    },
+    {
+      "name": "home-1.html",
+      "bytes": 619037,
+      "sha256": "0da2f0d15c073f9ed62c28a0a4a9c994e148419e9fc82dcdba9ca00bd608eede"
+    },
+    {
+      "name": "home-1.json",
+      "bytes": 432044,
+      "sha256": "dd353d604210f7ab606026dd2366ef5ff5c57ac34eafb6d8a6b8c64d1cb3cf28"
+    },
+    {
+      "name": "home-2-DevtoolsLog.json.gz",
+      "bytes": 8928,
+      "sha256": "c915184d6430a6631ef7a38ea85bf255e99f0de6022de28524d3b59811b97af8"
+    },
+    {
+      "name": "home-2-Trace.json.gz",
+      "bytes": 1053502,
+      "sha256": "a219ae077530bb4b3db7f495c693a60cf9e05da85c698ca547a846fc20d79fbc"
+    },
+    {
+      "name": "home-2.html",
+      "bytes": 723996,
+      "sha256": "5da98084a5ea46fe73f076f039402246f275b5aedbbf2fc1469beea91950625e"
+    },
+    {
+      "name": "home-2.json",
+      "bytes": 537003,
+      "sha256": "4bf9c85d34ce8b034ae060e3bdb74ca5c8f232dd9c7f3007f04dbfce572ffd96"
+    },
+    {
+      "name": "home-3-DevtoolsLog.json.gz",
+      "bytes": 8964,
+      "sha256": "b4c77dbbf10edd4413733d9a045f2848e313aaa7b7f20da5459005daae4a2734"
+    },
+    {
+      "name": "home-3-Trace.json.gz",
+      "bytes": 1077883,
+      "sha256": "a8c60516e7ef45592dbde4a420c7eef70a6939326ef6db751c4d07820cc78cc9"
+    },
+    {
+      "name": "home-3.html",
+      "bytes": 716590,
+      "sha256": "dfc0ccdabc69ddf215979a1009baaad7d67b62de82e1550bd6fcd19d541cf8af"
+    },
+    {
+      "name": "home-3.json",
+      "bytes": 529597,
+      "sha256": "2bdcfdde77c02453a30b9dcaf9047f566c50d1184fab35af08ac5a6fec135236"
+    },
+    {
+      "name": "home-4-DevtoolsLog.json.gz",
+      "bytes": 8927,
+      "sha256": "97fdee35ff1328e46d2a2c13bf3f282193060316f02d493c73c180c75c5452a3"
+    },
+    {
+      "name": "home-4-Trace.json.gz",
+      "bytes": 1050689,
+      "sha256": "1adb39fd1356dc7781d13bcd5d00653925d79734b05b86d357b4758fcb054842"
+    },
+    {
+      "name": "home-4.html",
+      "bytes": 724530,
+      "sha256": "8f807047b91900c99c73cd49206acab30a989dc2bd107515a2635056d556b4b7"
+    },
+    {
+      "name": "home-4.json",
+      "bytes": 537537,
+      "sha256": "22b4c0124424a67a62582043d3651e4f6343afaf001d1f147e8951d47b3865f6"
+    },
+    {
+      "name": "home-5-DevtoolsLog.json.gz",
+      "bytes": 8798,
+      "sha256": "4a3e663cebc204be03be319982bf6225ffd43af025dde53e3ed981d1f6436354"
+    },
+    {
+      "name": "home-5-Trace.json.gz",
+      "bytes": 1102295,
+      "sha256": "613bc71eeabfc2a3536efd67801b3a35a254f21cd4f29cc27b21fcbedc426986"
+    },
+    {
+      "name": "home-5.html",
+      "bytes": 724537,
+      "sha256": "075a0f7f33714feabe249c45dee3757d06a89ba06b3fc344ba39418a550a732f"
+    },
+    {
+      "name": "home-5.json",
+      "bytes": 537544,
+      "sha256": "4a8db92d2b19e8e73fafadb4b5139cdd4cd355e6383a4eef23535fb85132b0cf"
+    },
+    {
+      "name": "home-6-DevtoolsLog.json.gz",
+      "bytes": 8816,
+      "sha256": "0d030f82720320ee854cc252e425ca6bdeba6b2ba09a95c572dbae613885104e"
+    },
+    {
+      "name": "home-6-Trace.json.gz",
+      "bytes": 1104387,
+      "sha256": "d93661a6299342324957799dd8da083bb9e2c7c3c0b6c9a169b4befde8f1575b"
+    },
+    {
+      "name": "home-6.html",
+      "bytes": 724899,
+      "sha256": "964cd541182d7cff9e7e2ae42c4f9f7d53c8ff94f07eb8ff457fcd0cf2eb8ff9"
+    },
+    {
+      "name": "home-6.json",
+      "bytes": 537906,
+      "sha256": "7036c7eb14cdf2d3e2a276360ffaf7c41a219d3de121719b19fa95d644ec6f10"
+    },
+    {
+      "name": "measurements.json",
+      "bytes": 15180,
+      "sha256": "72119bcd921b094cbc2c62f0bcfd118e6ccc5b8fdda5c904168d1a5a80082f8e"
+    },
+    {
+      "name": "runner.mjs.txt",
+      "bytes": 9654,
+      "sha256": "a0bf3ab10b75a206a4b6293fbd8144ad98722cadefa59d9b8c27a6a287a7a479"
+    },
+    {
+      "name": "runtime-proof.json",
+      "bytes": 346,
+      "sha256": "96fd7a27fcaa88377c31b01d5887a267da97c55be860998526d44beb14d46b19"
+    }
+  ],
+  "derivedEvidenceHashes": {
+    "results/baseline-six/trace-diagnosis.json": "c9f08c1356f377a599f43d65380932536a6b7d6f2cb39dfe50e7567a38991988",
+    "cpu-before-lcp.json": "ed2a11df5eddc74614fc01e634b446d507ab8d2bf005ccd3e0b1b024c7e6410c"
+  },
+  "traceComparison": [
+    {
+      "sample": 2,
+      "nativeLcpMs": 219.857,
+      "mainThreadTasksBeforeLcp": [
+        {
+          "name": "RunTask",
+          "startMs": 43.927,
+          "wallMs": 20.346,
+          "cpuMs": 9.721
+        },
+        {
+          "name": "RunTask",
+          "startMs": 107.712,
+          "wallMs": 65.155,
+          "cpuMs": 25.065
+        },
+        {
+          "name": "Layout",
+          "startMs": 113.288,
+          "wallMs": 55.009,
+          "cpuMs": 15.4,
+          "layoutObjectCount": 305
+        },
+        {
+          "name": "RunTask",
+          "startMs": 184.936,
+          "wallMs": 93.434,
+          "cpuMs": 51.121
+        },
+        {
+          "name": "EvaluateScript",
+          "startMs": 184.945,
+          "wallMs": 91.782,
+          "cpuMs": 49.609
+        },
+        {
+          "name": "ScriptCompiled",
+          "startMs": 189.751,
+          "wallMs": 86.975,
+          "cpuMs": 45.011
+        }
+      ],
+      "nativeFrameStages": [
+        {
+          "name": "BeginImplFrameToSendBeginMainFrame",
+          "startMs": 105.324,
+          "wallMs": 0.057,
+          "runTaskWallMs": 0.057,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SendBeginMainFrameToCommit",
+          "startMs": 105.381,
+          "wallMs": 66.702,
+          "runTaskWallMs": 66.692,
+          "outsideRunTaskMs": 0.010000000000005116
+        },
+        {
+          "name": "Commit",
+          "startMs": 172.083,
+          "wallMs": 0.229,
+          "runTaskWallMs": 0.229,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "EndCommitToActivation",
+          "startMs": 172.312,
+          "wallMs": 29.722,
+          "runTaskWallMs": 29.526,
+          "outsideRunTaskMs": 0.1960000000000015
+        },
+        {
+          "name": "Activation",
+          "startMs": 202.034,
+          "wallMs": 0.14,
+          "runTaskWallMs": 0.14,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "EndActivateToSubmitCompositorFrame",
+          "startMs": 202.174,
+          "wallMs": 1.031,
+          "runTaskWallMs": 1.031,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SubmitCompositorFrameToPresentationCompositorFrame",
+          "startMs": 203.205,
+          "wallMs": 16.652,
+          "runTaskWallMs": 16.652,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SubmitToReceiveCompositorFrame",
+          "startMs": 203.205,
+          "wallMs": 0.787,
+          "runTaskWallMs": 0.787,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "ReceiveCompositorFrameToStartDraw",
+          "startMs": 203.992,
+          "wallMs": 2.325,
+          "runTaskWallMs": 2.325,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "StartDrawToSwapStart",
+          "startMs": 206.317,
+          "wallMs": 12.12,
+          "runTaskWallMs": 12.12,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SwapEndToPresentationCompositorFrame",
+          "startMs": 218.437,
+          "wallMs": 1.42,
+          "runTaskWallMs": 1.42,
+          "outsideRunTaskMs": 0.0
+        }
+      ],
+      "leafCpuSamplesAvailable": false
+    },
+    {
+      "sample": 5,
+      "nativeLcpMs": 182.406,
+      "mainThreadTasksBeforeLcp": [
+        {
+          "name": "RunTask",
+          "startMs": 40.742,
+          "wallMs": 17.047,
+          "cpuMs": 9.549
+        },
+        {
+          "name": "RunTask",
+          "startMs": 77.707,
+          "wallMs": 56.903,
+          "cpuMs": 20.564
+        },
+        {
+          "name": "Layout",
+          "startMs": 77.821,
+          "wallMs": 50.921,
+          "cpuMs": 15.379,
+          "layoutObjectCount": 305
+        },
+        {
+          "name": "RunTask",
+          "startMs": 137.597,
+          "wallMs": 10.319,
+          "cpuMs": 5.558
+        },
+        {
+          "name": "RunTask",
+          "startMs": 161.006,
+          "wallMs": 53.292,
+          "cpuMs": 46.083
+        },
+        {
+          "name": "EvaluateScript",
+          "startMs": 161.053,
+          "wallMs": 51.602,
+          "cpuMs": 44.735
+        },
+        {
+          "name": "v8.compile",
+          "startMs": 161.092,
+          "wallMs": 10.329,
+          "cpuMs": 6.483
+        },
+        {
+          "name": "ScriptCompiled",
+          "startMs": 171.435,
+          "wallMs": 41.219,
+          "cpuMs": 38.201
+        }
+      ],
+      "nativeFrameStages": [
+        {
+          "name": "BeginImplFrameToSendBeginMainFrame",
+          "startMs": 76.919,
+          "wallMs": 0.067,
+          "runTaskWallMs": 0.064,
+          "outsideRunTaskMs": 0.0030000000000000027
+        },
+        {
+          "name": "SendBeginMainFrameToCommit",
+          "startMs": 76.986,
+          "wallMs": 57.046,
+          "runTaskWallMs": 57.037,
+          "outsideRunTaskMs": 0.009000000000000341
+        },
+        {
+          "name": "Commit",
+          "startMs": 134.032,
+          "wallMs": 0.203,
+          "runTaskWallMs": 0.203,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "EndCommitToActivation",
+          "startMs": 134.235,
+          "wallMs": 29.109,
+          "runTaskWallMs": 28.81,
+          "outsideRunTaskMs": 0.29900000000000304
+        },
+        {
+          "name": "Activation",
+          "startMs": 163.344,
+          "wallMs": 0.132,
+          "runTaskWallMs": 0.132,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "EndActivateToSubmitCompositorFrame",
+          "startMs": 163.476,
+          "wallMs": 5.807,
+          "runTaskWallMs": 5.807,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SubmitCompositorFrameToPresentationCompositorFrame",
+          "startMs": 169.283,
+          "wallMs": 13.123,
+          "runTaskWallMs": 13.123,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SubmitToReceiveCompositorFrame",
+          "startMs": 169.283,
+          "wallMs": 2.205,
+          "runTaskWallMs": 2.205,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "ReceiveCompositorFrameToStartDraw",
+          "startMs": 171.488,
+          "wallMs": 0.724,
+          "runTaskWallMs": 0.724,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "StartDrawToSwapStart",
+          "startMs": 172.212,
+          "wallMs": 9.629,
+          "runTaskWallMs": 9.629,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SwapEndToPresentationCompositorFrame",
+          "startMs": 181.841,
+          "wallMs": 0.565,
+          "runTaskWallMs": 0.565,
+          "outsideRunTaskMs": 0.0
+        }
+      ],
+      "leafCpuSamplesAvailable": false
+    }
+  ],
+  "nativeFrameStagesAllSamples": [
+    {
+      "sample": 1,
+      "stages": [
+        {
+          "name": "BeginImplFrameToSendBeginMainFrame",
+          "startMs": 151.516,
+          "wallMs": 0.069,
+          "runTaskWallMs": 0.069,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SendBeginMainFrameToCommit",
+          "startMs": 151.585,
+          "wallMs": 83.634,
+          "runTaskWallMs": 83.621,
+          "outsideRunTaskMs": 0.01300000000000523
+        },
+        {
+          "name": "Commit",
+          "startMs": 235.219,
+          "wallMs": 0.139,
+          "runTaskWallMs": 0.139,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "EndCommitToActivation",
+          "startMs": 235.358,
+          "wallMs": 53.178,
+          "runTaskWallMs": 52.686,
+          "outsideRunTaskMs": 0.49199999999999733
+        },
+        {
+          "name": "Activation",
+          "startMs": 288.536,
+          "wallMs": 0.124,
+          "runTaskWallMs": 0.124,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "EndActivateToSubmitCompositorFrame",
+          "startMs": 288.66,
+          "wallMs": 978.645,
+          "runTaskWallMs": 110.403,
+          "outsideRunTaskMs": 868.242
+        },
+        {
+          "name": "SubmitCompositorFrameToPresentationCompositorFrame",
+          "startMs": 1267.305,
+          "wallMs": 13.827,
+          "runTaskWallMs": 0.206,
+          "outsideRunTaskMs": 13.621
+        },
+        {
+          "name": "SubmitToReceiveCompositorFrame",
+          "startMs": 1267.305,
+          "wallMs": 0.342,
+          "runTaskWallMs": 0.175,
+          "outsideRunTaskMs": 0.16700000000000004
+        },
+        {
+          "name": "ReceiveCompositorFrameToStartDraw",
+          "startMs": 1267.647,
+          "wallMs": 0.269,
+          "runTaskWallMs": 0.0,
+          "outsideRunTaskMs": 0.269
+        },
+        {
+          "name": "StartDrawToSwapStart",
+          "startMs": 1267.916,
+          "wallMs": 12.71,
+          "runTaskWallMs": 0.031,
+          "outsideRunTaskMs": 12.679
+        },
+        {
+          "name": "SwapEndToPresentationCompositorFrame",
+          "startMs": 1280.626,
+          "wallMs": 0.506,
+          "runTaskWallMs": 0.0,
+          "outsideRunTaskMs": 0.506
+        }
+      ]
+    },
+    {
+      "sample": 2,
+      "stages": [
+        {
+          "name": "BeginImplFrameToSendBeginMainFrame",
+          "startMs": 105.324,
+          "wallMs": 0.057,
+          "runTaskWallMs": 0.057,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SendBeginMainFrameToCommit",
+          "startMs": 105.381,
+          "wallMs": 66.702,
+          "runTaskWallMs": 66.692,
+          "outsideRunTaskMs": 0.010000000000005116
+        },
+        {
+          "name": "Commit",
+          "startMs": 172.083,
+          "wallMs": 0.229,
+          "runTaskWallMs": 0.229,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "EndCommitToActivation",
+          "startMs": 172.312,
+          "wallMs": 29.722,
+          "runTaskWallMs": 29.526,
+          "outsideRunTaskMs": 0.1960000000000015
+        },
+        {
+          "name": "Activation",
+          "startMs": 202.034,
+          "wallMs": 0.14,
+          "runTaskWallMs": 0.14,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "EndActivateToSubmitCompositorFrame",
+          "startMs": 202.174,
+          "wallMs": 1.031,
+          "runTaskWallMs": 1.031,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SubmitCompositorFrameToPresentationCompositorFrame",
+          "startMs": 203.205,
+          "wallMs": 16.652,
+          "runTaskWallMs": 16.652,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SubmitToReceiveCompositorFrame",
+          "startMs": 203.205,
+          "wallMs": 0.787,
+          "runTaskWallMs": 0.787,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "ReceiveCompositorFrameToStartDraw",
+          "startMs": 203.992,
+          "wallMs": 2.325,
+          "runTaskWallMs": 2.325,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "StartDrawToSwapStart",
+          "startMs": 206.317,
+          "wallMs": 12.12,
+          "runTaskWallMs": 12.12,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SwapEndToPresentationCompositorFrame",
+          "startMs": 218.437,
+          "wallMs": 1.42,
+          "runTaskWallMs": 1.42,
+          "outsideRunTaskMs": 0.0
+        }
+      ]
+    },
+    {
+      "sample": 3,
+      "stages": [
+        {
+          "name": "BeginImplFrameToSendBeginMainFrame",
+          "startMs": 72.662,
+          "wallMs": 0.048,
+          "runTaskWallMs": 0.048,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SendBeginMainFrameToCommit",
+          "startMs": 72.71,
+          "wallMs": 39.077,
+          "runTaskWallMs": 39.068,
+          "outsideRunTaskMs": 0.009000000000000341
+        },
+        {
+          "name": "Commit",
+          "startMs": 111.787,
+          "wallMs": 0.171,
+          "runTaskWallMs": 0.171,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "EndCommitToActivation",
+          "startMs": 111.958,
+          "wallMs": 26.775,
+          "runTaskWallMs": 26.547,
+          "outsideRunTaskMs": 0.22799999999999798
+        },
+        {
+          "name": "Activation",
+          "startMs": 138.733,
+          "wallMs": 0.109,
+          "runTaskWallMs": 0.109,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "EndActivateToSubmitCompositorFrame",
+          "startMs": 138.842,
+          "wallMs": 3.115,
+          "runTaskWallMs": 3.115,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SubmitCompositorFrameToPresentationCompositorFrame",
+          "startMs": 141.957,
+          "wallMs": 29.865,
+          "runTaskWallMs": 29.865,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SubmitToReceiveCompositorFrame",
+          "startMs": 141.957,
+          "wallMs": 10.122,
+          "runTaskWallMs": 10.122,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "ReceiveCompositorFrameToStartDraw",
+          "startMs": 152.079,
+          "wallMs": 8.721,
+          "runTaskWallMs": 8.721,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "StartDrawToSwapStart",
+          "startMs": 160.8,
+          "wallMs": 10.401,
+          "runTaskWallMs": 10.401,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SwapEndToPresentationCompositorFrame",
+          "startMs": 171.201,
+          "wallMs": 0.621,
+          "runTaskWallMs": 0.621,
+          "outsideRunTaskMs": 0.0
+        }
+      ]
+    },
+    {
+      "sample": 4,
+      "stages": [
+        {
+          "name": "BeginImplFrameToSendBeginMainFrame",
+          "startMs": 91.287,
+          "wallMs": 0.043,
+          "runTaskWallMs": 0.043,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SendBeginMainFrameToCommit",
+          "startMs": 91.33,
+          "wallMs": 72.246,
+          "runTaskWallMs": 72.222,
+          "outsideRunTaskMs": 0.02400000000000091
+        },
+        {
+          "name": "Commit",
+          "startMs": 163.576,
+          "wallMs": 0.138,
+          "runTaskWallMs": 0.138,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "EndCommitToActivation",
+          "startMs": 163.714,
+          "wallMs": 27.194,
+          "runTaskWallMs": 26.912,
+          "outsideRunTaskMs": 0.28200000000000003
+        },
+        {
+          "name": "Activation",
+          "startMs": 190.908,
+          "wallMs": 0.107,
+          "runTaskWallMs": 0.107,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "EndActivateToSubmitCompositorFrame",
+          "startMs": 191.015,
+          "wallMs": 5.624,
+          "runTaskWallMs": 5.624,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SubmitCompositorFrameToPresentationCompositorFrame",
+          "startMs": 196.639,
+          "wallMs": 9.31,
+          "runTaskWallMs": 9.31,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SubmitToReceiveCompositorFrame",
+          "startMs": 196.639,
+          "wallMs": 0.521,
+          "runTaskWallMs": 0.521,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "ReceiveCompositorFrameToStartDraw",
+          "startMs": 197.16,
+          "wallMs": 2.078,
+          "runTaskWallMs": 2.078,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "StartDrawToSwapStart",
+          "startMs": 199.238,
+          "wallMs": 6.273,
+          "runTaskWallMs": 6.273,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SwapEndToPresentationCompositorFrame",
+          "startMs": 205.511,
+          "wallMs": 0.438,
+          "runTaskWallMs": 0.438,
+          "outsideRunTaskMs": 0.0
+        }
+      ]
+    },
+    {
+      "sample": 5,
+      "stages": [
+        {
+          "name": "BeginImplFrameToSendBeginMainFrame",
+          "startMs": 76.919,
+          "wallMs": 0.067,
+          "runTaskWallMs": 0.064,
+          "outsideRunTaskMs": 0.0030000000000000027
+        },
+        {
+          "name": "SendBeginMainFrameToCommit",
+          "startMs": 76.986,
+          "wallMs": 57.046,
+          "runTaskWallMs": 57.037,
+          "outsideRunTaskMs": 0.009000000000000341
+        },
+        {
+          "name": "Commit",
+          "startMs": 134.032,
+          "wallMs": 0.203,
+          "runTaskWallMs": 0.203,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "EndCommitToActivation",
+          "startMs": 134.235,
+          "wallMs": 29.109,
+          "runTaskWallMs": 28.81,
+          "outsideRunTaskMs": 0.29900000000000304
+        },
+        {
+          "name": "Activation",
+          "startMs": 163.344,
+          "wallMs": 0.132,
+          "runTaskWallMs": 0.132,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "EndActivateToSubmitCompositorFrame",
+          "startMs": 163.476,
+          "wallMs": 5.807,
+          "runTaskWallMs": 5.807,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SubmitCompositorFrameToPresentationCompositorFrame",
+          "startMs": 169.283,
+          "wallMs": 13.123,
+          "runTaskWallMs": 13.123,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SubmitToReceiveCompositorFrame",
+          "startMs": 169.283,
+          "wallMs": 2.205,
+          "runTaskWallMs": 2.205,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "ReceiveCompositorFrameToStartDraw",
+          "startMs": 171.488,
+          "wallMs": 0.724,
+          "runTaskWallMs": 0.724,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "StartDrawToSwapStart",
+          "startMs": 172.212,
+          "wallMs": 9.629,
+          "runTaskWallMs": 9.629,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SwapEndToPresentationCompositorFrame",
+          "startMs": 181.841,
+          "wallMs": 0.565,
+          "runTaskWallMs": 0.565,
+          "outsideRunTaskMs": 0.0
+        }
+      ]
+    },
+    {
+      "sample": 6,
+      "stages": [
+        {
+          "name": "BeginImplFrameToSendBeginMainFrame",
+          "startMs": 97.036,
+          "wallMs": 0.063,
+          "runTaskWallMs": 0.063,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SendBeginMainFrameToCommit",
+          "startMs": 97.099,
+          "wallMs": 45.303,
+          "runTaskWallMs": 45.296,
+          "outsideRunTaskMs": 0.006999999999997897
+        },
+        {
+          "name": "Commit",
+          "startMs": 142.402,
+          "wallMs": 0.155,
+          "runTaskWallMs": 0.155,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "EndCommitToActivation",
+          "startMs": 142.557,
+          "wallMs": 32.98,
+          "runTaskWallMs": 32.806,
+          "outsideRunTaskMs": 0.1739999999999995
+        },
+        {
+          "name": "Activation",
+          "startMs": 175.537,
+          "wallMs": 0.121,
+          "runTaskWallMs": 0.121,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "EndActivateToSubmitCompositorFrame",
+          "startMs": 175.658,
+          "wallMs": 0.95,
+          "runTaskWallMs": 0.95,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SubmitCompositorFrameToPresentationCompositorFrame",
+          "startMs": 176.608,
+          "wallMs": 8.609,
+          "runTaskWallMs": 8.609,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SubmitToReceiveCompositorFrame",
+          "startMs": 176.608,
+          "wallMs": 1.565,
+          "runTaskWallMs": 1.565,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "ReceiveCompositorFrameToStartDraw",
+          "startMs": 178.173,
+          "wallMs": 0.455,
+          "runTaskWallMs": 0.455,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "StartDrawToSwapStart",
+          "startMs": 178.628,
+          "wallMs": 5.91,
+          "runTaskWallMs": 5.91,
+          "outsideRunTaskMs": 0.0
+        },
+        {
+          "name": "SwapEndToPresentationCompositorFrame",
+          "startMs": 184.538,
+          "wallMs": 0.679,
+          "runTaskWallMs": 0.679,
+          "outsideRunTaskMs": 0.0
+        }
+      ]
+    }
+  ],
+  "nativeSampleOneOutlier": {
+    "scope": "Recorded X events in renderer process only; thread intervals may overlap and must not be summed; GPU process is not included",
+    "stage": {
+      "name": "EndActivateToSubmitCompositorFrame",
+      "startMs": 288.66,
+      "wallMs": 978.645,
+      "runTaskWallMs": 110.403,
+      "outsideRunTaskMs": 868.242,
+      "rendererRecordedThreads": [
+        {
+          "tid": 117,
+          "name": "CrRendererMain",
+          "recordedWallMs": 110.403,
+          "longestRecordedEvents": [
+            {
+              "name": "RunTask",
+              "wallMs": 72.962,
+              "cpuMs": 46.78
+            },
+            {
+              "name": "EvaluateScript",
+              "wallMs": 70.71,
+              "cpuMs": 45.461
+            },
+            {
+              "name": "ScriptCompiled",
+              "wallMs": 63.009,
+              "cpuMs": 41.344
+            },
+            {
+              "name": "v8.run",
+              "wallMs": 62.84,
+              "cpuMs": 41.244
+            },
+            {
+              "name": "RunMicrotasks",
+              "wallMs": 25.141,
+              "cpuMs": 13.383
+            }
+          ]
+        },
+        {
+          "tid": 154,
+          "name": "ThreadPoolForegroundWorker",
+          "recordedWallMs": 42.911,
+          "longestRecordedEvents": [
+            {
+              "name": "ImageDecodeTask",
+              "wallMs": 17.144,
+              "cpuMs": 2.817
+            },
+            {
+              "name": "Decode LazyPixelRef",
+              "wallMs": 17.12,
+              "cpuMs": 2.796
+            },
+            {
+              "name": "Decode Image",
+              "wallMs": 15.029,
+              "cpuMs": 2.317
+            },
+            {
+              "name": "RasterTask",
+              "wallMs": 13.091,
+              "cpuMs": 5.138
+            },
+            {
+              "name": "RasterTask",
+              "wallMs": 10.912,
+              "cpuMs": 4.704
+            }
+          ]
+        },
+        {
+          "tid": 124,
+          "name": "ThreadPoolForegroundWorker",
+          "recordedWallMs": 26.036,
+          "longestRecordedEvents": [
+            {
+              "name": "RasterTask",
+              "wallMs": 13.99,
+              "cpuMs": 4.457
+            },
+            {
+              "name": "RasterTask",
+              "wallMs": 6.362,
+              "cpuMs": 5.936
+            },
+            {
+              "name": "BackgroundJSStreamManager::RunScriptStreamingTask",
+              "wallMs": 4.055,
+              "cpuMs": 0.394
+            },
+            {
+              "name": "v8.parseOnBackground",
+              "wallMs": 4.039,
+              "cpuMs": 0.381
+            },
+            {
+              "name": "v8.parseOnBackgroundWaiting",
+              "wallMs": 3.609,
+              "cpuMs": 0.03
+            }
+          ]
+        },
+        {
+          "tid": 122,
+          "name": "ThreadPoolForegroundWorker",
+          "recordedWallMs": 25.958,
+          "longestRecordedEvents": [
+            {
+              "name": "RasterTask",
+              "wallMs": 9.832,
+              "cpuMs": 5.633
+            },
+            {
+              "name": "RasterTask",
+              "wallMs": 7.648,
+              "cpuMs": 5.442
+            },
+            {
+              "name": "RasterTask",
+              "wallMs": 4.482,
+              "cpuMs": 1.682
+            },
+            {
+              "name": "BackgroundJSStreamManager::RunScriptStreamingTask",
+              "wallMs": 2.105,
+              "cpuMs": 0.523
+            },
+            {
+              "name": "v8.parseOnBackground",
+              "wallMs": 2.09,
+              "cpuMs": 0.51
+            }
+          ]
+        },
+        {
+          "tid": 153,
+          "name": "ThreadPoolForegroundWorker",
+          "recordedWallMs": 21.158,
+          "longestRecordedEvents": [
+            {
+              "name": "RasterTask",
+              "wallMs": 9.939,
+              "cpuMs": 4.111
+            },
+            {
+              "name": "RasterTask",
+              "wallMs": 6.419,
+              "cpuMs": 3.434
+            },
+            {
+              "name": "BackgroundJSStreamManager::RunScriptStreamingTask",
+              "wallMs": 2.544,
+              "cpuMs": 0.727
+            },
+            {
+              "name": "v8.parseOnBackground",
+              "wallMs": 2.53,
+              "cpuMs": 0.718
+            },
+            {
+              "name": "v8.parseOnBackgroundWaiting",
+              "wallMs": 1.468,
+              "cpuMs": 0.021
+            }
+          ]
+        },
+        {
+          "tid": 131,
+          "name": "Compositor",
+          "recordedWallMs": 6.38,
+          "longestRecordedEvents": [
+            {
+              "name": "RunTask",
+              "wallMs": 5.422,
+              "cpuMs": 0.781
+            },
+            {
+              "name": "RunTask",
+              "wallMs": 0.85,
+              "cpuMs": 0.85
+            },
+            {
+              "name": "RunTask",
+              "wallMs": 0.216,
+              "cpuMs": 0.094
+            },
+            {
+              "name": "RunTask",
+              "wallMs": 0.152,
+              "cpuMs": 0.022
+            },
+            {
+              "name": "RunTask",
+              "wallMs": 0.097,
+              "cpuMs": 0.096
+            }
+          ]
+        },
+        {
+          "tid": 123,
+          "name": "Chrome_ChildIOThread",
+          "recordedWallMs": 2.824,
+          "longestRecordedEvents": [
+            {
+              "name": "RunTask",
+              "wallMs": 0.513,
+              "cpuMs": 0.065
+            },
+            {
+              "name": "RunTask",
+              "wallMs": 0.366,
+              "cpuMs": 0.01
+            },
+            {
+              "name": "RunTask",
+              "wallMs": 0.211,
+              "cpuMs": 0.013
+            },
+            {
+              "name": "RunTask",
+              "wallMs": 0.21,
+              "cpuMs": 0.018
+            },
+            {
+              "name": "RunTask",
+              "wallMs": 0.203,
+              "cpuMs": 0.026
+            }
+          ]
+        },
+        {
+          "tid": 120,
+          "name": "PerfettoTrace",
+          "recordedWallMs": 0.211,
+          "longestRecordedEvents": [
+            {
+              "name": "RunTask",
+              "wallMs": 0.142,
+              "cpuMs": 0.135
+            },
+            {
+              "name": "RunTask",
+              "wallMs": 0.026,
+              "cpuMs": 0.034
+            },
+            {
+              "name": "RunTask",
+              "wallMs": 0.026,
+              "cpuMs": 0.024
+            },
+            {
+              "name": "RunTask",
+              "wallMs": 0.017,
+              "cpuMs": 0.013
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
