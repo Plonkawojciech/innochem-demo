@@ -110,7 +110,7 @@
   display: block;
   font-size: 12px;
   font-weight: 600;
-  color: var(--gold);
+  color: var(--gold-text);
   margin-bottom: 2px;
 }
 .name {

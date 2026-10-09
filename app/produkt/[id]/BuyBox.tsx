@@ -7,6 +7,7 @@ import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { money, type ProductCardData } from "@/lib/store-types";
 import { useCart } from "@/lib/cart";
 import { MAX_QUANTITY, cartLimitMessage } from "@/lib/cart-state";
+import { installStickyBuyFocus } from "@/lib/sticky-buy-focus";
 function inCartNote(inCart: number, available: number) {
   if (inCart > available)
     return `W koszyku masz ${inCart} szt., a dostępnych jest ${available} szt. Zmniejsz ilość w koszyku.`;
@@ -33,7 +34,11 @@ export function BuyBox({
   const [quantity, setQuantity] = useState(1);
   const [notice, setNotice] = useState<string | null>(null);
   const box = useRef<HTMLDivElement>(null);
+  const sticky = useRef<HTMLDivElement>(null);
   const [boxVisible, setBoxVisible] = useState(false);
+  useEffect(() => {
+    if (sticky.current) return installStickyBuyFocus(sticky.current);
+  }, [product.id, product.saleMode, product.available > 0]);
   useEffect(() => {
     const el = box.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
@@ -164,6 +169,7 @@ export function BuyBox({
       </div>
       {inStock && (
         <div
+          ref={sticky}
           className="sticky-buy"
           data-hidden={boxVisible ? "true" : undefined}
           inert={boxVisible}

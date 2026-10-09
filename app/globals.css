@@ -11,6 +11,7 @@
   --violet: #4c2fd6;
   --violet-soft: #eeeafd;
   --gold: #a8811c;
+  --gold-text: #876713;
   --ink: #17131f;
   --body: #45404f;
   --line: rgba(23, 19, 31, 0.11);
@@ -31,6 +32,7 @@
   --violet: #8b74ff;
   --violet-soft: rgba(139, 116, 255, 0.16);
   --gold: #d9b355;
+  --gold-text: #d9b355;
   --ink: #f3f0fa;
   --body: #c7c1d6;
   --muted: #8d86a1;
@@ -2204,7 +2206,7 @@ address {
 }
 .series-line {
   font-size: 13.5px;
-  color: var(--gold);
+  color: var(--gold-text);
   font-weight: 600;
   margin-bottom: 8px;
 }
@@ -3396,8 +3398,15 @@ footer.site .foot-withdraw {
 }
 /* The footer is outside .product-page, so a sibling selector never matched it. */
 @media (max-width: 700px) {
+  html:has(.sticky-buy:not([data-hidden])) {
+    scroll-padding-bottom: calc(
+      var(--sticky-buy-height, calc(84px + env(safe-area-inset-bottom))) + 8px
+    );
+  }
   body:has(.sticky-buy) footer.site {
-    padding-bottom: calc(84px + env(safe-area-inset-bottom));
+    padding-bottom: calc(
+      var(--sticky-buy-height, calc(84px + env(safe-area-inset-bottom))) + 8px
+    );
   }
 }
 .empty-state .btn-primary {
