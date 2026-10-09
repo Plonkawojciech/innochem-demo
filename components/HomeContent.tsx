@@ -100,7 +100,8 @@ export function HomeContent({
                   alt={hero.image.alt}
                   width={1000}
                   height={1400}
-                  decoding="sync"
+                  fetchPriority="low"
+                  decoding="async"
                 />
               )}
             </div>
@@ -159,12 +160,22 @@ export function HomeContent({
           <div className="split-grid">
             <div className="split-photo">
               {technology.image.path && (
-                <img
-                  src={technology.image.path}
-                  alt={technology.image.alt}
-                  loading="lazy"
-                  decoding="async"
-                />
+                <picture>
+                  {technology.image.path === "/tlo-silnik.webp" && (
+                    <source
+                      type="image/avif"
+                      srcSet="/tlo-silnik-480-4e7a56fa45622363.avif 480w, /tlo-silnik-800-1753ea917a467a6e.avif 800w, /tlo-silnik-1024-f70777c1c04c694b.avif 1024w"
+                      sizes="(max-width: 900px) 100vw, 50vw"
+                    />
+                  )}
+                  <img
+                    src={technology.image.path}
+                    alt={technology.image.alt}
+                    loading="lazy"
+                    fetchPriority="low"
+                    decoding="async"
+                  />
+                </picture>
               )}
             </div>
             <div className="split-copy">

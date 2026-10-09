@@ -1,0 +1,227 @@
+/* Route styles preserve the original global selector/declaration order. */
+
+.admin-shell {
+  padding-top: 36px;
+  padding-bottom: 72px;
+}
+.admin-heading,
+.admin-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.admin-heading h1 {
+  margin: 0;
+}
+.admin-nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 18px;
+  margin-bottom: 32px;
+}
+.admin-nav a {
+  padding: 9px 13px;
+  border: 1px solid #e2dfe8;
+  border-radius: 8px;
+  text-decoration: none;
+}
+.admin-nav a:hover {
+  background: #f1edf7;
+}
+.admin-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.admin-stats a {
+  color: inherit;
+  text-decoration: none;
+}
+.admin-stats strong {
+  display: block;
+  font-size: 38px;
+  margin-top: 10px;
+}
+.admin-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 24px;
+}
+.admin-columns > .panel,
+.admin-columns > div > .panel {
+  margin-top: 0;
+}
+.admin-editor textarea {
+  font-family: inherit;
+  line-height: 1.6;
+}
+.admin-save {
+  position: sticky;
+  bottom: 0;
+  background: var(--panel);
+  border-top: 1px solid #ddd;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  box-shadow: 0 -8px 24px #00000008;
+  z-index: 2;
+}
+.admin-save p {
+  margin: 0;
+}
+.admin-search {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+}
+.admin-search input,
+.admin-search select {
+  border: 1px solid #cfcbd5;
+  border-radius: 8px;
+  padding: 11px 14px;
+  min-width: 0;
+}
+.admin-search input {
+  flex: 1;
+}
+.admin-shell details > summary {
+  cursor: pointer;
+  font-weight: 700;
+  padding: 8px 0;
+}
+.admin-shell h2 {
+  font-size: 28px;
+}
+.admin-shell .muted {
+  font-size: 13px;
+  color: #615c67;
+}
+@media (max-width: 900px) {
+  .admin-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin-columns {
+    grid-template-columns: 1fr;
+  }
+  .admin-search {
+    flex-wrap: wrap;
+  }
+  .admin-heading,
+  .admin-actions {
+    align-items: flex-start;
+  }
+  .admin-shell {
+    padding-top: 24px;
+  }
+}
+@media (max-width: 520px) {
+  .admin-stats {
+    gap: 10px;
+  }
+  .admin-stats .panel {
+    padding: 16px;
+  }
+  .admin-stats strong {
+    font-size: 30px;
+  }
+  .admin-nav {
+    gap: 6px;
+  }
+  .admin-nav a {
+    font-size: 13px;
+    padding: 8px;
+  }
+  .admin-actions {
+    flex-direction: column;
+  }
+  .admin-search {
+    flex-direction: column;
+  }
+  .admin-save {
+    padding: 12px;
+    gap: 12px;
+  }
+}
+.site-editor-actions {
+  position: sticky;
+  top: 73px;
+  z-index: 15;
+  background: var(--panel);
+  border-bottom: 1px solid #ddd;
+  padding: 16px 0;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.site-editor-actions > span {
+  font-size: 13px;
+  color: #51495c;
+}
+.site-editor-body {
+  padding: 0;
+  border: 0;
+  margin: 20px 0;
+  min-width: 0;
+}
+.site-editor-section {
+  border: 1px solid #d6d0df;
+  background: var(--panel);
+  border-radius: 6px;
+  margin: 12px 0;
+  padding: 0 22px 20px;
+}
+.site-editor-section:not([open]),
+.site-editor-subsection:not([open]) {
+  padding-bottom: 0;
+}
+.site-editor-section > summary {
+  font-weight: 700;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 18px 0;
+}
+.site-editor-subsection {
+  border-top: 1px solid #ddd;
+  padding-bottom: 22px;
+}
+.site-editor-subsection > summary {
+  font-weight: 600;
+  cursor: pointer;
+  padding: 16px 0;
+}
+.site-fields {
+  display: grid;
+  gap: 16px;
+}
+.site-fields .f {
+  margin: 0;
+}
+.site-fields small {
+  color: #595261;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.site-editor .text-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+@media (max-width: 600px) {
+  .site-editor-section {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .site-editor-actions .btn {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  .site-editor-actions {
+    gap: 10px;
+  }
+}

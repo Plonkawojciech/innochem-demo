@@ -39,6 +39,19 @@ const nextConfig = {
           },
         ],
       },
+      ...[
+        "/tlo-silnik-480-4e7a56fa45622363.avif",
+        "/tlo-silnik-800-1753ea917a467a6e.avif",
+        "/tlo-silnik-1024-f70777c1c04c694b.avif",
+      ].map((source) => ({
+        source,
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      })),
     ];
   },
   // One canonical host: www.innochem.pl answers only with a permanent redirect to the apex domain.

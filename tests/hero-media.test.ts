@@ -69,3 +69,27 @@ test("server hero markup keeps the full original for a CMS layout edit", async (
   assert.doesNotMatch(edited, /hero-olej-(small|mobile)-/);
   assert.match(edited, /src="\/hero-olej.webp"/);
 });
+
+test("technology derivatives preserve the full default image and bypass a CMS replacement", async () => {
+  const { createElement } = await import("react");
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { HomeContent } = await import("../components/HomeContent");
+  const { defaultSiteContent } = await import("../lib/site-content");
+  const home = structuredClone(defaultSiteContent.home);
+  home.technology.enabled = true;
+  home.technology.image.path = "/tlo-silnik.webp";
+  const markup = () =>
+    renderToStaticMarkup(
+      createElement(HomeContent, {
+        home,
+        series: "",
+        seriesProducts: [],
+      }),
+    );
+  assert.match(markup(), /tlo-silnik-800-1753ea917a467a6e/);
+  assert.match(markup(), /src="\/tlo-silnik.webp"/);
+  home.technology.image.path = "/media/new-client-image.webp";
+  const edited = markup();
+  assert.doesNotMatch(edited, /tlo-silnik-(480|800|1024)-/);
+  assert.match(edited, /src="\/media\/new-client-image.webp"/);
+});

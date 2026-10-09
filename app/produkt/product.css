@@ -1,0 +1,225 @@
+/* Route styles preserve the original global selector/declaration order. */
+
+.pdp-photo {
+  background:
+    radial-gradient(
+      closest-side at 50% 42%,
+      rgba(124, 92, 255, 0.2),
+      transparent 75%
+    ),
+    var(--dark);
+  border: 1px solid var(--line);
+  padding: 48px;
+  position: sticky;
+  top: 96px;
+}
+.pdp-photo img {
+  max-height: 460px;
+  object-fit: contain;
+  margin: 0 auto;
+  mix-blend-mode: lighten;
+}
+@media (max-width: 640px) {
+  .pdp-photo {
+    position: static;
+    padding: 28px;
+  }
+  .pdp-photo img {
+    max-height: 300px;
+  }
+}
+.pdp-photo {
+  background: var(--panel);
+}
+.pdp-photo img {
+  max-height: 650px;
+  width: auto;
+  object-fit: contain;
+  margin: auto;
+}
+.pdp-photo {
+  background: var(--dark);
+}
+.pdp-photo .no-photo {
+  color: #ccc5dd;
+}
+.pdp-photo img {
+  mix-blend-mode: normal;
+}
+.product-page .pdp {
+  gap: 56px;
+  padding-top: 24px;
+}
+.pdp-photo {
+  background: var(--photo-well);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 32px;
+  position: relative;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pdp-photo img {
+  max-height: 100%;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 24px 30px rgba(23, 19, 31, 0.18));
+}
+.product-page .pdp h1 {
+  font-size: clamp(26px, 3.2vw, 38px);
+  margin: 0 0 16px;
+}
+.pdp-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 22px;
+  font-size: 13.5px;
+  color: var(--body);
+  margin-bottom: 18px;
+}
+.pdp-meta b {
+  color: var(--ink);
+  font-weight: 600;
+}
+@media (max-width: 700px) {
+  .pdp-photo {
+    padding: 20px;
+  }
+  .product-page {
+    padding-bottom: 88px;
+  }
+}
+:root[data-theme="dark"] .pdp-photo img {
+  filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.55));
+}
+:root[data-theme="dark"] .pdp-photo {
+  background:
+    radial-gradient(
+      closest-side at 50% 55%,
+      rgba(139, 116, 255, 0.22),
+      transparent 80%
+    ),
+    var(--photo-well);
+}
+.product-page .pdp {
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 56px;
+  padding: 26px 0 40px;
+}
+.product-page .pdp-photo {
+  position: relative;
+  top: auto;
+  padding: 28px;
+  cursor: zoom-in;
+}
+.product-page .gallery {
+  position: sticky;
+  top: 88px;
+}
+.product-page .gallery-main {
+  width: 100%;
+  border: 1px solid var(--line);
+}
+.pdp-section {
+  margin-top: 36px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+}
+.pdp-section h2 {
+  font-size: 22px;
+  margin-bottom: 14px;
+}
+.pdp-desc {
+  font-size: 15px;
+  line-height: 1.75;
+  color: var(--body);
+}
+.pdp-desc > p:first-child {
+  font-size: 16px;
+  color: var(--ink);
+}
+.pdp-desc p {
+  margin: 0 0 14px;
+}
+.pdp-desc strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.pdp-desc em {
+  font-style: normal;
+}
+.pdp-desc ul,
+.pdp-desc ol {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 4px;
+  display: grid;
+  gap: 8px;
+}
+.pdp-desc ul + ul {
+  margin-top: 0;
+}
+.pdp-desc li {
+  position: relative;
+  padding: 12px 16px 12px 42px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.pdp-desc li::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 19px;
+  width: 14px;
+  height: 14px;
+  border-radius: 100px;
+  background: var(--violet-soft);
+  border: 1.5px solid var(--violet);
+  box-sizing: border-box;
+}
+.pdp-desc li::after {
+  content: "";
+  position: absolute;
+  left: 20.5px;
+  top: 22px;
+  width: 4px;
+  height: 7px;
+  border: solid var(--violet);
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+.pdp-desc li strong {
+  display: block;
+  margin-bottom: 2px;
+}
+.pdp-desc li br {
+  display: none;
+}
+.pdp-desc a {
+  color: var(--violet);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.pdp-desc table {
+  font-size: 14px;
+}
+.pdp-section .muted {
+  margin-top: 14px;
+}
+@media (max-width: 900px) {
+  .product-page .gallery {
+    position: static;
+  }
+}
+@media (max-width: 900px) {
+  .product-page .pdp {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}

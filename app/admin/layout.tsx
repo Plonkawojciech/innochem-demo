@@ -1,4 +1,5 @@
 import Link from "next/link";
+import "./admin.css";
 export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Panel sklepu — INNOCHEM",

@@ -43,4 +43,44 @@ for (const variant of variants) {
     throw new Error("Encoder output changed; review and update the asset hash");
   await writeFile(new URL(variant.name, root), output);
 }
-console.log("Default hero input and both mobile asset hashes verified");
+// Keep the default technology image responsive without cropping it or replacing
+// images selected through the CMS. Only content-addressed outputs are cached.
+const engineSource = await readFile(new URL("tlo-silnik.webp", root));
+if (
+  hash(engineSource) !==
+  "74041e5d0333389cb65bcf0a2e0b160368197599e8276b50134d939f655d70d8"
+)
+  throw new Error("Default technology image changed; review its derivatives");
+for (const variant of [
+  {
+    width: 480,
+    sha256: "4e7a56fa4562236395f766e7768f9888c5daf9dd7938cd80bee1ea7425cea749",
+  },
+  {
+    width: 800,
+    sha256: "1753ea917a467a6e0e1ce5d02de9c1e68b693e6823f7e9b2111e5b6a0d167190",
+  },
+  {
+    width: 1024,
+    sha256: "f70777c1c04c694bf9f9285182dbc72fa7b86f4b896785ca0c7aa553b868ab15",
+  },
+]) {
+  const name = `tlo-silnik-${variant.width}-${variant.sha256.slice(0, 16)}.avif`;
+  if (process.argv.includes("--check")) {
+    if (hash(await readFile(new URL(name, root))) !== variant.sha256)
+      throw new Error(
+        "Technology derivative does not match its immutable name",
+      );
+    continue;
+  }
+  const output = await sharp(engineSource)
+    .resize({ width: variant.width, withoutEnlargement: true })
+    .avif({ quality: 55, effort: 4 })
+    .toBuffer();
+  if (hash(output) !== variant.sha256)
+    throw new Error("Encoder output changed; review technology asset hashes");
+  await writeFile(new URL(name, root), output);
+}
+console.log(
+  "Default hero and technology inputs and derivative hashes verified",
+);
