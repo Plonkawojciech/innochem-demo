@@ -9,6 +9,7 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:import": "tsx scripts/import-legacy.ts",
     "test": "tsx --test --test-concurrency=1 tests/*.test.ts tests/*.test.mjs",
+    "test:checkout": "node scripts/test-checkout.mjs",
     "format:check": "prettier --check app components lib scripts tests"
   },
   "dependencies": {
