@@ -17,10 +17,15 @@ export function createCartConfirmationBridge() {
   } | null = null;
 
   return {
-    publish(added: CartConfirmation) {
-      if (added.result.delta <= 0) return;
-      if (!subscriber) pending = added;
-      else if (subscriber.pathname === added.pathname) subscriber.notify(added);
+    publish(added: CartConfirmation, currentPathname: string) {
+      if (added.result.delta <= 0 || added.pathname !== currentPathname) return;
+      // The old route's passive cleanup may still be waiting after navigation.
+      if (!subscriber || subscriber.pathname !== currentPathname)
+        pending = added;
+      else {
+        pending = null;
+        subscriber.notify(added);
+      }
     },
     subscribe(pathname: string, notify: (added: CartConfirmation) => void) {
       const current = { pathname, notify };

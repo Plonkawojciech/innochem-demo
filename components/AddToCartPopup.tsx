@@ -27,13 +27,13 @@ export function useAddToCart() {
     trigger?: HTMLElement,
   ) => {
     const result = add(product.id, quantity, product);
-    if (result.delta > 0)
-      cartConfirmation.publish({
-        product,
-        result,
-        trigger: trigger ?? null,
-        pathname: window.location.pathname,
-      });
+    if (result.delta > 0) {
+      const pathname = window.location.pathname;
+      cartConfirmation.publish(
+        { product, result, trigger: trigger ?? null, pathname },
+        pathname,
+      );
+    }
     return result;
   };
 }
@@ -45,6 +45,8 @@ export function AddToCartPopup() {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    // A delayed effect from an intermediate route must not consume a current add.
+    if (window.location.pathname !== pathname) return;
     setAdded((current) => (current?.pathname === pathname ? current : null));
     return cartConfirmation.subscribe(pathname, (next) => {
       if (window.location.pathname === pathname) setAdded(next);
