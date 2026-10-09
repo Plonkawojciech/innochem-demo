@@ -36,7 +36,7 @@ export function ProductCard({
           track("select_item", { item_list_id: listId, items: [item(p)] });
       }}
     >
-      <Link className="ph" href={`/produkt/${p.slug}`}>
+      <Link className="ph" href={`/produkt/${p.slug}`} prefetch={false}>
         {p.imagePath ? (
           <img
             src={mediaSrc(p.imagePath, 480)}
@@ -44,7 +44,7 @@ export function ProductCard({
             sizes={imageSizes}
             alt={p.imageAlt || p.name}
             loading={priority ? "eager" : "lazy"}
-            fetchPriority={priority ? "high" : "auto"}
+            fetchPriority={priority ? "high" : "low"}
             decoding="async"
             width={480}
             height={480}
@@ -56,7 +56,7 @@ export function ProductCard({
       </Link>
       <div className="body">
         {facts.series && <span className="series">{facts.series}</span>}
-        <Link className="name" href={`/produkt/${p.slug}`}>
+        <Link className="name" href={`/produkt/${p.slug}`} prefetch={false}>
           {facts.title}
         </Link>
         {facts.volume && <span className="volume">{facts.volume}</span>}

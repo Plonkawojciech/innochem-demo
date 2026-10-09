@@ -20,7 +20,7 @@ export function CatBar({ navigation }: Pick<SiteContent, "navigation">) {
             className={c.items.length ? "cb-item has-menu" : "cb-item"}
             key={i}
           >
-            <Link href={c.href}>
+            <Link href={c.href} prefetch={false}>
               {c.name}
               {!!c.items.length && (
                 <span className="cb-caret" aria-hidden>
@@ -31,7 +31,7 @@ export function CatBar({ navigation }: Pick<SiteContent, "navigation">) {
             {!!c.items.length && (
               <div className="cb-menu">
                 {c.items.map((l, j) => (
-                  <Link key={j} href={l.href}>
+                  <Link key={j} href={l.href} prefetch={false}>
                     {l.name}
                   </Link>
                 ))}
@@ -40,7 +40,7 @@ export function CatBar({ navigation }: Pick<SiteContent, "navigation">) {
           </div>
         ))}
         <div className="cb-item cb-dist">
-          <Link href={navigation.highlighted.href}>
+          <Link href={navigation.highlighted.href} prefetch={false}>
             {navigation.highlighted.name}
           </Link>
         </div>

@@ -78,6 +78,7 @@ export function CatalogToolbar({
         <div className="chips" aria-label="Kategoria">
           <Link
             href={href("/katalog", { q, grade })}
+            prefetch={false}
             className={!activeCategory ? "chip on" : "chip"}
           >
             Wszystkie
@@ -88,12 +89,13 @@ export function CatalogToolbar({
               <Link
                 key={c.id}
                 href={href(`/kategoria/${c.slug}`, { grade })}
+                prefetch={false}
                 className={activeCategory === c.slug ? "chip on" : "chip"}
               >
                 {c.name.replace(/^Oleje\s+/i, "")}
               </Link>
             ))}
-          <Link href="/przemysl" className="chip">
+          <Link href="/przemysl" className="chip" prefetch={false}>
             Przemysł
           </Link>
         </div>

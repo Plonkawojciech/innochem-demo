@@ -211,6 +211,7 @@ export function HomeContent({
                     width={1000}
                     height={1400}
                     loading="lazy"
+                    fetchPriority="low"
                     decoding="async"
                   />
                 )}
