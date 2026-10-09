@@ -1,0 +1,44 @@
+# INNOCHEM: kontrolowana diagnoza LCP strony głównej
+
+Cel: LCP poniżej 2500 ms w najgorszej próbie z zaplanowanej zimnej serii, z zachowaniem wyglądu i flow. Punkt wyjścia `e660067b896fdaf78e835dbd51450980d62a8869`. Aktualny raport QA zachowuje home 2729,151 / 1540,784 / 1548,497 ms oraz powtórzenie 1548,223 / 1551,003 / 1543,397 ms. Nie kasujemy ani nie zastępujemy nieudanego wyniku.
+
+Przeczytano aktualny checkpoint z `2026-10-08-rano-dla-wojtka.md`, cały raport `independent-qa-fixes/REPORT.md` oraz diagnozę zapisanych śladów. Starszy nagłówek performance-followup opisuje `2506c40`, dlatego nie traktujemy go jako bieżącego wyniku. Installed Next/lockfile: 16.3.8; przeczytano lokalne instrukcje images, fonts, CSS i lazy-loading.
+
+## Z góry ustalona seria
+
+Pierwszy eksperyment: sześć zimnych prób publicznej strony głównej HTTPS na obecnym podglądzie. Lighthouse 13.5.0, systemowy Chrome 154.0.8037.98, osobny proces i świeży profil każdej próby; mobile 412×823/DPR1,75, simulate RTT150 ms, download1474,56 kbps, CPU4. Wynik laboratoryjny simulate pozostaje odrębny od natywnej obserwacji śladu. Root wstrzymał ciężkie prace zespołu, lecz na Macu pozostały ciężkie procesy obcych sesji. Load przekraczał 100. Nie udało się uzyskać cichego hosta; seria ma zakres diagnostyczny, nie stabilnej bramki. Runner zapisuje obciążenie hosta każdej próby.
+
+Każda próba zachowuje LHR, HTML, Trace, DevtoolsLog i PID; runner zamyka swój proces. Serii nie powtarzamy po wyniku FAIL dla uzyskania green. Dalsza kontrola wymaga nowej, opisanej hipotezy potwierdzonej śladem. Nie zmieniamy flag GPU, transportu, wyglądu, zdjęć ani fontów dla pomiaru.
+
+## Istniejący ślad i otwarta hipoteza
+
+Nieudany home ma pobranie hero zakończone po 523,900 ms oraz prezentację LCP po 2492,829 ms; render delay1968,908 ms. Hero ma 13140 B, priorytet high i istnieje w początkowym HTML. Etap activation→submit1002,520 ms pokrywa zaledwie4,833 ms głównego wątku. Pierwszy Layout50,891 ms wall/31,606 ms CPU nie wyjaśnia całej przerwy. Kod nie potwierdza konkretnego winnego procesu lub błędu GPU.
+
+Kandydat optymalizacji powstanie tylko po powiązaniu kosztu z kodem strony. Lokalny serwer produkcyjny będzie wyłącznie na przydzielonym3061; bazę55449/socket `/tmp/innochem-orchestrator-pg` prowadzi agent checkout. Środowisko lokalne wykorzysta osobną bazę i read-only GET, bez zapisu danych klientki.
+
+## Stan
+
+Gotowy runner `scripts/measure-home-lcp.mjs` wymaga istniejących dokładnych wersji Lighthouse i chrome-launcher oraz nowego katalogu wyników. Używa wyłącznie `https://sklep-innochem.programo.pl` lub `http://127.0.0.1:3061`. Root dostarczył niesekretny odczyt runtime z 19:52 CEST: obraz e660067 healthy, preview/worker true, payments/mail false.
+
+Pierwszy start 18:04:17 UTC zatrzymał błąd runnera: nieutworzony katalog przekazanego profilu. Chrome wystartował przed błędem zapisu chrome.pid; nie powstał LHR ani pomiar strony. Wynik pozostaje w `private/lcp-20261009/baseline-https-six`; receipt cleanup zachowuje własny PID4964 i sześć dzieci, SIGTERM oraz sprawdzony brak procesów tego profilu po zakończeniu. Profil zachowano. Load97,83 przy ośmiu CPU i wolnej pamięci około195 MB pozostaje w nieudanej próbie.
+
+Poprawka runnera tworzy nowy profil przed startem i przechowuje własną instancję Launcher już podczas launch; cleanup czeka na zdarzenie close własnego child process. To korekta konkretnego błędu instrumentacji, bez zmiany profilu, kodu strony lub polowania na green. Pierwotnie zadeklarowane sześć pomiarów zakolejkowano w nowym katalogu `baseline-https-six-fixed`, bez nadpisania nieudanej próby. Kod aplikacji pozostaje bez zmian.
+
+
+## Osobna seria Linux VM
+
+Root wskazał istniejący obraz `skup-fb-collector:local` z Chromium i Node na VM159.195.206.7. Poprawiony Mac runner anulowano w kolejce, przed utworzeniem katalogu wyników i przed pierwszą próbą strony; exit130, zero próbek. Błąd pierwszego launch pozostaje w archiwum.
+
+Przed startem deklarujemy osobną serię sześciu zimnych home HTTPS. Lighthouse 13.5.0, identyczne parametry mobile i simulate; Linux Chromium 154.0.8037.92, Node v24.21.0, amd64. Obraz przypięty do `sha256:ea50dc50f7f9a231ebb842a78b868b16f89011a2efe3d770ff51d6bd78fc6f01`. Odczyt wersji nie otwierał strony. Load VM 6,18 / 5,92 / 6,00. To inny host i silnik, więc nie porównujemy Mac/VM jako przed/po poprawce kodu. Aplikacja nadal e660067, bez zmian źródeł.
+
+Kontener QA ma limit 2 CPU / 2 GB / pids256, dropALL/no-new-privileges, użytkownika 1000 i czyste środowisko env-i. Używa świeżego własnego procesu i profilu każdej próby. Nie montuje wolumenów ani profilu kolektora, nie publikuje portów. Obraz deklaruje `/profile`; zastępujemy go własnym tmpfs 16 MB i sprawdzamy brak montowań typu volume/bind. Właściwy profil każdej próby jest w katalogu własnych wyników. Flagi Linux headless/no-sandbox zostają zapisane jako warunki tej osobnej serii, bez zmian GPU lub kodu strony. Własny payload obejmuje harness, niesekretny runtime proof i 100 istniejących zależności runtime Lighthouse/chrome-launcher; archiwum pomija .env*.
+
+`scripts/run-home-lcp-vm.py` przeprowadza kolejne kroki przez jeden heavy: archiwum, transfer z SHA, nowy kontener, sześć prób, pobranie wyników i kontrolę SHA każdego pliku. Sprawdza czysty stan swoich źródeł względem commita, hash manifestu zależności oraz package.json każdego istniejącego pakietu. Nie formatuje ani nie zmienia źródeł podczas wykonania. Usuwa wyłącznie nowo utworzony zamknięty kontener z etykietą właściciela oraz jego wskazany katalog tymczasowy po zweryfikowanym pobraniu. Zapisuje obraz runtime jako immutable imageID, limity i przed/po obciążenie/pamięć VM. Późniejsza finalna seria po root deploy ma użyć tego samego obrazu/silnika/profilu.
+
+## Zamrożenie instrumentacji przed formalnym review
+
+VM6: **NOT RUN**. Oczekujący helper anulowany przed przejęciem heavy; exit130, brak payloadu i zero próbek strony. Kod aplikacji pozostaje na e660067 i nie ma zmian. Root poprosił o osobny commit instrumentacji przed formalnym static review. Wyniki oraz dowód wykonania zostaną zapisane w kolejnym commicie.
+
+Własne pliki: runner, offline parser, helper VM, manifest nazw/wersji/hashów package.json 100 zależności i ten checkpoint. Nie commitujemy pakietów, profili, raw trace ani danych klientki. Syntax `node --check scripts/measure-home-lcp.mjs` oraz `python3 -m py_compile scripts/analyze-home-lcp.py scripts/run-home-lcp-vm.py`: PASS. Walidacja parsera na śladzie historycznym i sześć pomiarów nie zostały jeszcze wykonane.
+
+Następny krok: formalny review exact SHA, potem uruchomienie zamrożonego helpera przez heavy. Duże artefakty pozostaną na Mad Dog; raport zachowa wszystkie próby oraz ich hashe. Serwera3061 nie uruchamiano; PG55449 pozostaje własnością checkout. Własny Chrome po błędzie launcher zakończony, co potwierdza zachowany receipt; kontener inwentaryzacji był --rm, benchmarkowego kontenera nie utworzono.
