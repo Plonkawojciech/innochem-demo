@@ -52,18 +52,17 @@ const contrast = (foreground, background) => {
 };
 
 for (const theme of ["light", "dark"]) {
-  test(`small product and popup series text passes AA in ${theme} theme`, () => {
-    const tokens = vars(theme);
-    for (const [css, selector, background] of [
-      [globalCss, ".series-line", "--bg"],
-      [popupCss, ".series", "--panel"],
-    ]) {
+  for (const [name, css, selector, background] of [
+    ["product", globalCss, ".series-line", "--bg"],
+    ["popup", popupCss, ".series", "--panel"],
+  ])
+    test(`small ${name} series text passes AA in ${theme} theme`, () => {
+      const tokens = vars(theme);
       const rule = block(css, selector);
       assert.ok(parseFloat(rule["font-size"]) < 18, selector);
       const ratio = contrast(resolve(rule.color, tokens), tokens[background]);
       assert.ok(ratio >= 4.5, `${selector} ${theme}: ${ratio.toFixed(3)}:1`);
-    }
-  });
+    });
   test(`catalogue series contrast remains AA in ${theme} theme`, () => {
     const tokens = vars(theme);
     const rule = block(globalCss, ".card .series");
