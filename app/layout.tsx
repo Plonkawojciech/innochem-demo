@@ -4,12 +4,13 @@ import { ConsentBanner } from "@/components/ConsentBanner";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { CartProvider } from "@/lib/cart";
-import { CmsPreviewBar, Header } from "@/components/SiteChrome";
+import { Header } from "@/components/SiteChrome";
+import { CmsPreviewBar } from "@/components/CmsPreviewBar";
 import { CatBar, Footer } from "@/components/StaticSiteChrome";
 import "./globals.css";
 import "./fonts/extended.css";
 import { requestSite } from "@/lib/server/site-request";
-import { themeBootScript } from "@/components/ThemeToggle";
+import { themeBootScript } from "@/lib/theme-boot";
 
 const archivo = localFont({
   src: "./fonts/manrope.woff2",

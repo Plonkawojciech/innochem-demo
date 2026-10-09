@@ -73,7 +73,7 @@ export function Footer({
             <div key={i}>
               <b>{group.title}</b>
               {group.links.map((l, j) => (
-                <Link href={l.href} key={j}>
+                <Link href={l.href} key={j} prefetch={false}>
                   {l.name}
                 </Link>
               ))}
@@ -84,7 +84,11 @@ export function Footer({
         <div className="foot-note">
           <span>
             © {new Date().getFullYear()} {brand.name}. {brand.copyright}{" "}
-            <Link href="/odstapienie" className="foot-withdraw">
+            <Link
+              href="/odstapienie"
+              className="foot-withdraw"
+              prefetch={false}
+            >
               Formularz odstąpienia od umowy
             </Link>
           </span>

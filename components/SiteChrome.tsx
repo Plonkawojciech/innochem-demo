@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useCart } from "@/lib/cart";
 import type { SiteContent } from "@/lib/site-content";
@@ -9,35 +9,6 @@ import { ThemeToggle } from "./ThemeToggle";
 const hydrationSubscribe = () => () => {};
 const hydrated = () => true;
 const serverHydrated = () => false;
-export function CmsPreviewBar() {
-  const [error, setError] = useState("");
-  const router = useRouter();
-  return (
-    <div className="cms-preview-bar">
-      <span>Oglądasz zapisany szkic witryny.</span>{" "}
-      <Link href="/admin/witryna">Wróć do edycji</Link>
-      <button
-        type="button"
-        onClick={async () => {
-          try {
-            const r = await fetch("/api/admin/site-preview", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ enabled: false }),
-            });
-            if (!r.ok) throw new Error();
-            router.refresh();
-          } catch {
-            setError("Nie udało się wyłączyć podglądu. Spróbuj ponownie.");
-          }
-        }}
-      >
-        Zakończ podgląd
-      </button>
-      {error && <span role="alert">{error}</span>}
-    </div>
-  );
-}
 export function Header({
   brand,
   navigation,
@@ -106,7 +77,7 @@ export function Header({
         </Link>
         <nav className="main" aria-label="Główna nawigacja">
           {navigation.main.map((l, i) => (
-            <Link href={l.href} key={i}>
+            <Link href={l.href} key={i} prefetch={false}>
               {l.name}
             </Link>
           ))}
@@ -118,13 +89,13 @@ export function Header({
         <nav className="m-menu" id="mobile-menu" aria-label="Menu mobilne">
           {navigation.categories.map((c, i) => (
             <div key={i}>
-              <Link className="m-cat" href={c.href}>
+              <Link className="m-cat" href={c.href} prefetch={false}>
                 {c.name}
               </Link>
               {!!c.items.length && (
                 <div className="m-sub">
                   {c.items.map((l, j) => (
-                    <Link href={l.href} key={j}>
+                    <Link href={l.href} key={j} prefetch={false}>
                       {l.name}
                     </Link>
                   ))}
@@ -133,11 +104,15 @@ export function Header({
             </div>
           ))}
           {navigation.main.map((l, i) => (
-            <Link className="m-cat" href={l.href} key={i}>
+            <Link className="m-cat" href={l.href} key={i} prefetch={false}>
               {l.name}
             </Link>
           ))}
-          <Link className="m-dist" href={navigation.highlighted.href}>
+          <Link
+            className="m-dist"
+            href={navigation.highlighted.href}
+            prefetch={false}
+          >
             {navigation.highlighted.name}
           </Link>
         </nav>

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { runInNewContext } from "node:vm";
-import { themeBootScript } from "../components/ThemeToggle";
+import { themeBootScript } from "../lib/theme-boot";
 
 function boot(
   saved: string | null,

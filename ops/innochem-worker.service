@@ -1,0 +1,19 @@
+[Unit]
+Description=Innochem minute worker using the newest healthy application container
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+RuntimeDirectory=innochem-worker
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+UMask=0077
+ExecStart=/root/innochem-monitor/worker-host.sh
+TimeoutStartSec=240
+KillMode=control-group
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=innochem-worker
