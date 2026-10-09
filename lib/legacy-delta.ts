@@ -1118,258 +1118,268 @@ export async function exportLegacyDeltaTarget(
     await client.query("SET LOCAL idle_in_transaction_session_timeout = '10s'");
     await client.query("SET LOCAL lock_timeout = '1s'");
     await client.query("SET LOCAL TIME ZONE 'UTC'");
-    const raw = {} as Record<LegacyDeltaEntity, Record<string, unknown>[]>;
-    let rowCount = 0;
-    for (const entity of legacyDeltaEntities) {
-      const table = entity === "orderItems" ? "order_items" : entity;
-      raw[entity] = (
-        await client.query(
-          `SELECT ${exportColumns[entity]} FROM ${table} ORDER BY id LIMIT 100001`,
-        )
-      ).rows;
-      rowCount += raw[entity].length;
-      if (rowCount > 100_000) throw new LegacyDeltaInputError();
-    }
-    const relations = (
-      await client.query(
-        "SELECT product_id::text,category_id::text FROM product_categories ORDER BY product_id,category_id LIMIT 100001",
-      )
-    ).rows;
-    const movements = (
-      await client.query(
-        "SELECT product_id::text,count(*)::text AS movement_count FROM stock_movements GROUP BY product_id ORDER BY product_id LIMIT 100001",
-      )
-    ).rows;
-    if (relations.length > 100_000 || movements.length > 100_000)
-      throw new LegacyDeltaInputError();
-    const stringColumns: Record<LegacyDeltaEntity, string[]> = {
-      categories: ["slug", "name", "description_html"],
-      products: [
-        "slug",
-        "sku",
-        "name",
-        "summary",
-        "description_html",
-        "tax_rate",
-        "status",
-        "sale_mode",
-        "image_alt",
-        "meta_title",
-        "meta_description",
-      ],
-      customers: ["email", "first_name", "last_name"],
-      addresses: ["label"],
-      orders: [
-        "email",
-        "status",
-        "payment_method",
-        "currency",
-        "shipping_method",
-        "shipping_label",
-        "terms_version",
-        "reservation_state",
-      ],
-      orderItems: ["product_name", "sku", "tax_rate"],
-    };
-    const objectValue = (value: unknown) =>
-      value !== null &&
-      typeof value === "object" &&
-      !Array.isArray(value) &&
-      Object.getPrototypeOf(value) === Object.prototype;
-    for (const entity of legacyDeltaEntities)
-      for (const row of raw[entity]) {
-        if (
-          stringColumns[entity].some(
-            (column) => typeof row[column] !== "string",
-          )
-        )
-          throw new LegacyDeltaInputError();
-        if (
-          entity === "products" &&
-          row.image_path !== null &&
-          typeof row.image_path !== "string"
-        )
-          throw new LegacyDeltaInputError();
-        if (entity === "addresses" && !objectValue(row.data))
-          throw new LegacyDeltaInputError();
-        if (
-          entity === "orders" &&
-          (!objectValue(row.buyer) ||
-            !objectValue(row.shipping_address) ||
-            (row.source_data !== null && !objectValue(row.source_data)) ||
-            (row.tracking_number !== null &&
-              typeof row.tracking_number !== "string"))
-        )
-          throw new LegacyDeltaInputError();
-      }
-    const maps = new Map<LegacyDeltaEntity, Map<string, Reference>>();
-    for (const entity of legacyDeltaEntities) {
-      const map = new Map<string, Reference>();
-      for (const row of raw[entity]) {
-        if (!z.uuid().safeParse(row.id).success || map.has(String(row.id)))
-          throw new LegacyDeltaInputError();
-        const id = identity.safeParse({
-          legacyId: row.legacy_id,
-          targetId: row.id,
-        });
-        if (!id.success) throw new LegacyDeltaInputError();
-        map.set(String(row.id), id.data);
-      }
-      maps.set(entity, map);
-    }
-    const reference = (
-      entity: LegacyDeltaEntity,
-      value: unknown,
-    ): Reference | null => {
-      if (value === null) return null;
-      const found = maps.get(entity)!.get(String(value));
-      if (!found) throw new LegacyDeltaInputError();
-      return found.legacyId === null
-        ? { ...found }
-        : { legacyId: found.legacyId };
-    };
-    const links = new Map<string, Reference[]>(),
-      movementCounts = new Map<string, number>();
-    for (const relation of relations) {
-      const product = reference("products", relation.product_id),
-        category = reference("categories", relation.category_id);
-      if (!product || !category) throw new LegacyDeltaInputError();
-      const refs = links.get(String(relation.product_id)) || [];
-      refs.push(category);
-      links.set(String(relation.product_id), refs);
-    }
-    for (const movement of movements) {
-      if (!reference("products", movement.product_id))
-        throw new LegacyDeltaInputError();
-      const count = String(movement.movement_count);
-      if (
-        !/^[1-9][0-9]*$/.test(count) ||
-        !integer.safeParse(Number(count)).success ||
-        movementCounts.has(String(movement.product_id))
-      )
-        throw new LegacyDeltaInputError();
-      movementCounts.set(String(movement.product_id), Number(count));
-    }
-    const dateHash = (value: unknown) => {
-      if (value === null) return legacyDeltaHash(null);
-      if (!(value instanceof Date) || !Number.isFinite(value.getTime()))
-        throw new LegacyDeltaInputError();
-      return legacyDeltaHash(value.toISOString());
-    };
-    const snapshot = {
-      schemaVersion: 1,
-      role: "storefront",
-      categories: [] as unknown[],
-      products: [] as unknown[],
-      customers: [] as unknown[],
-      addresses: [] as unknown[],
-      orders: [] as unknown[],
-      orderItems: [] as unknown[],
-    };
-    for (const row of raw.categories)
-      snapshot.categories.push({
-        ...maps.get("categories")!.get(String(row.id)),
-        fields: {
-          slugHash: legacyDeltaHash(row.slug),
-          nameHash: legacyDeltaHash(row.name),
-          descriptionHtmlHash: legacyDeltaHash(row.description_html),
-          parentRef: reference("categories", row.parent_id),
-          visible: row.visible,
-          position: row.position,
-        },
-      });
-    for (const row of raw.products)
-      snapshot.products.push({
-        ...maps.get("products")!.get(String(row.id)),
-        reserved: row.reserved,
-        stockMovementCount: movementCounts.get(String(row.id)) || 0,
-        fields: {
-          slugHash: legacyDeltaHash(row.slug),
-          skuHash: legacyDeltaHash(row.sku),
-          nameHash: legacyDeltaHash(row.name),
-          summaryHash: legacyDeltaHash(row.summary),
-          descriptionHtmlHash: legacyDeltaHash(row.description_html),
-          price: {
-            kind: "gross_cents",
-            amount: row.price_cents,
-            taxRate: row.tax_rate,
-          },
-          stock: row.stock,
-          status: row.status,
-          saleMode: row.sale_mode,
-          weightGrams: row.weight_grams,
-          imagePathHash: legacyDeltaHash(row.image_path),
-          imageAltHash: legacyDeltaHash(row.image_alt),
-          metaTitleHash: legacyDeltaHash(row.meta_title),
-          metaDescriptionHash: legacyDeltaHash(row.meta_description),
-          categoryRefs: links.get(String(row.id)) || [],
-        },
-      });
-    for (const row of raw.customers)
-      snapshot.customers.push({
-        ...maps.get("customers")!.get(String(row.id)),
-        fields: {
-          emailHash: legacyDeltaHash(row.email),
-          firstNameHash: legacyDeltaHash(row.first_name),
-          lastNameHash: legacyDeltaHash(row.last_name),
-          sourceCreatedAtHash: dateHash(row.source_created_at),
-        },
-      });
-    for (const row of raw.addresses)
-      snapshot.addresses.push({
-        ...maps.get("addresses")!.get(String(row.id)),
-        fields: {
-          customerRef: reference("customers", row.customer_id),
-          labelHash: legacyDeltaHash(row.label),
-          dataHash: legacyDeltaHash(row.data),
-          archived: row.archived,
-        },
-      });
-    for (const row of raw.orders)
-      snapshot.orders.push({
-        ...maps.get("orders")!.get(String(row.id)),
-        reservationState: row.reservation_state,
-        fields: {
-          customerRef: reference("customers", row.customer_id),
-          emailHash: legacyDeltaHash(row.email),
-          buyerHash: legacyDeltaHash(row.buyer),
-          shippingAddressHash: legacyDeltaHash(row.shipping_address),
-          status: row.status,
-          paymentMethodHash: legacyDeltaHash(row.payment_method),
-          currency: row.currency,
-          subtotalCents: row.subtotal_cents,
-          shippingCents: row.shipping_cents,
-          totalCents: row.total_cents,
-          shippingMethodHash: legacyDeltaHash(row.shipping_method),
-          shippingLabelHash: legacyDeltaHash(row.shipping_label),
-          trackingNumberHash: legacyDeltaHash(row.tracking_number),
-          stockCommitted: row.stock_committed,
-          termsVersionHash: legacyDeltaHash(row.terms_version),
-          sourceDataHash: legacyDeltaHash(row.source_data),
-          createdAtHash: dateHash(row.created_at),
-          updatedAtHash: dateHash(row.updated_at),
-        },
-      });
-    for (const row of raw.orderItems)
-      snapshot.orderItems.push({
-        ...maps.get("orderItems")!.get(String(row.id)),
-        fields: {
-          orderRef: reference("orders", row.order_id),
-          productRef: reference("products", row.product_id),
-          productNameHash: legacyDeltaHash(row.product_name),
-          skuHash: legacyDeltaHash(row.sku),
-          quantity: row.quantity,
-          unitPrice: {
-            kind: "gross_cents",
-            amount: row.unit_price_cents,
-            taxRate: row.tax_rate,
-          },
-          totalCents: row.total_cents,
-        },
-      });
-    parseLegacyDeltaSnapshot(snapshot, "storefront");
-    return snapshot;
+    return await readLegacyDeltaTargetInTransaction({
+      activeTransaction: true,
+      query: (sql) => client.query(sql),
+    });
   } finally {
     await client.query("ROLLBACK");
   }
+}
+
+/** Caller owns an active, bounded transaction and its locks; never starts or ends it. */
+export async function readLegacyDeltaTargetInTransaction(client: {
+  activeTransaction: true;
+  query(sql: string): Promise<{ rows: Record<string, unknown>[] }>;
+}) {
+  if (client.activeTransaction !== true) throw new LegacyDeltaInputError();
+  const raw = {} as Record<LegacyDeltaEntity, Record<string, unknown>[]>;
+  let rowCount = 0;
+  for (const entity of legacyDeltaEntities) {
+    const table = entity === "orderItems" ? "order_items" : entity;
+    raw[entity] = (
+      await client.query(
+        `SELECT ${exportColumns[entity]} FROM ${table} ORDER BY id LIMIT 100001`,
+      )
+    ).rows;
+    rowCount += raw[entity].length;
+    if (rowCount > 100_000) throw new LegacyDeltaInputError();
+  }
+  const relations = (
+    await client.query(
+      "SELECT product_id::text,category_id::text FROM product_categories ORDER BY product_id,category_id LIMIT 100001",
+    )
+  ).rows;
+  const movements = (
+    await client.query(
+      "SELECT product_id::text,count(*)::text AS movement_count FROM stock_movements GROUP BY product_id ORDER BY product_id LIMIT 100001",
+    )
+  ).rows;
+  if (relations.length > 100_000 || movements.length > 100_000)
+    throw new LegacyDeltaInputError();
+  const stringColumns: Record<LegacyDeltaEntity, string[]> = {
+    categories: ["slug", "name", "description_html"],
+    products: [
+      "slug",
+      "sku",
+      "name",
+      "summary",
+      "description_html",
+      "tax_rate",
+      "status",
+      "sale_mode",
+      "image_alt",
+      "meta_title",
+      "meta_description",
+    ],
+    customers: ["email", "first_name", "last_name"],
+    addresses: ["label"],
+    orders: [
+      "email",
+      "status",
+      "payment_method",
+      "currency",
+      "shipping_method",
+      "shipping_label",
+      "terms_version",
+      "reservation_state",
+    ],
+    orderItems: ["product_name", "sku", "tax_rate"],
+  };
+  const objectValue = (value: unknown) =>
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype;
+  for (const entity of legacyDeltaEntities)
+    for (const row of raw[entity]) {
+      if (
+        stringColumns[entity].some((column) => typeof row[column] !== "string")
+      )
+        throw new LegacyDeltaInputError();
+      if (
+        entity === "products" &&
+        row.image_path !== null &&
+        typeof row.image_path !== "string"
+      )
+        throw new LegacyDeltaInputError();
+      if (entity === "addresses" && !objectValue(row.data))
+        throw new LegacyDeltaInputError();
+      if (
+        entity === "orders" &&
+        (!objectValue(row.buyer) ||
+          !objectValue(row.shipping_address) ||
+          (row.source_data !== null && !objectValue(row.source_data)) ||
+          (row.tracking_number !== null &&
+            typeof row.tracking_number !== "string"))
+      )
+        throw new LegacyDeltaInputError();
+    }
+  const maps = new Map<LegacyDeltaEntity, Map<string, Reference>>();
+  for (const entity of legacyDeltaEntities) {
+    const map = new Map<string, Reference>();
+    for (const row of raw[entity]) {
+      if (!z.uuid().safeParse(row.id).success || map.has(String(row.id)))
+        throw new LegacyDeltaInputError();
+      const id = identity.safeParse({
+        legacyId: row.legacy_id,
+        targetId: row.id,
+      });
+      if (!id.success) throw new LegacyDeltaInputError();
+      map.set(String(row.id), id.data);
+    }
+    maps.set(entity, map);
+  }
+  const reference = (
+    entity: LegacyDeltaEntity,
+    value: unknown,
+  ): Reference | null => {
+    if (value === null) return null;
+    const found = maps.get(entity)!.get(String(value));
+    if (!found) throw new LegacyDeltaInputError();
+    return found.legacyId === null
+      ? { ...found }
+      : { legacyId: found.legacyId };
+  };
+  const links = new Map<string, Reference[]>(),
+    movementCounts = new Map<string, number>();
+  for (const relation of relations) {
+    const product = reference("products", relation.product_id),
+      category = reference("categories", relation.category_id);
+    if (!product || !category) throw new LegacyDeltaInputError();
+    const refs = links.get(String(relation.product_id)) || [];
+    refs.push(category);
+    links.set(String(relation.product_id), refs);
+  }
+  for (const movement of movements) {
+    if (!reference("products", movement.product_id))
+      throw new LegacyDeltaInputError();
+    const count = String(movement.movement_count);
+    if (
+      !/^[1-9][0-9]*$/.test(count) ||
+      !integer.safeParse(Number(count)).success ||
+      movementCounts.has(String(movement.product_id))
+    )
+      throw new LegacyDeltaInputError();
+    movementCounts.set(String(movement.product_id), Number(count));
+  }
+  const dateHash = (value: unknown) => {
+    if (value === null) return legacyDeltaHash(null);
+    if (!(value instanceof Date) || !Number.isFinite(value.getTime()))
+      throw new LegacyDeltaInputError();
+    return legacyDeltaHash(value.toISOString());
+  };
+  const snapshot = {
+    schemaVersion: 1,
+    role: "storefront",
+    categories: [] as unknown[],
+    products: [] as unknown[],
+    customers: [] as unknown[],
+    addresses: [] as unknown[],
+    orders: [] as unknown[],
+    orderItems: [] as unknown[],
+  };
+  for (const row of raw.categories)
+    snapshot.categories.push({
+      ...maps.get("categories")!.get(String(row.id)),
+      fields: {
+        slugHash: legacyDeltaHash(row.slug),
+        nameHash: legacyDeltaHash(row.name),
+        descriptionHtmlHash: legacyDeltaHash(row.description_html),
+        parentRef: reference("categories", row.parent_id),
+        visible: row.visible,
+        position: row.position,
+      },
+    });
+  for (const row of raw.products)
+    snapshot.products.push({
+      ...maps.get("products")!.get(String(row.id)),
+      reserved: row.reserved,
+      stockMovementCount: movementCounts.get(String(row.id)) || 0,
+      fields: {
+        slugHash: legacyDeltaHash(row.slug),
+        skuHash: legacyDeltaHash(row.sku),
+        nameHash: legacyDeltaHash(row.name),
+        summaryHash: legacyDeltaHash(row.summary),
+        descriptionHtmlHash: legacyDeltaHash(row.description_html),
+        price: {
+          kind: "gross_cents",
+          amount: row.price_cents,
+          taxRate: row.tax_rate,
+        },
+        stock: row.stock,
+        status: row.status,
+        saleMode: row.sale_mode,
+        weightGrams: row.weight_grams,
+        imagePathHash: legacyDeltaHash(row.image_path),
+        imageAltHash: legacyDeltaHash(row.image_alt),
+        metaTitleHash: legacyDeltaHash(row.meta_title),
+        metaDescriptionHash: legacyDeltaHash(row.meta_description),
+        categoryRefs: links.get(String(row.id)) || [],
+      },
+    });
+  for (const row of raw.customers)
+    snapshot.customers.push({
+      ...maps.get("customers")!.get(String(row.id)),
+      fields: {
+        emailHash: legacyDeltaHash(row.email),
+        firstNameHash: legacyDeltaHash(row.first_name),
+        lastNameHash: legacyDeltaHash(row.last_name),
+        sourceCreatedAtHash: dateHash(row.source_created_at),
+      },
+    });
+  for (const row of raw.addresses)
+    snapshot.addresses.push({
+      ...maps.get("addresses")!.get(String(row.id)),
+      fields: {
+        customerRef: reference("customers", row.customer_id),
+        labelHash: legacyDeltaHash(row.label),
+        dataHash: legacyDeltaHash(row.data),
+        archived: row.archived,
+      },
+    });
+  for (const row of raw.orders)
+    snapshot.orders.push({
+      ...maps.get("orders")!.get(String(row.id)),
+      reservationState: row.reservation_state,
+      fields: {
+        customerRef: reference("customers", row.customer_id),
+        emailHash: legacyDeltaHash(row.email),
+        buyerHash: legacyDeltaHash(row.buyer),
+        shippingAddressHash: legacyDeltaHash(row.shipping_address),
+        status: row.status,
+        paymentMethodHash: legacyDeltaHash(row.payment_method),
+        currency: row.currency,
+        subtotalCents: row.subtotal_cents,
+        shippingCents: row.shipping_cents,
+        totalCents: row.total_cents,
+        shippingMethodHash: legacyDeltaHash(row.shipping_method),
+        shippingLabelHash: legacyDeltaHash(row.shipping_label),
+        trackingNumberHash: legacyDeltaHash(row.tracking_number),
+        stockCommitted: row.stock_committed,
+        termsVersionHash: legacyDeltaHash(row.terms_version),
+        sourceDataHash: legacyDeltaHash(row.source_data),
+        createdAtHash: dateHash(row.created_at),
+        updatedAtHash: dateHash(row.updated_at),
+      },
+    });
+  for (const row of raw.orderItems)
+    snapshot.orderItems.push({
+      ...maps.get("orderItems")!.get(String(row.id)),
+      fields: {
+        orderRef: reference("orders", row.order_id),
+        productRef: reference("products", row.product_id),
+        productNameHash: legacyDeltaHash(row.product_name),
+        skuHash: legacyDeltaHash(row.sku),
+        quantity: row.quantity,
+        unitPrice: {
+          kind: "gross_cents",
+          amount: row.unit_price_cents,
+          taxRate: row.tax_rate,
+        },
+        totalCents: row.total_cents,
+      },
+    });
+  parseLegacyDeltaSnapshot(snapshot, "storefront");
+  return snapshot;
 }

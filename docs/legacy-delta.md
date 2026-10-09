@@ -2,7 +2,7 @@
 
 `scripts/report-legacy-delta.ts` porównuje lokalne pliki: bazowy obraz danych zaimportowanych ze starego sklepu, końcowy obraz starego sklepu oraz aktualny obraz nowego sklepu. Raport wskazuje zmiany i konflikty. Domyślne polecenie działa bez bazy. Tryb `normalize-source` przygotowuje znormalizowany obraz lokalnego archiwum, a osobny `export-target` odczytuje bieżący sklep w transakcji `READ ONLY`. Żaden tryb nie zapisuje danych sklepu ani nie uruchamia istniejących importerów.
 
-Stan na 9.10.2026: adapter i eksporter sprawdzono wyłącznie na syntetycznych danych i sztucznym kliencie SQL. Nie wykonano połączenia z bazą ani eksportu klientki. Końcowy snapshot, przygotowanie rzeczywistych projekcji i uzgodnione okno przełączenia pozostają do wykonania. Raport nie potwierdza kompletności migracji.
+Stan na 9.10.2026: adapter i eksporter sprawdzono na syntetycznych danych, sztucznym kliencie SQL i własnej testowej bazie PostgreSQL 17. Przygotowano osobny, ograniczony etap plan/apply dla istniejących rekordów katalogu, opisany poniżej. Nie wykonano eksportu ani zapisu do bazy klientki. Zaufany baseline, końcowy snapshot, rzeczywiste projekcje i uzgodnione okno przełączenia pozostają do wykonania. Nie jest to wykonany cutover F01 ani kompletny importer całej historii.
 
 ## Uruchomienie
 
@@ -108,3 +108,83 @@ W uzgodnionym oknie wykonaj backup oraz spójny końcowy snapshot starego sklepu
 Zakres tego raportu nie obejmuje bajtów mediów, stron CMS, przekierowań, eventów i dodatkowych `legacy_records`, kont auth, konfiguracji operatorów, sesji płatności, przesyłek ani kolejek poczty/analityki. Końcowy protokół migracji musi objąć również te zasoby. Brak różnic w tym module nie jest akceptacją przełączenia domeny.
 
 Testy modułu uruchomisz bez DB: `node --import tsx --test tests/legacy-delta.test.ts`. Sprawdzają syntetyczne scenariusze zmian, finansowe mapowanie, referencje, rezerwacje, brak ujawniania wartości, brak mutacji wejścia i lokalny zapis raportu. Adapter i sztuczny klient SQL dają porównanie bez różnic dla niezależnie zbudowanej projekcji pierwszego importu. Testy kontrolują READ ONLY, stałe SELECT, timeouty, rollback również przy błędzie i guardy CLI. Nie potwierdzają rzeczywistego eksportu ani danych klientki.
+
+## Ograniczony etap plan/apply istniejącego katalogu
+
+[scripts/apply-legacy-catalog-delta.ts](../scripts/apply-legacy-catalog-delta.ts) domyślnie wykonuje dry-run. Czyta cztery prywatne pliki oraz aktualny target w transakcji `REPEATABLE READ READ ONLY`, sprawdza zgodność targetu z podanym eksportem i zapisuje nowy plan `0600`. W przeciwieństwie do samego reportera wymaga połączenia z jawnie wskazaną bazą. Wszystkie wejścia muszą być zwykłymi plikami `0600`, bez symlinków i po najwyżej 16 MiB. Przechowuj je w prywatnym katalogu `0700` poza Git; folder przygotowuje prowadzący, skrypt nie zmienia jego praw.
+
+Obsługiwane aktualizacje dotyczą wyłącznie już istniejącego `legacyId` i potwierdzonego UUID oraz wersji:
+
+| Encja        | Pola                                                                             |
+| ------------ | -------------------------------------------------------------------------------- |
+| `products`   | `priceCents`, `taxRateBasisPoints`, `stock`, `status`, `saleMode`, `weightGrams` |
+| `categories` | `visible`, `position`                                                            |
+
+Plan zachowuje niezależne zmiany targetu. Nie zapisuje pola, które po obu stronach osiągnęło już tę samą wartość. Jakikolwiek konflikt, utworzenie źródłowego wiersza, delete, zmiana relacji, tekstu, PII, zamówienia, adresu lub innego nieobsługiwanego pola blokuje **cały** apply; skrypt nie stosuje tylko części poprawnych operacji. Hash tekstu nie pozwala odtworzyć jego wartości, dlatego narzędzie nie tworzy nowych kategorii, produktów, klientów ani historycznych zamówień. Nowe wiersze istniejące wyłącznie w target są zachowywane.
+
+Źródłowa zmiana stanu produktu z rezerwacją, ruchami magazynowymi lub referencją z nowego zamówienia wymaga odrębnego review. Statusu i trybu sprzedaży produktu z rezerwacją też nie zmienia. Skuteczny stan produktu nie może mieć stock poniżej reserved ani aktywnej detalicznej sprzedaży z ceną zero. Zmiana ceny dodaje wpis `price_history` w tej samej transakcji.
+
+Wersjonowany plik provenance ma poniższy kształt. `snapshotHash` to `legacyDeltaHash` dokładnego JSON wejścia, przed normalizacją. Pozostałe SHA-256 wiążą prywatne archiwa i protokoły; przygotuj je na podstawie rzeczywistych materiałów, nie placeholderów. Narzędzie sprawdza strukturę i wiązanie snapshotów, ale **nie dowodzi**, że deklarowane archiwum, backup czy freeze wykonano. Kontrola pochodzenia i odbiór backupu pozostają obowiązkiem prowadzącego cutover.
+
+```json
+{
+  "schemaVersion": 1,
+  "baseline": {
+    "snapshotHash": "SHA256 canonical JSON baseline",
+    "archiveHash": "SHA256 original archive bytes",
+    "mediaInventoryHash": "SHA256 inventory bytes",
+    "importProtocolHash": "SHA256 verified historical import protocol"
+  },
+  "final": {
+    "snapshotHash": "SHA256 canonical JSON final source",
+    "archiveHash": "SHA256 final archive bytes",
+    "mediaInventoryHash": "SHA256 final inventory bytes",
+    "freezeProtocolHash": "SHA256 agreed and completed freeze protocol"
+  },
+  "target": {
+    "snapshotHash": "SHA256 canonical JSON target export",
+    "database": "innochem",
+    "backupReceiptHash": "SHA256 independently checked backup receipt"
+  }
+}
+```
+
+Powyższe opisy SHA są przykładem dokumentacji; prawidłowy plik wymaga 64 małych znaków hex dla każdego hasha. Plan zawiera dokładne fingerprinty wszystkich projekcji, provenance, UUID/version, hashe aktualnych wierszy, jawne pola i wartości katalogowe operacji, blokady, hash całego planu oraz termin ważności 30 minut. Maksymalnie dopuszcza 5000 operacji. Kwoty, stany i UUID pozostają w prywatnym pliku planu; stdout zawiera wyłącznie liczniki i hash planu.
+
+```sh
+INNOCHEM_DELTA_EXPORT_READ_ONLY=1 node --import tsx scripts/apply-legacy-catalog-delta.ts \
+  --baseline /private/path/baseline.json \
+  --final /private/path/final.json \
+  --target /private/path/target.json \
+  --provenance /private/path/provenance.json \
+  --database innochem \
+  --output /private/path/catalog-plan-new.json
+```
+
+Przed apply prowadzący musi sprawdzić cały plan i pochodzenie, wykonać uzgodniony backup/restore oraz faktycznie zamknąć checkout i zatrzymać workerów starego i nowego sklepu. CLI wymaga `INNOCHEM_DELTA_CATALOG_APPLY=1`, `INNOCHEM_DELTA_FREEZE_CONFIRMED=1`, `PAYMENTS_ENABLED=false`, `MAIL_DELIVERY_ENABLED=false`, `STORE_WORKER_ENABLED=false`, a baza `settings.store.checkoutEnabled` musi być dokładnie false. Zmienne procesu nie dowodzą zatrzymania innych procesów; ten stan potwierdza osobny protokół. `PGHOST`/`PGUSER` muszą istnieć, `PGDATABASE` musi odpowiadać `--database`, a `PGOPTIONS` jest zabronione. Sekrety zapewnia istniejące środowisko, bez plików `.env` i bez wypisywania hasła.
+
+```sh
+node --import tsx scripts/apply-legacy-catalog-delta.ts \
+  --baseline /private/path/baseline.json \
+  --final /private/path/final.json \
+  --target /private/path/target.json \
+  --provenance /private/path/provenance.json \
+  --database innochem \
+  --apply --plan /private/path/catalog-plan-new.json \
+  --confirm-plan-hash EXACT_REVIEWED_PLAN_HASH
+```
+
+Apply używa własnego połączenia, transakcji `SERIALIZABLE`, obu advisory locks istniejących importerów (`842615913` i `842615914`) oraz stałej listy blokad tabel `SHARE ROW EXCLUSIVE`. Blokady wstrzymują konkurencyjne zapisy do tabel projekcji, stanu magazynu, audytu importu i ustawień podczas tej transakcji; nie zamrażają zewnętrznego sklepu ani bajtów mediów. Timeout zapytania wynosi 5 s, lock 1 s, bezczynnej transakcji 10 s. Przed każdym zapisem i commit sprawdza również 30-sekundowy budżet własnej operacji i ważność planu; trwające zapytanie ogranicza jego własny timeout.
+
+Pod blokadami narzędzie ponownie odczytuje cały target, wersje i wszystkie używane migracje oraz odtwarza plan. Każda zmiana targetu, nawet poza aktualizowanym wierszem projekcji, niezgodny UUID/version, hash, otwarty checkout, wygasły plan lub nieznany schemat zatrzymuje całość. Wymaga dokładnego ledgeru 17 migracji i znanego fingerprintu kolumn, constraints oraz triggerów tabel używanych do projekcji i zapisów, uzyskanego na czystej testowej bazie PostgreSQL 17. Inna wersja DDL lub formatowania metadata wymaga odrębnego sprawdzenia; nie usuwaj guardów, żeby przepchnąć cutover. Fingerprint nie obejmuje konfiguracji całego serwera ani wszystkich zasobów poza zakresem tego modułu.
+
+Kolumny SQL pochodzą wyłącznie z allowlisty, wartości są parametrami. Aktualizacja wymaga UUID, legacy ID i wcześniejszej wersji, zwiększa wersję o jeden; product zmienia też `updated_at`. Wpis `import_runs` przechowuje hash planu, fingerprinty, hash provenance i licznik operacji. Ponowne wykonanie tego planu odrzuca jako stale albo zapisany już run; nie wykonuje zmian ani nie dodaje powtórnej historii cen. Błąd dowolnej operacji cofa wcześniejsze aktualizacje, wersje, historię cen i wpis run razem. Narzędzie nie uruchamia maila, płatności, workerów, zamówień ani API operatorów.
+
+Testy bez DB: `node --import tsx --test tests/legacy-delta-apply.test.ts`. Odrębny, jawny tryb syntetyczny tworzy nową bazę `innochem_test_delta_apply_*` na lokalnym PG 55439, nakłada znane migracje i używa tylko sztucznych rekordów. Bazę zachowuje po testach, zamyka własne połączenia i usuwa własny katalog plików testu CLI.
+
+```sh
+INNOCHEM_DELTA_DB_TEST=1 PGHOST=/tmp/innochem-postgres PGPORT=55439 \
+PGUSER=wojciechplonka node --import tsx --test tests/legacy-delta-apply.test.ts
+```
+
+Sprawdzone syntetycznie: READ ONLY plan, prywatny i wyłączny zapis CLI, odrzucenie symlinków/publicznych plików, jawne apply przez CLI, rollback po drugiej operacji, idempotency, stale stock i same-value version change, dwa równoległe apply z jednym commit, blokada przez drugi klient SQL, wygasły/tampered plan oraz guards checkout/provenance/schema. Te wyniki potwierdzają ograniczony etap katalogu. Pełne uzupełnienie historii, nowych encji i raw payload nadal wymaga zaufanego baseline/raw eksportu, mapowania i osobnego uzgodnienia oraz testów; rzeczywistego F01 cutover nie wykonano.
