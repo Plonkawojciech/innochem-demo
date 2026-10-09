@@ -687,6 +687,151 @@ test(
         },
       );
       await t.test(
+        "writer commit between advisory locks and table locks invalidates checkout or whole target",
+        async () => {
+          for (const scenario of ["checkout", "unrelated-target"] as const) {
+            const { inputs, plan } = await candidate((final) => {
+              final.products[0].fields.weightGrams += 1;
+            });
+            const before = (
+              await client.query(
+                "SELECT weight_grams,version FROM products WHERE legacy_id=1",
+              )
+            ).rows[0];
+            const writer = new Client({ ...config, database: db });
+            await writer.connect();
+            let writerCommitted = false;
+            const racing: LegacyCatalogDeltaClient = {
+              dedicatedConnection: true,
+              query: async (sql, values) => {
+                if (sql.startsWith("LOCK TABLE public.categories")) {
+                  await writer.query("BEGIN");
+                  if (scenario === "checkout")
+                    await writer.query(
+                      "UPDATE settings SET value=jsonb_set(value,'{checkoutEnabled}','true'::jsonb) WHERE key='store'",
+                    );
+                  else
+                    await writer.query(
+                      "UPDATE categories SET position=position+1,version=version+1 WHERE legacy_id=1",
+                    );
+                  await writer.query("COMMIT");
+                  writerCommitted = true;
+                }
+                return client.query(sql, values);
+              },
+            };
+            try {
+              await assert.rejects(
+                applyLegacyCatalogDelta(racing, inputs, plan, {
+                  ...runtimeBinding,
+                  confirmPlanHash: plan.planHash,
+                }),
+                LegacyDeltaInputError,
+              );
+              assert.equal(writerCommitted, true);
+              assert.deepEqual(
+                (
+                  await client.query(
+                    "SELECT weight_grams,version FROM products WHERE legacy_id=1",
+                  )
+                ).rows[0],
+                before,
+              );
+              assert.equal(
+                (
+                  await client.query(
+                    "SELECT count(*)::int AS n FROM import_runs WHERE source_hash=$1",
+                    [plan.planHash],
+                  )
+                ).rows[0].n,
+                0,
+              );
+            } finally {
+              await writer.end();
+              if (scenario === "checkout")
+                await client.query(
+                  "UPDATE settings SET value=jsonb_set(value,'{checkoutEnabled}','false'::jsonb) WHERE key='store'",
+                );
+            }
+          }
+        },
+      );
+      await t.test(
+        "rewrite rules, inherited children and RLS drift abort before application side effects",
+        async () => {
+          await client.query(
+            "CREATE TABLE synthetic_delta_rule_effects(marker text)",
+          );
+          const variants = [
+            {
+              create:
+                "CREATE RULE synthetic_delta_rule AS ON UPDATE TO products DO ALSO INSERT INTO synthetic_delta_rule_effects(marker) VALUES('synthetic-only')",
+              restore: "DROP RULE synthetic_delta_rule ON products",
+            },
+            {
+              create:
+                "CREATE TABLE synthetic_delta_child () INHERITS (products)",
+              restore: "DROP TABLE synthetic_delta_child",
+            },
+            {
+              create: "ALTER TABLE products ENABLE ROW LEVEL SECURITY",
+              restore: "ALTER TABLE products DISABLE ROW LEVEL SECURITY",
+            },
+          ];
+          for (const variant of variants) {
+            const { inputs, plan } = await candidate((final) => {
+              final.products[0].fields.weightGrams += 1;
+            });
+            const before = (
+              await client.query(
+                "SELECT weight_grams,version FROM products WHERE legacy_id=1",
+              )
+            ).rows[0];
+            await client.query(variant.create);
+            try {
+              await assert.rejects(
+                dryRunLegacyCatalogDelta(dedicated, inputs, runtimeBinding),
+                LegacyDeltaInputError,
+              );
+              await assert.rejects(
+                applyLegacyCatalogDelta(dedicated, inputs, plan, {
+                  ...runtimeBinding,
+                  confirmPlanHash: plan.planHash,
+                }),
+                LegacyDeltaInputError,
+              );
+              assert.deepEqual(
+                (
+                  await client.query(
+                    "SELECT weight_grams,version FROM products WHERE legacy_id=1",
+                  )
+                ).rows[0],
+                before,
+              );
+              assert.equal(
+                (
+                  await client.query(
+                    "SELECT count(*)::int AS n FROM synthetic_delta_rule_effects",
+                  )
+                ).rows[0].n,
+                0,
+              );
+              assert.equal(
+                (
+                  await client.query(
+                    "SELECT count(*)::int AS n FROM import_runs WHERE source_hash=$1",
+                    [plan.planHash],
+                  )
+                ).rows[0].n,
+                0,
+              );
+            } finally {
+              await client.query(variant.restore);
+            }
+          }
+        },
+      );
+      await t.test(
         "CLI writes an exclusive private dry-run plan, then explicitly applies its hash once",
         async () => {
           const { inputs } = await candidate((final) => {

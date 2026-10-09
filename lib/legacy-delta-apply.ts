@@ -124,17 +124,27 @@ export interface LegacyCatalogDeltaClient {
 
 /** PostgreSQL 17, clean schema from the 17 checked migrations; unknown DDL fails closed. */
 export const legacyCatalogDeltaSchemaHash =
-  "cef079404e6fd0f14b34aa9c4cb1e87d09220a727c9e711283308875100b8022";
+  "83d1c363332b9f1805514a3c1bd7ea6f315e25b5268b95de6b0f1e9f64d2c851";
 export const legacyCatalogDeltaSchemaSql = `
 SELECT jsonb_build_object(
+  'relations', (SELECT jsonb_agg(jsonb_build_array(t.relname,t.relkind,t.relpersistence,t.relrowsecurity,t.relforcerowsecurity,t.relispartition) ORDER BY t.relname)
+    FROM pg_class t JOIN pg_namespace n ON n.oid=t.relnamespace WHERE n.nspname='public'
+    AND t.relname IN ('categories','products','product_categories','customers','addresses','orders','order_items','stock_movements','payment_sessions','price_history','import_runs','settings','schema_migrations')),
+  'inheritance', (SELECT COALESCE(jsonb_agg(jsonb_build_array(pn.nspname,p.relname,cn.nspname,c.relname) ORDER BY pn.nspname,p.relname,cn.nspname,c.relname),'[]'::jsonb)
+    FROM pg_inherits i JOIN pg_class p ON p.oid=i.inhparent JOIN pg_namespace pn ON pn.oid=p.relnamespace
+    JOIN pg_class c ON c.oid=i.inhrelid JOIN pg_namespace cn ON cn.oid=c.relnamespace WHERE pn.nspname='public'
+    AND p.relname IN ('categories','products','product_categories','customers','addresses','orders','order_items','stock_movements','payment_sessions','price_history','import_runs','settings','schema_migrations')),
+  'rules', (SELECT COALESCE(jsonb_agg(jsonb_build_array(t.relname,r.rulename,pg_get_ruledef(r.oid,true)) ORDER BY t.relname,r.rulename),'[]'::jsonb)
+    FROM pg_rewrite r JOIN pg_class t ON t.oid=r.ev_class JOIN pg_namespace n ON n.oid=t.relnamespace WHERE n.nspname='public'
+    AND t.relname IN ('categories','products','product_categories','customers','addresses','orders','order_items','stock_movements','payment_sessions','price_history','import_runs','settings','schema_migrations')),
   'columns', (SELECT jsonb_agg(jsonb_build_array(c.table_name,c.column_name,c.data_type,c.udt_name,c.is_nullable,c.column_default,c.is_identity,c.identity_generation) ORDER BY c.table_name,c.ordinal_position)
-    FROM information_schema.columns c WHERE c.table_schema='public' AND c.table_name IN ('categories','products','product_categories','customers','addresses','orders','order_items','stock_movements','payment_sessions','price_history','import_runs')),
+    FROM information_schema.columns c WHERE c.table_schema='public' AND c.table_name IN ('categories','products','product_categories','customers','addresses','orders','order_items','stock_movements','payment_sessions','price_history','import_runs','settings','schema_migrations')),
   'constraints', (SELECT jsonb_agg(jsonb_build_array(t.relname,c.conname,pg_get_constraintdef(c.oid,true)) ORDER BY t.relname,c.conname)
     FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid JOIN pg_namespace n ON n.oid=t.relnamespace
-    WHERE n.nspname='public' AND t.relname IN ('categories','products','product_categories','customers','addresses','orders','order_items','stock_movements','payment_sessions','price_history','import_runs')),
+    WHERE n.nspname='public' AND t.relname IN ('categories','products','product_categories','customers','addresses','orders','order_items','stock_movements','payment_sessions','price_history','import_runs','settings','schema_migrations')),
   'triggers', (SELECT COALESCE(jsonb_agg(jsonb_build_array(t.relname,g.tgname,pg_get_triggerdef(g.oid,true)) ORDER BY t.relname,g.tgname),'[]'::jsonb)
     FROM pg_trigger g JOIN pg_class t ON t.oid=g.tgrelid JOIN pg_namespace n ON n.oid=t.relnamespace WHERE NOT g.tgisinternal AND n.nspname='public'
-    AND t.relname IN ('categories','products','product_categories','customers','addresses','orders','order_items','stock_movements','payment_sessions','price_history','import_runs'))
+    AND t.relname IN ('categories','products','product_categories','customers','addresses','orders','order_items','stock_movements','payment_sessions','price_history','import_runs','settings','schema_migrations'))
 ) AS schema`;
 const lockSql =
   "LOCK TABLE public.categories,public.products,public.product_categories,public.customers,public.addresses,public.orders,public.order_items,public.stock_movements,public.payment_sessions,public.price_history,public.import_runs,public.schema_migrations,public.settings IN SHARE ROW EXCLUSIVE MODE";
@@ -320,7 +330,7 @@ async function transactionSetup(
   if (client.dedicatedConnection !== true) fail();
   await client.query(
     writable
-      ? "BEGIN ISOLATION LEVEL SERIALIZABLE"
+      ? "BEGIN ISOLATION LEVEL READ COMMITTED"
       : "BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY",
   );
   try {
@@ -344,6 +354,10 @@ async function readBinding(
       ?.database !== database
   )
     fail();
+  const schema = (await client.query(legacyCatalogDeltaSchemaSql)).rows[0]
+    ?.schema;
+  const schemaHash = legacyDeltaHash(schema);
+  if (schemaHash !== legacyCatalogDeltaSchemaHash) fail();
   const migrations = (
     await client.query(
       "SELECT name,checksum FROM public.schema_migrations ORDER BY name",
@@ -354,10 +368,6 @@ async function readBinding(
     legacyDeltaHash(migrations) !== legacyDeltaHash(expectedMigrations)
   )
     fail();
-  const schema = (await client.query(legacyCatalogDeltaSchemaSql)).rows[0]
-    ?.schema;
-  const schemaHash = legacyDeltaHash(schema);
-  if (schemaHash !== legacyCatalogDeltaSchemaHash) fail();
   const versions = (await client.query(versionsSql)).rows.map((row) => ({
     entity: row.entity as "categories" | "products",
     legacyId: row.legacy_id as number,
@@ -432,19 +442,20 @@ export async function applyLegacyCatalogDelta(
   await transactionSetup(client, true);
   const deadline = Date.now() + 30_000;
   try {
-    // Match both existing import locks, then pause all relevant writers in a fixed order.
+    // Keep the importers' advisory -> table order. READ COMMITTED deliberately
+    // refreshes the snapshot after the table locks, including intervening commits.
     await client.query("SELECT pg_advisory_xact_lock(842615913)");
     await client.query("SELECT pg_advisory_xact_lock(842615914)");
     await client.query(lockSql);
-    const store = (
-      await client.query("SELECT value FROM public.settings WHERE key='store'")
-    ).rows[0]?.value as Record<string, unknown> | undefined;
-    if (!store || store.checkoutEnabled !== false) fail();
     const live = await readBinding(
       client,
       binding.database,
       binding.expectedMigrations,
     );
+    const store = (
+      await client.query("SELECT value FROM public.settings WHERE key='store'")
+    ).rows[0]?.value as Record<string, unknown> | undefined;
+    if (!store || store.checkoutEnabled !== false) fail();
     if (legacyDeltaHash(live.target) !== legacyDeltaHash(inputs.target)) fail();
     const recomputed = planLegacyCatalogDelta(inputs, {
       ...live,
