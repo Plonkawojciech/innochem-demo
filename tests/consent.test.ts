@@ -85,10 +85,10 @@ test("tag runtime starts after consent only, denies ads, masks URLs and is dispo
     removed = 0;
   const tag = {
     document: {
-      createElement: () => ({}),
+      createElement: (tagName: string) => ({ tagName }),
       head: {
-        appendChild: () => {
-          scripts++;
+        appendChild: (node: { tagName: string }) => {
+          if (node.tagName === "script") scripts++;
         },
       },
     },

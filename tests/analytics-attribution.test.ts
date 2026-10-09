@@ -148,10 +148,17 @@ test("attribution: config/events sanitize URL overrides and consent still contro
   let scripts = 0;
   let frames = 0;
   let removed = 0;
+  const bases: string[] = [];
   const tag = {
     document: {
-      createElement: () => ({}),
-      head: { appendChild: () => scripts++ },
+      referrer: origin + "/konto/nowe-haslo?token=private",
+      createElement: (tagName: string) => ({ tagName, href: "" }),
+      head: {
+        appendChild: (node: { tagName: string; href: string }) => {
+          if (node.tagName === "script") scripts++;
+          else if (node.tagName === "base") bases.push(node.href);
+        },
+      },
     },
     dataLayer: [] as IArguments[],
   };
@@ -193,6 +200,12 @@ test("attribution: config/events sanitize URL overrides and consent still contro
     assert.equal(scripts, 1);
     assert.equal(frames, 1);
     assert.equal(iframe.referrerPolicy, "no-referrer");
+    assert.equal(tag.document.referrer, "");
+    assert.equal(
+      Object.getOwnPropertyDescriptor(tag.document, "referrer")?.configurable,
+      false,
+    );
+    assert.deepEqual(bases, [origin + "/"]);
     const config = commands().find(
       (entry) => entry[0] === "config",
     )![2] as Record<string, unknown>;

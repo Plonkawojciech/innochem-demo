@@ -35,6 +35,10 @@ zmiana query po nawigacji generuje widok z ponownie oczyszczonym adresem.
 Automatyczne `send_page_view` Google pozostaje wyłączone.
 
 Runtime działa w pustym, usuwalnym iframe z `referrerPolicy="no-referrer"`.
+Pusty `about:blank` nadal dziedziczy referrer rodzica. Przed załadowaniem tagu
+kod ustawia więc własne niezmienne `document.referrer` na pusty ciąg oraz
+publiczny bazowy URL dokumentu na origin sklepu. Dotyczy to zwykłych odczytów
+obserwatorów; nie tworzy granicy bezpieczeństwa dla skryptu same-origin.
 Google nie dostaje DOM formularzy ani historii routera przez automatyczne
 obserwatory dokumentu iframe; config i zdarzenia zawsze mają jawne oczyszczone
 adresy. Iframe ma ten sam origin, aby zachować istniejące cookies i przypisanie

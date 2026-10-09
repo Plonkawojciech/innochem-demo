@@ -135,6 +135,13 @@ function startAnalytics() {
   document.body.appendChild(frame);
   tag = frame.contentWindow as TagWindow;
   const doc = tag.document;
+  // about:blank inherits the parent referrer/base even with no-referrer.
+  // Keep implicit reads by ordinary tag observers free of the parent URL.
+  // Same-origin parent access remains possible; this is not a hostile sandbox.
+  Object.defineProperty(doc, "referrer", { value: "", configurable: false });
+  const base = doc.createElement("base");
+  base.href = location.origin + "/";
+  doc.head.appendChild(base);
   tag.dataLayer = [];
   tag.gtag = function () {
     tag?.dataLayer.push(arguments);
