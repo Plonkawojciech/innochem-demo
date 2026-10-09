@@ -1,0 +1,29 @@
+{
+  "at": "2026-10-09T20:52:24.115Z",
+  "sourceBefore": "a776579eb7aa73370d1b30eef7b9a27008a3716f",
+  "scope": "Prettier only two files; JS AST equality excluding locations/raw spelling; CSS ordered tree equality including declarations, selectors, at-rules and comments excluding insignificant whitespace tokens",
+  "versions": {
+    "node": "v22.22.0",
+    "prettier": "3.9.8",
+    "acorn": "8.14.0",
+    "postcss": "8.5.23"
+  },
+  "js": {
+    "beforeSHA256": "a0bf3ab10b75a206a4b6293fbd8144ad98722cadefa59d9b8c27a6a287a7a479",
+    "afterSHA256": "0623e0a01dc358fb733e891d70b0059a51d59ef520f6b26e093a8990a5f03e91",
+    "canonicalASTSHA256": "50bfbd9dc4fb56364bfed21197386763f75aa3f7c33c980bb56600a3b7e5999a",
+    "astEqual": true
+  },
+  "css": {
+    "beforeSHA256": "bd6dbca4c701d11166a525f3642c67dc6eb2e182c7ff92e49f38b2669d44a32f",
+    "afterSHA256": "9a8646667054e9c1c687841a13a168a6f46ca755b3544ee560bcc945105c02c5",
+    "canonicalTreeSHA256": "d42576534b096455b23dafc0f0d161c5b22329431129da72fec4cbc4ab611ee2",
+    "declarations": 1923,
+    "rules": 634,
+    "atRules": 36,
+    "treeEqual": true
+  },
+  "verifierSHA256": "0da09bb6775e04d96df55817f4359750b82e3909b2c86702a21e37a2bf3106ca",
+  "frozenFinalMeasurementPolicy": "Keep original orchestrator/20261009-innochem_lcp branch at6fed460; return own worktree to it before final-six. Run its exact frozen helper/runner bytes for both baseline and final. Formatted app deployment SHA appears only as explicit argv and canonical runtime-proof image SHA. Never execute final-six from formatting branch.",
+  "validationLimit": "No build/typecheck/browser/performance run in this formatting fix; root runs fresh full gate on integrated commit."
+}

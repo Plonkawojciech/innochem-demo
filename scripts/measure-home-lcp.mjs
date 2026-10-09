@@ -28,14 +28,21 @@ if (!tooling || !path.isAbsolute(tooling))
 const linux = process.platform === "linux";
 const expectedBrowserVersion =
   process.env.INNOCHEM_EXPECTED_BROWSER_VERSION || (!linux && "154.0.8037.98");
-if (!expectedBrowserVersion || !/^\d+\.\d+\.\d+\.\d+$/.test(expectedBrowserVersion))
-  throw Error("Pin the installed Linux browser version before declaring its series");
+if (
+  !expectedBrowserVersion ||
+  !/^\d+\.\d+\.\d+\.\d+$/.test(expectedBrowserVersion)
+)
+  throw Error(
+    "Pin the installed Linux browser version before declaring its series",
+  );
 const chromePath = linux
   ? "/usr/bin/chromium"
   : "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome";
 // Linux uses a dedicated container without secrets, ports or collector mounts. Its
 // sandbox policy stays identical across that separate VM series.
-const chromeFlags = linux ? ["--headless=new", "--no-sandbox"] : ["--headless=new"];
+const chromeFlags = linux
+  ? ["--headless=new", "--no-sandbox"]
+  : ["--headless=new"];
 const sourceSHA =
   process.env.INNOCHEM_SOURCE_SHA ||
   execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
@@ -100,7 +107,9 @@ const report = {
     chromePath,
     additionalChromeFlags: chromeFlags,
     environmentKeys: Object.keys(process.env).sort(),
-    containerScope: linux ? "Dedicated QA container; no collector environment, profile, mounts or ports; image /profile replaced with private tmpfs" : null,
+    containerScope: linux
+      ? "Dedicated QA container; no collector environment, profile, mounts or ports; image /profile replaced with private tmpfs"
+      : null,
   },
   versions: { ...versions, node: process.version },
   plannedSamples: count,
@@ -136,7 +145,8 @@ async function closeOwnedBrowser() {
   if (child.exitCode === null && child.signalCode === null) {
     const closed = new Promise((resolve, reject) => {
       const timeout = setTimeout(
-        () => reject(Error("Owned Chrome did not emit close within 10 seconds")),
+        () =>
+          reject(Error("Owned Chrome did not emit close within 10 seconds")),
         10000,
       );
       child.once("close", () => {
@@ -234,7 +244,9 @@ for (let run = 1; run <= count; run++) {
       nonReadRequests: (artifacts.DevtoolsLog || [])
         .filter((event) => event.method === "Network.requestWillBeSent")
         .map((event) => event.params.request)
-        .filter((request) => !["GET", "HEAD", "OPTIONS"].includes(request.method))
+        .filter(
+          (request) => !["GET", "HEAD", "OPTIONS"].includes(request.method),
+        )
         .map((request) => ({ method: request.method, url: request.url })),
     });
     row.valid =

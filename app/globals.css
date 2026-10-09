@@ -2905,8 +2905,7 @@ address {
 /* home: featured series */
 @media screen {
   @supports (content-visibility: auto) and
-    (contain-intrinsic-block-size: auto 1px) and
-    (overflow-clip-margin: 200px) {
+    (contain-intrinsic-block-size: auto 1px) and (overflow-clip-margin: 200px) {
     .home-deferred-technology,
     .home-deferred-feature {
       content-visibility: auto;
