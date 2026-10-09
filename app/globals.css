@@ -429,7 +429,7 @@ nav.main a:hover {
   background-size: cover;
   background-position: center;
 }
-.hero-bg > img {
+.hero-bg img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -2665,6 +2665,11 @@ address {
 }
 .card:hover {
   box-shadow: 0 16px 40px rgba(23, 19, 31, 0.1);
+}
+/* Cards already clip their contents; isolate layout and paint without replacing
+   their real height or delaying keyboard navigation to offscreen products. */
+.catalog-page #prodGrid > .card {
+  contain: layout paint;
 }
 .card .ph {
   position: relative;

@@ -11,6 +11,7 @@ import path from "node:path";
 import sharp from "sharp";
 import { resolveRedirect } from "@/lib/server/redirects";
 import { mediaWidths, type MediaWidth } from "@/lib/media";
+import { derivativeFormat } from "@/lib/server/media-format";
 export const runtime = "nodejs";
 const types: Record<string, string> = {
   ".jpg": "image/jpeg",
@@ -31,17 +32,20 @@ const resizable = new Set([".jpg", ".jpeg", ".png", ".webp", ".avif", ".gif"]);
 const cacheDir = "_derivatives";
 const derivativeInFlight = new Map<string, Promise<Buffer>>();
 
-/** Resized WebP derivatives are cached next to the originals and keyed by source size and mtime. */
+/** Negotiated derivatives retain original WebP cache keys; AVIF has a separate versioned key. */
 async function derivative(
   base: string,
   file: string,
   info: { size: number; mtimeMs: number },
   width: MediaWidth,
+  format: "avif" | "webp",
 ) {
   const key = createHash("sha1")
-    .update(`${file}:${info.size}:${Math.floor(info.mtimeMs)}:${width}`)
+    .update(
+      `${file}:${info.size}:${Math.floor(info.mtimeMs)}:${width}${format === "avif" ? ":avif-v1" : ""}`,
+    )
     .digest("hex");
-  const target = path.join(base, cacheDir, key.slice(0, 2), `${key}.webp`);
+  const target = path.join(base, cacheDir, key.slice(0, 2), `${key}.${format}`);
   try {
     return await readFile(target);
   } catch {
@@ -52,11 +56,14 @@ async function derivative(
   const work = (async () => {
     const image = sharp(file, { limitInputPixels: 40000000, animated: false });
     const meta = await image.metadata();
-    const buffer = await image
+    const resized = image
       .rotate()
-      .resize({ width, withoutEnlargement: true, fit: "inside" })
-      .webp({ quality: 82, effort: 4, alphaQuality: 90 })
-      .toBuffer();
+      .resize({ width, withoutEnlargement: true, fit: "inside" });
+    const buffer = await (
+      format === "avif"
+        ? resized.avif({ quality: 60, effort: 4 })
+        : resized.webp({ quality: 82, effort: 4, alphaQuality: 90 })
+    ).toBuffer();
     if (!meta.width) throw new Error("Unreadable image");
     await mkdir(path.dirname(target), { recursive: true });
     const temporary = `${target}.${process.pid}.${Date.now()}.tmp`;
@@ -103,9 +110,10 @@ export async function GET(
     const info = await stat(file);
     if (!info.isFile() || info.size > 25 * 1024 * 1024)
       return new Response("Not found", { status: 404 });
-    const etag = `"${info.size}-${Math.floor(info.mtimeMs)}${width ? `-w${width}` : ""}"`;
+    const format = derivativeFormat(request.headers.get("accept"));
+    const etag = `"${info.size}-${Math.floor(info.mtimeMs)}${width ? `-w${width}${format === "avif" ? "-avif-v1" : ""}` : ""}"`;
     const headers: Record<string, string> = {
-      "Content-Type": width ? "image/webp" : mime,
+      "Content-Type": width ? `image/${format}` : mime,
       "Cache-Control": width
         ? "public, max-age=604800, stale-while-revalidate=86400"
         : "public, max-age=3600",
@@ -122,7 +130,7 @@ export async function GET(
     if (request.headers.get("if-none-match") === etag)
       return new Response(null, { status: 304, headers });
     const body = width
-      ? await derivative(base, file, info, width)
+      ? await derivative(base, file, info, width, format)
       : await readFile(file);
     return new Response(new Uint8Array(body), {
       headers: { ...headers, "Content-Length": String(body.length) },

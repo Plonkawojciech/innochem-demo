@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/optimize-hero.mjs --check && next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "db:migrate": "tsx scripts/migrate.ts",

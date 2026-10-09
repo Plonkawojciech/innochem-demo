@@ -19,7 +19,18 @@ const nextConfig = {
   // Local runs use APP_URL=http://127.0.0.1:<port>; dev asset loading must allow that host.
   allowedDevOrigins: ["127.0.0.1"],
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
+    return [
+      { source: "/(.*)", headers: securityHeaders },
+      {
+        source: "/hero-olej-mobile-855b096a504ba167.avif",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+    ];
   },
   // One canonical host: www.innochem.pl answers only with a permanent redirect to the apex domain.
   async redirects() {

@@ -14,19 +14,52 @@ export function HomeContent({
   seriesProducts: StoreProduct[];
 }) {
   const { hero, benefits, categories, technology, featured } = home;
+  const mobileHero = "/hero-olej-mobile-855b096a504ba167.avif";
+  const defaultHero = hero.background.path === "/hero-olej.webp";
   return (
     <>
       {hero.enabled && (
         <section className="hero">
           <div className="hero-bg">
-            {hero.background.path && (
+            {defaultHero ? (
+              <>
+                <link
+                  rel="preload"
+                  as="image"
+                  href={mobileHero}
+                  type="image/avif"
+                  media="(max-width: 800px)"
+                  fetchPriority="high"
+                />
+                <link
+                  rel="preload"
+                  as="image"
+                  href={hero.background.path}
+                  media="(min-width: 801px)"
+                  fetchPriority="high"
+                />
+                <picture>
+                  <source
+                    srcSet={mobileHero}
+                    type="image/avif"
+                    media="(max-width: 800px)"
+                  />
+                  <img
+                    src={hero.background.path}
+                    alt=""
+                    fetchPriority="high"
+                    decoding="sync"
+                  />
+                </picture>
+              </>
+            ) : hero.background.path ? (
               <img
                 src={hero.background.path}
                 alt=""
                 fetchPriority="high"
-                decoding="async"
+                decoding="sync"
               />
-            )}
+            ) : null}
           </div>
           <div className="wrap hero-grid">
             <div>
@@ -51,8 +84,7 @@ export function HomeContent({
                   alt={hero.image.alt}
                   width={1000}
                   height={1400}
-                  fetchPriority="low"
-                  decoding="async"
+                  decoding="sync"
                 />
               )}
             </div>
