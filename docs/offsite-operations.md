@@ -24,7 +24,7 @@ Nie jest to test pełnego odtworzenia działającej aplikacji, bazy i wszystkich
 
 Powiadomienia korzystają z istniejących `infra_monitor.channels()` i `programo_alerts` na VM. Klucz Resend przebywa wyłącznie w pamięci procesu, pobrany z działającego runtime. Guard wymaga zgodności istniejącego odbiorcy z zatwierdzonym adresem oraz dostępnego ntfy i klucza. Nie zmieniamy SMTP sklepu.
 
-Stan deduplikacji Innochem jest oddzielny od wspólnego monitora Programo: `/root/innochem-monitor/alerts-state.json`. Zgłoszenie następuje po dwóch kolejnych błędnych sprawdzeniach, przypomnienie po 12 godzinach, a „rozwiązane” po trzech poprawnych. Przy cron co 5 minut oznacza to około 10 i 15 minut. Nie ponawiamy kanału, który już przyjął daną wiadomość; nieskuteczny kanał pozostaje do ponowienia.
+Stan deduplikacji Innochem jest oddzielny od wspólnego monitora Programo: `/root/innochem-monitor/alerts-state.json`. Email i push prowadzą niezależny stan tej samej maszyny alarmów. Zgłoszenie następuje po dwóch kolejnych błędnych sprawdzeniach, przypomnienie po 12 godzinach, a „rozwiązane” po trzech poprawnych. Przy cron co 5 minut oznacza to około 10 i 15 minut. Nie ponawiamy kanału, który już przyjął daną wiadomość; nieskuteczny kanał ponawia próbę wyłącznie dla siebie. Po ustąpieniu problemu każdy kanał, który przyjął alarm, otrzymuje własne „rozwiązane”. Kolejny incydent uruchamia ponownie normalne zgłoszenie.
 
 Kod zachowuje kod błędu sondy. Jeżeli sama sonda jest zdrowa, lecz dostarczenie alarmu zawiodło, wrapper również zwraca błąd. Samo przyjęcie maila przez Resend nie jest dowodem pojawienia się wiadomości w skrzynce; do raportu odbioru należy dopisać zdarzenie `delivered` z logów dostawcy, jeżeli jest dostępne.
 

@@ -16,6 +16,17 @@ now=datetime.datetime.now(datetime.timezone.utc).timestamp()
 at=datetime.datetime.fromtimestamp(now,datetime.timezone.utc).isoformat()
 `;
 
+const stateMachine = `
+spec=importlib.util.spec_from_file_location('shared','tests/fixtures/programo-alerts-state-20261009.py');alerts=importlib.util.module_from_spec(spec);spec.loader.exec_module(alerts)
+def render(plan,source,now):
+ phase='failure' if plan['new'] else 'reminder' if plan['remind'] else 'recovery'
+ return phase,'Synthetic state-machine test body'
+alerts.render=render
+state={};events=[];accepted={'email':True,'push':False};issue='Innochem: test failure'
+def deliver(channel,subject,body):
+ events.append((channel,subject));return dict(accepted=accepted[channel],id=f'{channel}-{len(events)}')
+`;
+
 test("Innochem alarm validates freshness and exposes only known aggregate problem descriptions", () => {
   python(
     setup +
@@ -35,22 +46,24 @@ assert 'secret' not in json.dumps(m.issues_from_status(dict(at=at,failures=['sec
   );
 });
 
-test("alarm marks delivery only after both authorized channels accept and keeps failed receipts retryable", () => {
+test("actual Programo state machine recovers accepted email after push failure and allows a later incident", () => {
   python(
     setup +
+      stateMachine +
       `
-class Alerts:
- def __init__(self):self.deliveries=0
- def step(self,state,issues,metrics,now):return dict(due=not state.get('complete'))
- def render(self,plan,source,now):return 'Innochem alarm','Synthetic test body'
- def delivered(self,state,plan,now):self.deliveries+=1;state['complete']=True
-alerts=Alerts();state={}
-result=m.advance(state,['Innochem: test'],alerts,lambda *args:dict(email=dict(accepted=True),push=dict(accepted=False)),now)
-assert result['due'] and alerts.deliveries==0 and state['alerts']['attemptAt']==now
-result=m.advance(state,['Innochem: test'],alerts,lambda *args:dict(email=dict(accepted=True),push=dict(accepted=True)),now+121)
-assert result['due'] and alerts.deliveries==1
-result=m.advance(state,['Innochem: test'],alerts,lambda *args:(_ for _ in ()).throw(AssertionError('duplicate notification')),now+242)
-assert not result['due']
+assert not m.advance(state,[issue],alerts,deliver,now)['due']
+m.advance(state,[issue],alerts,deliver,now+301)
+assert events==[('push','failure'),('email','failure')]
+assert state['channels']['email']['alerts']['problems'][issue]['alertedAt']==now+301
+assert state['channels']['push']['alerts']['problems'][issue]['alertedAt'] is None
+m.advance(state,[issue],alerts,deliver,now+602)
+assert events==[('push','failure'),('email','failure'),('push','failure')]
+for offset in (903,1204,1505):m.advance(state,[],alerts,deliver,now+offset)
+assert events[-1]==('email','recovery') and ('push','recovery') not in events
+assert all(channel['alerts']['problems']=={} for channel in state['channels'].values())
+assert not m.advance(state,[issue],alerts,deliver,now+1806)['due']
+m.advance(state,[issue],alerts,deliver,now+2107)
+assert events.count(('email','failure'))==2 and events[-1]==('email','failure')
 `,
   );
 });
@@ -72,17 +85,21 @@ with tempfile.TemporaryDirectory() as name:
   );
 });
 
-test("partial channel retries keep an accepted email receipt without sending it again", () => {
+test("actual Programo state machine retries only failed email then recovers both acknowledged channels", () => {
   python(
     setup +
+      stateMachine +
       `
-class Channels:
- def __init__(self):self.email=0;self.push=0
- def send_push(self,*args):self.push+=1;return dict(accepted=True,id='push-retry')
- def send_email(self,*args):self.email+=1;return dict(accepted=True,id='unexpected-email')
-channels=Channels()
-receipts=m.deliver_channels(channels,'not-printed-topic','not-printed-key','test','test',dict(email=dict(accepted=True,id='email-first'),push=dict(accepted=False)))
-assert channels.email==0 and channels.push==1 and receipts['email']['id']=='email-first'
+accepted={'push':True,'email':False}
+m.advance(state,[issue],alerts,deliver,now);m.advance(state,[issue],alerts,deliver,now+301)
+assert events==[('push','failure'),('email','failure')]
+assert not m.advance(state,[issue],alerts,deliver,now+350)['due']
+accepted['email']=True;m.advance(state,[issue],alerts,deliver,now+602)
+assert events==[('push','failure'),('email','failure'),('email','failure')]
+for offset in (903,1204,1505):m.advance(state,[],alerts,deliver,now+offset)
+assert events[-2:]==[('push','recovery'),('email','recovery')]
+assert not m.advance(state,[],alerts,deliver,now+1806)['due']
+assert events.count(('push','failure'))==1 and events.count(('push','recovery'))==1 and events.count(('email','recovery'))==1
 `,
   );
 });

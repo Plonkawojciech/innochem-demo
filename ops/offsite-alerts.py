@@ -4,7 +4,6 @@
 import argparse
 import datetime as dt
 import fcntl
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -80,14 +79,6 @@ def atomic(path, value):
             staged.unlink(missing_ok=True)
 
 
-def deliver_channels(alerts, topic, key, subject, body, previous=None):
-    previous = previous or {}
-    return {
-        "push": previous["push"] if previous.get("push", {}).get("accepted") else alerts.send_push(topic, subject, body, "4"),
-        "email": previous["email"] if previous.get("email", {}).get("accepted") else alerts.send_email(key, RECIPIENT, subject, body, "Programo-Innochem-monitor/1"),
-    }
-
-
 def transport(module_dir):
     sys.path.insert(0, str(module_dir))
     import infra_monitor
@@ -105,32 +96,34 @@ def transport(module_dir):
                     "action": "Sprawdź /root/innochem-monitor/status.json oraz offsite-status.json na VM; zachowaj dane i dotychczasowe kopie.", "raw": issue}
         return describe(issue, metrics)
     programo_alerts.describe = scoped_description
-    def deliver(subject, body, previous=None):
-        return deliver_channels(programo_alerts, topic, key, subject, body, previous)
+    def deliver(channel, subject, body):
+        if channel == "push":
+            return programo_alerts.send_push(topic, subject, body, "4")
+        if channel == "email":
+            return programo_alerts.send_email(key, RECIPIENT, subject, body, "Programo-Innochem-monitor/1")
+        raise ValueError("UNKNOWN_CHANNEL")
     return programo_alerts, deliver
 
 
 def advance(state, issues, alerts, deliver, now):
-    plan = alerts.step(state.setdefault("alerts", {}), issues, None, now)
     state.update(checkedAt=dt.datetime.fromtimestamp(now, dt.timezone.utc).isoformat(), issues=issues)
-    if not plan["due"]:
-        return {"due": False, "issues": issues}
-    state["alerts"]["attemptAt"] = now
-    subject, body = alerts.render(plan, SOURCE, now)
-    signature = hashlib.sha256(json.dumps({
-        kind: sorted(row["info"]["key"] for row in plan.get(kind, []))
-        for kind in ("new", "remind", "resolved")
-    }, sort_keys=True).encode()).hexdigest()
-    pending = state.get("pendingDelivery", {})
-    previous = pending.get("receipts", {}) if pending.get("signature") == signature else {}
-    receipts = deliver(subject, body, previous)
-    state["pendingDelivery"] = {"signature": signature, "receipts": receipts}
-    state["lastReceipts"] = dict(receipts, at=state["checkedAt"], subject=subject)
-    # Never mark delivery complete until both authorized channels accept it.
-    if all(receipts.get(channel, {}).get("accepted") for channel in ("email", "push")):
-        alerts.delivered(state["alerts"], plan, now)
-        state.pop("pendingDelivery", None)
-    return {"due": True, "issues": issues, "receipts": receipts, "subject": subject}
+    receipts, subjects = {}, {}
+    # Each transport owns its acknowledgement. An accepted email receives its
+    # recovery even if push failed, while only the missing channel is retried.
+    for channel in ("push", "email"):
+        channel_state = state.setdefault("channels", {}).setdefault(channel, {})
+        alert_state = channel_state.setdefault("alerts", {})
+        plan = alerts.step(alert_state, issues, None, now)
+        if not plan["due"]:
+            continue
+        alert_state["attemptAt"] = now
+        subject, body = alerts.render(plan, SOURCE, now)
+        receipt = deliver(channel, subject, body)
+        channel_state["lastReceipt"] = dict(receipt, at=state["checkedAt"], subject=subject)
+        receipts[channel], subjects[channel] = receipt, subject
+        if receipt.get("accepted"):
+            alerts.delivered(alert_state, plan, now)
+    return {"due": bool(receipts), "issues": issues, "receipts": receipts, "subjects": subjects}
 
 
 def main():
@@ -164,13 +157,15 @@ def main():
                 issues = ["TEST: sonda Innochem sprawdza kanały alarmu bez zatrzymywania sklepu"] if args.test == "failure" else []
                 # Simulate consecutive intervals only for this explicitly requested transport test.
                 count = alerts.DEBOUNCE_CHECKS if args.test == "failure" else alerts.RESOLVE_AFTER_MISSES
-                for offset in range(count - 1):
-                    alerts.step(state.setdefault("alerts", {}), issues, None, now - 1000 + offset)
-                state.setdefault("alerts", {}).pop("attemptAt", None)
+                for channel in ("push", "email"):
+                    alert_state = state.setdefault("channels", {}).setdefault(channel, {}).setdefault("alerts", {})
+                    for offset in range(count - 1):
+                        alerts.step(alert_state, issues, None, now - 1000 + offset)
+                    alert_state.pop("attemptAt", None)
             result = advance(state, issues, alerts, deliver, now)
             atomic(state_path, state)
             print(json.dumps(dict(result, test=args.test, productionStateChanged=False), ensure_ascii=False))
-            return 0 if not result["due"] or all(result["receipts"].get(channel, {}).get("accepted") for channel in ("email", "push")) else 1
+            return 0 if all(receipt.get("accepted") for receipt in result["receipts"].values()) else 1
         except Exception as error:
             print(json.dumps({"notificationFailed": type(error).__name__, "productionStateChanged": False}))
             return 1
