@@ -67,7 +67,17 @@ export function createReadOnlyGuardian(
   const pending = new Set();
   let installed = false,
     closing = false,
-    disposed = false;
+    disposed = false,
+    sessionClosed = false,
+    handlerFailed = false;
+  // Playwright 1.62.1 CDPSession emits its own object on the public close event.
+  const closeListener = (session) => {
+    if (session !== client) {
+      handlerFailed = true;
+      throw Error("GUARD_CLOSE_EVENT_NOT_OWNED");
+    }
+    sessionClosed = true;
+  };
   const listener = (event) => {
     const operation = (async () => {
       const decision = requestDecision(event, origin);
@@ -91,16 +101,27 @@ export function createReadOnlyGuardian(
             })
             .catch(() => {});
       }
-    })();
+    })().catch(() => {
+      handlerFailed = true;
+      (closing ? onCleanupError : onError)?.({
+        reason: "GUARD_HANDLER_FAILED",
+      });
+    });
     pending.add(operation);
-    void operation
-      .finally(() => pending.delete(operation))
-      .catch(() => onError?.({ reason: "GUARD_HANDLER_FAILED" }));
+    void operation.then(
+      () => pending.delete(operation),
+      () => pending.delete(operation),
+    );
   };
+  async function drainPending() {
+    await Promise.allSettled([...pending]);
+    if (handlerFailed) throw Error("GUARD_HANDLER_FAILED");
+  }
   return {
     async enable() {
       assert(!installed && !disposed, "Guardian cannot be enabled twice");
       client.on("Fetch.requestPaused", listener);
+      client.on("close", closeListener);
       try {
         await client.send("Fetch.enable", {
           patterns: [{ urlPattern: "*", requestStage: "Request" }],
@@ -108,6 +129,7 @@ export function createReadOnlyGuardian(
         installed = true;
       } catch (error) {
         client.off("Fetch.requestPaused", listener);
+        client.off("close", closeListener);
         throw error;
       }
     },
@@ -117,38 +139,38 @@ export function createReadOnlyGuardian(
     async dispose({ targetClosed = false } = {}) {
       if (disposed) return { alreadyDisposed: true };
       closing = true;
-      await Promise.allSettled([...pending]);
+      await drainPending();
       const result = {
         pendingAfterDrain: pending.size,
         targetClosed,
         fetchDisabled: false,
         detached: false,
       };
-      const closedError = (error) =>
-        targetClosed &&
-        /Target closed|Session closed|Target page, context or browser has been closed|session has been closed|Session with given id not found|target.*closed/i.test(
-          String(error.message || error),
-        );
-      try {
+      assert.equal(pending.size, 0, "GUARD_PENDING_AFTER_DRAIN");
+      // Only a confirmed, drained session close makes these RPCs redundant.
+      // Every error from a required RPC propagates, regardless of its message.
+      if (targetClosed && sessionClosed) {
+        result.fetchDisabled = "session-closed";
+      } else {
         await client.send("Fetch.disable");
         result.fetchDisabled = true;
-      } catch (error) {
-        if (!closedError(error)) throw error;
-        result.fetchDisabled = "target-closed";
+        await drainPending();
+        assert.equal(pending.size, 0, "GUARD_PENDING_AFTER_DRAIN");
       }
       client.off("Fetch.requestPaused", listener);
-      try {
+      if (targetClosed && sessionClosed) {
+        result.detached = "session-closed";
+      } else {
         await client.detach();
         result.detached = true;
-      } catch (error) {
-        if (!closedError(error)) throw error;
-        result.detached = "target-closed";
       }
+      client.off("close", closeListener);
+      result.sessionClosed = sessionClosed;
       disposed = true;
       return result;
     },
     async drain() {
-      await Promise.allSettled([...pending]);
+      await drainPending();
     },
   };
 }
@@ -979,24 +1001,38 @@ async function selfTest() {
     constructor({
       rejectContinuation = false,
       blockContinuation = false,
+      rejectCommand,
+      rejectDetach = false,
+      rejectFallback = false,
+      spoofClosedErrorType = false,
     } = {}) {
       this.rejectContinuation = rejectContinuation;
       this.blockContinuation = blockContinuation;
+      this.rejectCommand = rejectCommand;
+      this.rejectDetach = rejectDetach;
+      this.rejectFallback = rejectFallback;
+      this.unknownCloseError = Error("UNKNOWN failure: target closed");
+      if (spoofClosedErrorType)
+        this.unknownCloseError.name = "TargetClosedError";
+      this.listeners = new Map();
       this.commands = [];
       this.blocked = new Promise((resolve) => {
         this.release = resolve;
       });
     }
     on(name, listener) {
-      assert.equal(name, "Fetch.requestPaused");
-      this.listener = listener;
+      assert(["Fetch.requestPaused", "close"].includes(name));
+      this.listeners.set(name, listener);
     }
     off(name, listener) {
-      assert.equal(this.listener, listener);
-      this.listener = undefined;
+      assert.equal(this.listeners.get(name), listener);
+      this.listeners.delete(name);
     }
     async send(name, args) {
       this.commands.push({ name, args });
+      if (name === this.rejectCommand) throw this.unknownCloseError;
+      if (name === "Fetch.failRequest" && this.rejectFallback)
+        throw Error("UNKNOWN_FALLBACK_FAILURE");
       if (name === "Fetch.continueRequest") {
         if (this.blockContinuation) await this.blocked;
         if (this.rejectContinuation)
@@ -1005,23 +1041,126 @@ async function selfTest() {
       return {};
     }
     async detach() {
+      this.detachCalled = true;
+      if (this.rejectDetach) throw this.unknownCloseError;
       this.detached = true;
     }
     emit(request) {
-      this.listener({ requestId: "owned-fixture", request });
+      this.listeners.get("Fetch.requestPaused")({
+        requestId: "owned-fixture",
+        request,
+      });
+    }
+    close(session = this) {
+      this.listeners.get("close")?.(session);
     }
   }
   const guardedFixture = async (options) => {
     const row = validCase(),
       client = new FakeCDP(options);
     const guardian = createReadOnlyGuardian(client, origin, {
-      onForbidden: (metadata) => row.forbiddenRequests.push(metadata),
+      onForbidden: (metadata) => {
+        if (options?.throwForbiddenHandler)
+          throw Error("UNKNOWN_HANDLER_FAILURE");
+        row.forbiddenRequests.push(metadata);
+      },
       onError: (metadata) => row.interceptionErrors.push(metadata),
       onCleanupError: (metadata) => row.cleanupFetchErrors.push(metadata),
     });
     await guardian.enable();
     return { row, client, guardian };
   };
+  for (const options of [
+    { rejectCommand: "Fetch.disable" },
+    { rejectDetach: true },
+    { rejectCommand: "Fetch.disable", spoofClosedErrorType: true },
+  ]) {
+    const unknownClose = await guardedFixture(options);
+    await assert.rejects(
+      async () => {
+        try {
+          unknownClose.row.guardCleanup = await unknownClose.guardian.dispose({
+            targetClosed: true,
+          });
+        } catch (error) {
+          unknownClose.row.failure = "UNKNOWN_GUARD_CLOSE_FAILURE";
+          throw error;
+        }
+      },
+      (error) => error === unknownClose.client.unknownCloseError,
+      "Generic target-closed text must not become successful cleanup",
+    );
+    assert.equal(caseIsValid(unknownClose.row, checks), false);
+  }
+
+  const confirmedClose = await guardedFixture({
+    rejectCommand: "Fetch.disable",
+    rejectDetach: true,
+  });
+  confirmedClose.client.close();
+  confirmedClose.row.guardCleanup = await confirmedClose.guardian.dispose({
+    targetClosed: true,
+  });
+  assert.equal(confirmedClose.row.guardCleanup.sessionClosed, true);
+  assert.equal(confirmedClose.row.guardCleanup.pendingAfterDrain, 0);
+  assert.equal(
+    confirmedClose.client.commands.length,
+    1,
+    "Closed session needs no redundant RPC",
+  );
+  assert.equal(confirmedClose.client.detachCalled, undefined);
+  assert.equal(confirmedClose.client.listeners.size, 0);
+  assert.equal(caseIsValid(confirmedClose.row, checks), true);
+
+  const foreignClose = await guardedFixture();
+  assert.throws(
+    () => foreignClose.client.close({}),
+    /GUARD_CLOSE_EVENT_NOT_OWNED/,
+  );
+  await assert.rejects(
+    foreignClose.guardian.dispose({ targetClosed: true }),
+    /GUARD_HANDLER_FAILED/,
+  );
+  foreignClose.row.failure = "GUARD_CLOSE_EVENT_NOT_OWNED";
+  assert.equal(caseIsValid(foreignClose.row, checks), false);
+
+  const unknownFallback = await guardedFixture({
+    rejectContinuation: true,
+    rejectFallback: true,
+  });
+  unknownFallback.guardian.beginClose();
+  unknownFallback.client.emit({ method: "GET", url: origin + "/" });
+  unknownFallback.client.close();
+  unknownFallback.row.guardCleanup = await unknownFallback.guardian.dispose({
+    targetClosed: true,
+  });
+  assert.equal(unknownFallback.row.cleanupFetchErrors.length, 1);
+  assert(
+    unknownFallback.client.commands.some(
+      ({ name }) => name === "Fetch.failRequest",
+    ),
+  );
+  assert.equal(
+    caseIsValid(unknownFallback.row, checks),
+    false,
+    "Unknown fallback cannot become strict zero",
+  );
+
+  const unknownHandler = await guardedFixture({ throwForbiddenHandler: true });
+  unknownHandler.client.emit({ method: "POST", url: origin + "/api/test" });
+  unknownHandler.client.close();
+  await assert.rejects(unknownHandler.guardian.drain(), /GUARD_HANDLER_FAILED/);
+  await assert.rejects(
+    unknownHandler.guardian.dispose({ targetClosed: true }),
+    /GUARD_HANDLER_FAILED/,
+  );
+  unknownHandler.row.failure = "GUARD_HANDLER_FAILED";
+  assert.equal(
+    caseIsValid(unknownHandler.row, checks),
+    false,
+    "Unknown handler cannot become strict zero",
+  );
+
   const lateForbidden = await guardedFixture();
   assert.equal(caseIsValid(lateForbidden.row, checks), true);
   lateForbidden.client.emit({ method: "POST", url: origin + "/api/test" });
@@ -1053,6 +1192,7 @@ async function selfTest() {
 
   const cleanupTimeout = await guardedFixture({ blockContinuation: true });
   cleanupTimeout.client.emit({ method: "GET", url: origin + "/" });
+  cleanupTimeout.client.close();
   const closing = cleanupTimeout.guardian.dispose({ targetClosed: true });
   await assert.rejects(
     bounded(closing, 5, "GUARD_CLOSE"),
@@ -1074,7 +1214,7 @@ async function selfTest() {
   incomplete.contextClosed = false;
   assert.equal(caseIsValid(incomplete, checks), false);
   console.log(
-    "Pure focus, late-event guard and cleanup timeout regressions passed; no browser or HTTP started",
+    "Pure focus, unknown close/handler/fallback, confirmed session close, late-event guard and cleanup timeout regressions passed; no browser or HTTP started",
   );
 }
 if (
