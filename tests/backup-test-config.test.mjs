@@ -33,6 +33,34 @@ test("backup test socket override accepts only a fully matched isolated VM", () 
   assert.equal(env.PGHOST, vm.PGHOST);
 });
 
+test("backup VM stamps cross midnight without relaxing socket or database isolation", () => {
+  for (const stamp of [
+    "r20261009t235959",
+    "r20261010t000000",
+    "r20261010t005328",
+  ]) {
+    const env = {
+      ...vm,
+      PGHOST: `innochem-theme-gate-${stamp}-db`,
+      PGDATABASE: `innochem_test_theme_${stamp}`,
+    };
+    assert.equal(backupTestSocketHost(env), "/pg-test-socket");
+    for (const override of [
+      { PGHOST: `innochem-provider-sandbox-${stamp}-db` },
+      { PGHOST: `https://innochem-theme-gate-${stamp}-db` },
+      { PGHOST: `innochem-theme-gate-${stamp}-db.example.test` },
+      { PGDATABASE: "innochem_test_theme_r20261009t230000" },
+      { PGDATABASE: `innochem_test_provider_${stamp}` },
+      { PGDATABASE: "innochem" },
+      { INNOCHEM_TEST_PG_SOCKET: "/var/run/postgresql" },
+      { PGUSER: "postgres" },
+      { PGPORT: "55439" },
+      { INNOCHEM_DELTA_DB_TEST: "0" },
+    ])
+      assert.throws(() => backupTestSocketHost({ ...env, ...override }));
+  }
+});
+
 test("backup test rejects every socket path outside its fixed private mount", () => {
   for (const socket of [
     "",
@@ -63,7 +91,7 @@ test("backup test rejects production, foreign and malformed VM hosts", () => {
     "localhost",
     "/tmp/innochem-postgres",
     "innochem-provider-sandbox-r20261009t230000-db",
-    "innochem-theme-gate-r20261008t230000-db",
+    "innochem-theme-gate-r2026109t230000-db",
     "innochem-theme-gate-r20261009t240000-db",
     "innochem-theme-gate-r20261009t236000-db",
     "innochem-theme-gate-r20261009t230060-db",

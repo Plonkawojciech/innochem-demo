@@ -60,6 +60,39 @@ test("checkout tests accept only a fully matched VM connection and private socke
   assert.equal(env.PGHOST, vm.PGHOST);
 });
 
+test("checkout VM stamps cross midnight while preserving host, database and loopback guards", () => {
+  for (const stamp of [
+    "r20261009t235959",
+    "r20261010t000000",
+    "r20261010t005328",
+  ]) {
+    const env = {
+      ...vm,
+      PGHOST: `innochem-theme-gate-${stamp}-db`,
+      PGDATABASE: `innochem_test_theme_${stamp}`,
+    };
+    const config = checkoutTestConfiguration(env);
+    assert.equal(config.databaseHost, env.PGHOST);
+    assert.equal(config.database, env.PGDATABASE);
+    assert.equal(config.socketHost, "/pg-test-socket");
+    for (const override of [
+      { PGHOST: `innochem-provider-sandbox-${stamp}-db` },
+      { PGHOST: `https://innochem-theme-gate-${stamp}-db` },
+      { PGHOST: `innochem-theme-gate-${stamp}-db.example.test` },
+      { PGDATABASE: "innochem_test_theme_r20261009t230000" },
+      { PGDATABASE: `innochem_test_provider_${stamp}` },
+      { PGDATABASE: "innochem" },
+      { INNOCHEM_TEST_PG_SOCKET: "/var/run/postgresql" },
+      { APP_URL: "https://127.0.0.1:3000" },
+      { APP_URL: "https://sklep-innochem.programo.pl" },
+      { PGUSER: "postgres" },
+      { PGPORT: "55439" },
+      { INNOCHEM_DELTA_DB_TEST: "0" },
+    ])
+      assert.throws(() => checkoutTestConfiguration({ ...env, ...override }));
+  }
+});
+
 test("checkout tests reject remote, production and wrong local connection targets", () => {
   for (const override of [
     { PGHOST: "localhost" },
@@ -101,7 +134,7 @@ test("checkout tests reject mismatched, malformed and foreign VM namespaces", ()
     { PGHOST: "innochem-provider-sandbox-r20261009t230000-db" },
     { PGHOST: "innochem-theme-gate-r20261009t230000-db.example.com" },
     { PGHOST: "innochem-theme-gate-r20261009t230001-db" },
-    { PGHOST: "innochem-theme-gate-r20261008t230000-db" },
+    { PGHOST: "innochem-theme-gate-r2026109t230000-db" },
     { PGHOST: "innochem-theme-gate-r20261009t240000-db" },
     { PGHOST: "innochem-theme-gate-r20261009t236000-db" },
     { PGHOST: "innochem-theme-gate-r20261009t230060-db" },

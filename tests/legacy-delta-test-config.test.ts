@@ -45,6 +45,40 @@ test("delta DB tests accept only a fully matched isolated VM namespace", () => {
   );
 });
 
+test("delta VM stamps cross midnight while preserving the exact host and database binding", () => {
+  for (const stamp of [
+    "r20261009t235959",
+    "r20261010t000000",
+    "r20261010t005328",
+  ]) {
+    const env = {
+      ...vm,
+      PGHOST: `innochem-theme-gate-${stamp}-db`,
+      PGDATABASE: `innochem_test_theme_${stamp}`,
+    };
+    assert.deepEqual(legacyDeltaTestDatabaseConfig(env), {
+      host: env.PGHOST,
+      port: 5432,
+      user: "innochem_theme_gate",
+    });
+    for (const override of [
+      { PGHOST: `innochem-provider-sandbox-${stamp}-db` },
+      { PGHOST: `https://innochem-theme-gate-${stamp}-db` },
+      { PGHOST: `innochem-theme-gate-${stamp}-db.example.test` },
+      { PGHOST: "/pg-test-socket" },
+      { PGDATABASE: "innochem_test_theme_r20261009t230000" },
+      { PGDATABASE: `innochem_test_provider_${stamp}` },
+      { PGDATABASE: "innochem" },
+      { PGUSER: "postgres" },
+      { PGPORT: "55439" },
+      { INNOCHEM_DELTA_DB_TEST: "0" },
+    ])
+      assert.throws(() =>
+        legacyDeltaTestDatabaseConfig({ ...env, ...override }),
+      );
+  }
+});
+
 test("delta DB tests require explicit opt-in for local and VM instances", () => {
   for (const env of [local, vm])
     for (const value of [undefined, "", "0", "true", "2"])
@@ -71,7 +105,7 @@ test("delta DB tests reject production and foreign hosts before a connection", (
 
 test("delta DB tests reject malformed or out-of-scope VM stamps", () => {
   for (const stamp of [
-    "r20261008t230000",
+    "r2026109t230000",
     "r20261009t240000",
     "r20261009t236000",
     "r20261009t230060",

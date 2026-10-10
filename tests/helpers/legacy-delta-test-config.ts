@@ -12,7 +12,7 @@ export function legacyDeltaTestDatabaseConfig(env: DeltaTestEnvironment) {
       return { host: env.PGHOST, port: 55439, user: env.PGUSER };
 
     const vmHost =
-      /^innochem-theme-gate-(r20261009t(?:[01][0-9]|2[0-3])[0-5][0-9][0-5][0-9])-db$/.exec(
+      /^innochem-theme-gate-(r[0-9]{8}t(?:[01][0-9]|2[0-3])[0-5][0-9][0-5][0-9])-db$/.exec(
         env.PGHOST ?? "",
       );
     if (
