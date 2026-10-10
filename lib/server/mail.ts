@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { setTimeout as pause } from "node:timers/promises";
 import nodemailer from "nodemailer";
 import { database, query, transaction } from "./db";
+import { isQaMail } from "./qa-mail";
 
 export async function enqueueMail(
   recipient: string,
@@ -28,7 +29,7 @@ export async function enqueueMailInTransaction(
       recipient,
       subject,
       body,
-      process.env.STOREFRONT_PREVIEW !== "false",
+      process.env.STOREFRONT_PREVIEW !== "false" || isQaMail(subject, body),
     ],
   );
 }
@@ -43,8 +44,9 @@ type MailTransport = {
   }): Promise<unknown>;
   close(): void;
 };
+type TestMailTransport = MailTransport | (() => MailTransport);
 /** SMTP delivery is opt-in and impossible in storefront preview. Ambiguous attempts are quarantined. */
-export async function deliverMailBatch(transportForTest?: MailTransport) {
+export async function deliverMailBatch(transportForTest?: TestMailTransport) {
   if (transportForTest && !process.env.PGDATABASE?.startsWith("innochem_test_"))
     throw new Error("Test transport requires an isolated test database");
   if (
@@ -82,47 +84,71 @@ export async function deliverMailBatch(transportForTest?: MailTransport) {
 }
 
 async function deliverLockedBatch(
-  transportForTest: MailTransport | undefined,
+  transportForTest: TestMailTransport | undefined,
   guardHealthy: () => boolean,
 ) {
-  if (
-    !transportForTest &&
-    (!process.env.SMTP_HOST ||
-      !process.env.SMTP_USER ||
-      !process.env.SMTP_PASSWORD ||
-      !process.env.MAIL_FROM)
-  )
-    throw new Error("SMTP not configured");
-  const transport: MailTransport =
-    transportForTest ||
-    nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT || 465),
-      secure: process.env.SMTP_PORT !== "587",
-      requireTLS: true,
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
-      connectionTimeout: 10000,
-      socketTimeout: 15000,
-    });
-  const batch = await transaction(async (db) => {
-    // A terminated worker may have sent a message. Never retry it merely because its lease expired.
-    await db.query(
-      "UPDATE mail_outbox SET delivery_state='uncertain',locked_until=NULL,last_error='Delivery interrupted; verify the provider before retrying' WHERE delivery_state='sending' AND sent_at IS NULL AND locked_until<now()",
-    );
-    const { rows } = await db.query(
-      "SELECT * FROM mail_outbox WHERE sent_at IS NULL AND NOT preview AND delivery_state IN ('queued','failed') AND attempts<8 AND available_at<=now() AND (locked_until IS NULL OR locked_until<now()) ORDER BY created_at,id LIMIT 10 FOR UPDATE SKIP LOCKED",
-    );
-    for (const row of rows)
-      await db.query(
-        "UPDATE mail_outbox SET delivery_state='sending',locked_until=now()+interval '5 minutes',attempts=attempts+1 WHERE id=$1",
-        [row.id],
-      );
-    return rows;
-  });
+  const delivery: { transport?: MailTransport } = {};
   let sent = 0,
     failed = 0,
-    uncertain = 0;
+    uncertain = 0,
+    testOnly = 0;
   try {
+    const batch = await transaction(async (db) => {
+      // A terminated worker may have sent a message. Never retry it merely because its lease expired.
+      await db.query(
+        "UPDATE mail_outbox SET delivery_state='uncertain',locked_until=NULL,last_error='Delivery interrupted; verify the provider before retrying' WHERE delivery_state='sending' AND sent_at IS NULL AND locked_until<now()",
+      );
+      const { rows } = await db.query(
+        "SELECT * FROM mail_outbox WHERE sent_at IS NULL AND NOT preview AND delivery_state IN ('queued','failed') AND attempts<8 AND available_at<=now() AND (locked_until IS NULL OR locked_until<now()) ORDER BY created_at,id LIMIT 10 FOR UPDATE SKIP LOCKED",
+      );
+      const deliverable = [];
+      for (const row of rows) {
+        // Reclassify historical jobs too, before a lease or provider construction.
+        if (isQaMail(row.subject, row.body_text)) {
+          await db.query(
+            "UPDATE mail_outbox SET preview=true,last_error='QA_MAIL_DISABLED',locked_until=NULL,sent_at=NULL WHERE id=$1",
+            [row.id],
+          );
+          testOnly++;
+        } else deliverable.push(row);
+      }
+      if (!deliverable.length) return deliverable;
+      // Missing SMTP configuration must not lease real customer correspondence.
+      if (
+        !transportForTest &&
+        (!process.env.SMTP_HOST ||
+          !process.env.SMTP_USER ||
+          !process.env.SMTP_PASSWORD ||
+          !process.env.MAIL_FROM)
+      )
+        throw new Error("SMTP not configured");
+      delivery.transport = transportForTest
+        ? typeof transportForTest === "function"
+          ? transportForTest()
+          : transportForTest
+        : nodemailer.createTransport({
+            host: process.env.SMTP_HOST,
+            port: Number(process.env.SMTP_PORT || 465),
+            secure: process.env.SMTP_PORT !== "587",
+            requireTLS: true,
+            auth: {
+              user: process.env.SMTP_USER,
+              pass: process.env.SMTP_PASSWORD,
+            },
+            connectionTimeout: 10000,
+            socketTimeout: 15000,
+          });
+      for (const row of deliverable)
+        await db.query(
+          "UPDATE mail_outbox SET delivery_state='sending',locked_until=now()+interval '5 minutes',attempts=attempts+1 WHERE id=$1",
+          [row.id],
+        );
+      return deliverable;
+    });
+    if (!batch.length)
+      return { enabled: true, sent, failed, uncertain, testOnly };
+    const transport = delivery.transport;
+    if (!transport) throw new Error("Mail transport unavailable");
     for (const row of batch) {
       if (!guardHealthy()) throw new Error("Mail guard disconnected");
       try {
@@ -180,7 +206,7 @@ async function deliverLockedBatch(
       sent++;
     }
   } finally {
-    transport.close();
+    delivery.transport?.close();
   }
-  return { enabled: true, sent, failed, uncertain };
+  return { enabled: true, sent, failed, uncertain, testOnly };
 }
