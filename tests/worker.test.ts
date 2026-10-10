@@ -377,8 +377,9 @@ test("old queued and failed QA jobs are permanently blocked before leasing or co
     ];
     const result = await deliverMailBatch(factory);
     assert.equal(result.sent, 0);
+    assert.ok("testOnly" in result, "A processed batch must report QA jobs");
     assert.equal(result.testOnly, 2);
-    testOnlyCount = result.testOnly!;
+    testOnlyCount = result.testOnly;
   });
   let { rows } = await query(
     "SELECT preview,delivery_state,attempts,sent_at,last_error,locked_until FROM mail_outbox WHERE event_key=ANY($1::text[]) ORDER BY created_at,id",
@@ -404,6 +405,7 @@ test("old queued and failed QA jobs are permanently blocked before leasing or co
   await withDelivery(async () => {
     const result = await deliverMailBatch(factory);
     assert.equal(result.sent, 0);
+    assert.ok("testOnly" in result, "A processed batch must report QA jobs");
     assert.equal(result.testOnly, 0);
   });
   assert.deepEqual(receipt, { created: 0, closed: 0, messages: [] });
@@ -451,6 +453,7 @@ test("a mixed batch sends the customer's ordinary order but not QA, including a 
     );
     const result = await deliverMailBatch(factory);
     assert.equal(result.sent, 1);
+    assert.ok("testOnly" in result, "A processed batch must report QA jobs");
     assert.equal(result.testOnly, 1);
     assert.equal(receipt.created, 1);
     assert.equal(receipt.closed, 1);
