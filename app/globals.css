@@ -2905,26 +2905,6 @@ address {
   }
 }
 
-/* Keep Technology in normal paint: content-visibility shifted text rasterization.
-   Deferred rendering remains enabled for the featured series. */
-@media screen {
-  @supports (content-visibility: auto) and
-    (contain-intrinsic-block-size: auto 1px) and (overflow-clip-margin: 200px) {
-    .home-deferred-feature {
-      content-visibility: auto;
-      /* Preserve the product shadow and focus rings outside the contained box. */
-      overflow-clip-margin: 200px;
-    }
-    .home-deferred-feature {
-      contain-intrinsic-block-size: auto 600px;
-    }
-    @media (max-width: 900px) {
-      .home-deferred-feature {
-        contain-intrinsic-block-size: auto 1000px;
-      }
-    }
-  }
-}
 .series-list {
   margin: -8px 0 26px;
 }
