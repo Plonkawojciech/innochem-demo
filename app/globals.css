@@ -51,7 +51,10 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  /* Native focus must settle immediately and clear the sticky header.
+     72px header + 1px border + 5px focus ring + 2px gap. */
+  scroll-behavior: auto;
+  scroll-padding-top: 80px;
 }
 @media (prefers-reduced-motion: reduce) {
   html {

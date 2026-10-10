@@ -30,6 +30,32 @@ rzeczywistego safe-area, pomiarów wydajności ani osobnego dowodu wersji i usta
 wdrożenia. Pomocnicze eksporty w `mobile-menu.mjs` i `qa-visual-regressions.mjs`
 mogą być użyte z przeglądarką zarządzaną przez inny test.
 
+## Fokus linków serii HPS na stronie głównej
+
+```sh
+PLAYWRIGHT_MODULE=/absolute/path/to/playwright \
+  CHROME_EXECUTABLE=/usr/bin/chromium \
+  node tests/browser/home-focus.mjs \
+  https://sklep-innochem.programo.pl /absolute/path/to/new-results EXPECTED_BUILD_ID
+```
+
+`EXPECTED_BUILD_ID` pochodzi z osobnego dowodu wdrożenia. Runner sprawdza publiczny
+identyfikator buildu przed każdą próbą; nie przypisuje wyniku do SHA bez tego dowodu.
+Używa własnych profili headless Chromium oraz czterech szerokości: 320, 412, 900
+i 1440 px. Po natywnym przewinięciu przechodzi przez wszystkie siedem linków HPS
+w obie strony. Po każdym Tab/Shift+Tab czeka dokładnie trzy klatki, sprawdza
+kolejność, trzy punkty trafienia oraz cały outline poniżej rzeczywistego nagłówka.
+Nie dodaje CSS, nie czeka na dodatkowe ustabilizowanie scrollu i nie uruchamia
+serwera. Wszystkie 56 wyników pozostają w raporcie także przy błędzie widoczności.
+
+Każdy redirect jest osobno kontrolowany; dozwolone są tylko GET/HEAD/OPTIONS
+w obrębie localhost albo autoryzowanego podglądu. Obcy origin, próba zapisu, błąd
+HTTP/strony/hydracji, błąd zakończenia interceptora lub niepotwierdzone zamknięcie
+własnej przeglądarki oznacza FAIL. Tablice błędów są ponownie sprawdzane po
+zamknięciu kontekstu i przeglądarki. Kontrole predicate/guard, późnych zdarzeń
+i timeoutów cleanup można uruchomić bez przeglądarki:
+`node tests/browser/home-focus.mjs --self-test`.
+
 ## Pierwsze przełączenie motywu podczas hydracji
 
 ```sh
