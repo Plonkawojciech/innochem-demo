@@ -62,7 +62,17 @@ export function Footer({
             <p className="preserve-lines">
               {brand.footerText}
               <br />
+              {contact.company}
+              <br />
               {contact.address}
+              {(contact.nip || contact.regon) && (
+                <>
+                  <br />
+                  {contact.nip && `NIP ${contact.nip}`}
+                  {contact.nip && contact.regon && " · "}
+                  {contact.regon && `REGON ${contact.regon}`}
+                </>
+              )}
               <br />
               {contact.hours}
             </p>
