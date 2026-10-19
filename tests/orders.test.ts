@@ -12,6 +12,7 @@ import {
 import { deliverMailBatch } from "../lib/server/mail";
 import { legalCommerce, legalHash } from "../lib/server/legal";
 import { settingsSchema } from "../lib/server/settings";
+import { money } from "../lib/store-types";
 
 if (!process.env.PGDATABASE?.startsWith("innochem_test_"))
   throw new Error(
@@ -133,9 +134,7 @@ test("approved 24/28 pricing and mixed twelve-unit free delivery are persisted a
       assert.equal(mails.length, 2);
       for (const mail of mails) {
         assert.ok(
-          mail.body_text.includes(
-            `Dostawa: Testowy kurier — ${(cost / 100).toFixed(2)} zł`,
-          ),
+          mail.body_text.includes(`Dostawa: Testowy kurier — ${money(cost)}`),
         );
         if (paymentMethod === "bank_transfer") {
           assert.ok(mail.body_text.includes("Termin płatności i rezerwacji:"));

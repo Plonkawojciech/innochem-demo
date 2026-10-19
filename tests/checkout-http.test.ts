@@ -10,6 +10,7 @@ import { accessibleOrder, type CheckoutInput } from "../lib/server/orders";
 import { database, query } from "../lib/server/db";
 import { legalCommerce, legalHash } from "../lib/server/legal";
 import { settingsSchema } from "../lib/server/settings";
+import { money } from "../lib/store-types";
 
 before(async () => {
   const result = await query<{ name: string }>(
@@ -164,7 +165,7 @@ test("checkout POST persists one guest order and a private capability cookie wit
   );
   assert.equal(mail.rowCount, 2);
   assert.ok(mail.rows.every((row) => row.preview && row.sent_at === null));
-  assert.ok(mail.rows.every((row) => row.body_text.includes("95.00 zł")));
+  assert.ok(mail.rows.every((row) => row.body_text.includes(money(9500))));
 });
 
 test("simultaneous checkout POST retries reuse the order and cookie, including after checkout closes", async (t) => {

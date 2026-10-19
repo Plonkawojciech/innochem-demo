@@ -10,6 +10,7 @@ import { stripeCheckoutReady } from "./stripe-config";
 import { quoteShipping, shippingKind } from "../shipping";
 export { StoreError } from "./errors";
 import { legalText, type LegalDocument } from "./legal";
+import { money } from "../store-types";
 const text = (max: number) => z.string().trim().min(1).max(max);
 const linesSchema = z
   .array(
@@ -350,7 +351,7 @@ export async function createOrder(
     const lines = items
       .map(
         (i) =>
-          `${i.name} — ${i.quantity} szt. — ${((i.price * i.quantity) / 100).toFixed(2)} zł`,
+          `${i.name} — ${i.quantity} szt. — ${money(i.price * i.quantity)}`,
       )
       .join("\n");
     const payment =
@@ -359,7 +360,7 @@ export async function createOrder(
         : cod
           ? "\nPłatność przy odbiorze."
           : "\nZamówienie oczekuje na potwierdzenie płatności.";
-    const body = `Zamówienie INNOCHEM ${order.number}\n\n${lines}\nDostawa: ${shipping.label} — ${(shippingQuote.priceCents / 100).toFixed(2)} zł\nRazem: ${(total / 100).toFixed(2)} zł${payment}\n\nKontakt: ${settings.contactEmail}`;
+    const body = `Zamówienie INNOCHEM ${order.number}\n\n${lines}\nDostawa: ${shipping.label} — ${money(shippingQuote.priceCents)}\nRazem: ${money(total)}${payment}\n\nKontakt: ${settings.contactEmail}`;
     for (const [suffix, recipient] of [
       ["customer", input.buyer.email],
       ["store", settings.orderEmail],
@@ -501,7 +502,7 @@ export async function markOrderPaidInTransaction(
     db,
     order.email,
     `INNOCHEM — płatność za zamówienie ${order.number}`,
-    `Potwierdzamy płatność ${(amount / 100).toFixed(2)} zł za zamówienie ${order.number}.`,
+    `Potwierdzamy płatność ${money(amount)} za zamówienie ${order.number}.`,
     `order:${orderId}:paid`,
   );
   await enqueueAnalytics(db, orderId, "purchase");
