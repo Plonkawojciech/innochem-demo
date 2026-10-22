@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
-"""Connect Stripe (test mode) and Apaczka to the INNOCHEM preview on Coolify.
+"""Connect Stripe and Apaczka to the INNOCHEM store on Coolify.
 
 Reads credentials only from the macOS Keychain and never prints them.
   programo.innochem.stripe-test          sk_test_/rk_test_ key of acct_1UNTjpEpjVk0RfTD
+  programo.innochem.stripe-live          sk_live_/rk_live_ key (only with --live)
   programo.innochem.apaczka-app-id       Apaczka Web API App ID
   programo.innochem.apaczka-secret       Apaczka Web API App Secret
-  programo.innochem.stripe-test-webhook  written by this script
+  programo.innochem.stripe-<mode>-webhook  written by this script
 
-Usage: python3 scripts/connect-providers.py [--check] [--no-deploy]
+Usage: python3 scripts/connect-providers.py [--live] [--check] [--no-deploy]
+  --live       launch day: live key, webhook on https://innochem.pl, test checkout off.
+               Leaves PAYMENTS_ENABLED and STOREFRONT_PREVIEW to the cutover runbook.
   --check      verify credentials and print status, change nothing
   --no-deploy  update Coolify env but skip the redeploy
 """
@@ -24,7 +27,13 @@ import urllib.request
 
 ACCOUNT = "acct_1UNTjpEpjVk0RfTD"
 APP_UUID = "oxdsv73fkwbxg7t0umly3ucd"
-WEBHOOK_URL = "https://sklep-innochem.programo.pl/api/payments/stripe/webhook"
+LIVE = "--live" in sys.argv
+MODE = "live" if LIVE else "test"
+WEBHOOK_URL = (
+    "https://innochem.pl/api/payments/stripe/webhook"
+    if LIVE
+    else "https://sklep-innochem.programo.pl/api/payments/stripe/webhook"
+)
 WEBHOOK_EVENTS = [
     "checkout.session.completed",
     "checkout.session.async_payment_succeeded",
@@ -82,16 +91,19 @@ def stripe(method, path, key, form=None):
 
 
 def connect_stripe(check_only):
-    key = keychain("programo.innochem.stripe-test")
+    key = keychain(f"programo.innochem.stripe-{MODE}")
     if not key:
-        print("stripe: brak klucza w Keychain (programo.innochem.stripe-test)")
+        print(f"stripe: brak klucza w Keychain (programo.innochem.stripe-{MODE})")
         return None
-    if not key.startswith(("sk_test_", "rk_test_")):
-        sys.exit("stripe: klucz nie jest kluczem testowym (sk_test_/rk_test_)")
+    if not key.startswith((f"sk_{MODE}_", f"rk_{MODE}_")):
+        sys.exit(f"stripe: klucz nie jest kluczem trybu {MODE} (sk_{MODE}_/rk_{MODE}_)")
     code, acct = stripe("GET", "account", key)
-    if code != 200 or acct.get("id") != ACCOUNT:
-        sys.exit(f"stripe: klucz nie należy do {ACCOUNT} (HTTP {code})")
-    print(f"stripe: konto {ACCOUNT} OK, tryb testowy")
+    if code == 200 and acct.get("id") != ACCOUNT:
+        sys.exit(f"stripe: klucz nie należy do {ACCOUNT}")
+    # A restricted key may lack account read access; the webhook call below still proves the key.
+    if code not in (200, 403):
+        sys.exit(f"stripe: klucz odrzucony (HTTP {code})")
+    print(f"stripe: tryb {MODE}, konto {ACCOUNT if code == 200 else 'niesprawdzone (klucz ograniczony)'}")
 
     code, cfgs = stripe("GET", "payment_method_configurations?limit=10", key)
     if code == 200:
@@ -114,7 +126,7 @@ def connect_stripe(check_only):
         if h.get("url") == WEBHOOK_URL
         and (h.get("metadata") or {}).get("managed_by") == MANAGED
     ]
-    secret = keychain("programo.innochem.stripe-test-webhook")
+    secret = keychain(f"programo.innochem.stripe-{MODE}-webhook")
     if len(managed) == 1 and secret:
         print(f"stripe: webhook {managed[0]['id']} już istnieje, sekret w Keychain")
     else:
@@ -127,20 +139,20 @@ def connect_stripe(check_only):
             form={
                 "url": WEBHOOK_URL,
                 "enabled_events[]": WEBHOOK_EVENTS,
-                "description": "INNOCHEM sklep (podgląd)",
+                "description": "INNOCHEM sklep" if LIVE else "INNOCHEM sklep (podgląd)",
                 "metadata[managed_by]": MANAGED,
             },
         )
         if code != 200 or not hook.get("secret", "").startswith("whsec_"):
             sys.exit(f"stripe: nie udało się utworzyć webhooka (HTTP {code})")
         secret = hook["secret"]
-        keychain_store("programo.innochem.stripe-test-webhook", secret)
+        keychain_store(f"programo.innochem.stripe-{MODE}-webhook", secret)
         print(f"stripe: utworzono webhook {hook['id']}, sekret zapisany w Keychain")
     return {
-        "STRIPE_MODE": "test",
+        "STRIPE_MODE": MODE,
         "STRIPE_SECRET_KEY": key,
         "STRIPE_WEBHOOK_SECRET": secret,
-        "STRIPE_TEST_CHECKOUT_ENABLED": "true",
+        "STRIPE_TEST_CHECKOUT_ENABLED": "false" if LIVE else "true",
     }
 
 
@@ -216,7 +228,9 @@ def deploy():
 def main():
     check_only = "--check" in sys.argv
     values = {}
-    for part in (connect_stripe(check_only), None if check_only else connect_apaczka()):
+    # Apaczka keys are already live; launch day only swaps the Stripe mode.
+    apaczka = None if check_only or LIVE else connect_apaczka()
+    for part in (connect_stripe(check_only), apaczka):
         values.update(part or {})
     if check_only:
         connect_apaczka()
